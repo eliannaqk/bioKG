@@ -17,6 +17,9 @@ schema/
   resources.tsv         one row per source database — derived_from upstream, what
                         entities and edges it contributed
   table_schemas.sql     CREATE TABLE / CREATE INDEX statements from the live SQLite DB
+  schema.py             DAG-2 entry-layer dataclasses — ClaimType, the three
+                        orthogonal claim axes, ResearchQuestionContract,
+                        CandidateNode, StudyResult / ProvingNodeResult
   KG_PROVENANCE.md      curated provenance map: license, API, proof-level per source
 ```
 
