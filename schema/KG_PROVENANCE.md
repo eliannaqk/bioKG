@@ -1,13 +1,8 @@
 # GBD Knowledge Graph — Complete Provenance Map
 
-**Database**: `/home/eqk3/scratch_pi_mg269/eqk3/coscientist_data/gbd_knowledge_graph.db`
 **Generated**: 2026-04-10
 **Total**: 118,137 entities (19 types), 5,206,053 edges (20 types), 18 curated databases
 **Provenance**: 100% of edges have source_db, 98.1% of entities have xrefs
-
-All data from real curated databases. Zero LLM-generated biological facts.
-
----
 
 ## Entity Types (Nodes)
 
@@ -110,12 +105,3 @@ All data from real curated databases. Zero LLM-generated biological facts.
 | **L7: Published/Clinical** | FDA-approved or clinical-grade evidence | Compound-treats-Disease (ChEMBL phase 3+), Gene-has-Variant (ClinVar pathogenic) |
 
 ---
-
-## Schema Coverage
-
-- **19/24 entity types populated** (missing: Study, Cohort, ProteinDomain, ProteinFamily — runtime or low-priority)
-- **20/23 edge types populated** (missing: Pathway-contains-Pathway [Reactome blocked], Gene-encodes-MiRNA [needs miRTarBase], Protein-has-ProteinDomain [needs InterPro])
-- **100% edge provenance** (source_db field)
-- **98.1% entity provenance** (xrefs field with source_db)
-- **3 edge types with variable confidence** (STRING, Open Targets, DGIdb)
-- **17 edge types with binary confidence** (1.0 = curated/present)

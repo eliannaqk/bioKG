@@ -1,6 +1,7 @@
 edge_type	count	head_types	tail_types	sources	example_source	example_target	example_source_db	example_confidence
 KGene-regulates-Gene	2477140	Gene	Gene	LINCS_L1000_CRISPR_KO_Consensus_Sigs=2477140	A1BG	HOMER2	LINCS_L1000_CRISPR_KO_Consensus_Sigs	1.0
 Protein-regulates-Gene	1051989	Gene	Gene	ChEA_2022=501938; ENCODE_TF_ChIP-seq_2015=470577; ENCODE_and_ChEA_Consensus_TFs_from_ChIP-=79474	NANOG	RBFOX2	ENCODE_and_ChEA_Consensus_TFs_from_ChIP-	1.0
+CellLine-dependsOn-Gene	658200	CellLine	Gene	DepMap=658200	ACH-000001	PAX8	DepMap	-3.21
 Gene-expressedIN-CellType	616565	Gene	CellType	HPA_v23=616565	TSPAN6	CT-appendix-glandular_cells	HPA_v23	1.0
 Anatomy-expresses-Gene	418700	Anatomy	Gene	HPA_v23=418700	ANAT-appendix	TSPAN6	HPA_v23	1.0
 Protein-interacts-Protein	306663	Gene	Gene	STRING=306663	AASDH	ABHD11	STRING	0.417
@@ -20,6 +21,8 @@ Gene-has-Variant	4905	Gene	Variant	ClinVar=4905	A1BG	ClinVar:4445985	ClinVar	1.0
 TMECompartment-signature-Gene	3827	TMECompartment	Gene	PanglaoDB=3827	TME-adipocyte	LUM	PanglaoDB	1.0
 ImmuneFunctionalState-marked-by-Gene	3396	ImmuneFunctionalState	Gene	Azimuth_2023=2156; STCAT=1240	IFS-STCAT-CD4_Tc	S100A4	STCAT	1.0
 CellType-isa-CellType	2713	CellType	CellType	CL=2713	CL:0000000	CL:4033054	CL	1.0
+CancerLineage-essential-Gene	1734	CancerLineage	Gene	DepMap=1734	LINEAGE-Ovary/Fallopian_Tube	PAX8	DepMap	0.92
+CellLine-isa-CancerLineage	1099	CellLine	CancerLineage	DepMap=1099	ACH-000001	LINEAGE-Ovary/Fallopian_Tube	DepMap	1.0
 Disease-contains-Disease	897	CancerType	CancerType	OncoTree=897	ONCO-TISSUE	ONCO-THYROID	OncoTree	1.0
 Gene-suppresses-ImmunePhenotype	203	Gene	ImmuneFunctionalState	TCPGdb_concordance=203	MAP4K1	PHENO-cytokine_IFNG	TCPGdb_concordance	0.58427
 Gene-drives-ImmunePhenotype	159	Gene	ImmuneFunctionalState	TCPGdb_concordance=159	VAV1	PHENO-cytokine_IFNG	TCPGdb_concordance	1.0

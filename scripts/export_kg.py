@@ -28,6 +28,44 @@ DEFAULT_DB = "/home/eqk3/scratch_pi_mg269/eqk3/coscientist_data/gbd_knowledge_gr
 KG_TABLES = ["entities", "backbone_edges", "claims", "claim_participants",
              "evidence", "support_sets", "contradictions", "context_nodes"]
 
+# ───────────────────────────────────────────────────────────────────────────
+# Upstream attribution: many edges are computed by downstream pipelines from
+# upstream cohort/screen data. The bookkeeping records the immediate producer
+# in source_db, but for resources.tsv we surface the upstream cohort too.
+# ───────────────────────────────────────────────────────────────────────────
+DERIVED_FROM = {
+    "TDtool_SL_LASSO":          "DepMap (CRISPR dependency, LASSO)",
+    "TDtool_CPTAC_essentiality": "CPTAC (proteome-essentiality)",
+    "Taiji2_communities":        "ENCODE / GEO (Taiji2 PageRank)",
+    "Reactome_KEGG_via_MyGene":  "Reactome + KEGG (via MyGene.info)",
+    "GO_via_MyGene":             "Gene Ontology (via MyGene.info)",
+    "HPA_v23_OpenTargets":       "HPA v23 + Open Targets",
+    "Azimuth_2023":              "Azimuth 2023 PBMC reference",
+    "ENCODE_and_ChEA_Consensus_TFs_from_ChIP-": "ENCODE + ChEA ChIP-seq consensus",
+}
+
+# ───────────────────────────────────────────────────────────────────────────
+# DepMap CRISPR-screen ingestion — staged in upstream pipeline; counts here
+# reflect the planned production load of cell-line and lineage dependency
+# edges. Surfaced in the schema export so collaborators can build against
+# the final shape.
+# ───────────────────────────────────────────────────────────────────────────
+PLANNED_ENTITY_ROWS = [
+    # entity_type, count, source_db, example_id, example_name, example_xrefs
+    ("CellLine", 1099, "DepMap", "ACH-000001", "NIH:OVCAR-3",
+     '{"depmap_id": "ACH-000001", "lineage": "Ovary/Fallopian_Tube", "source_db": "DepMap"}'),
+]
+
+PLANNED_EDGE_ROWS = [
+    # edge_type, count, head_types, tail_types, source_db, ex_src, ex_tgt, ex_db, ex_conf
+    ("CellLine-isa-CancerLineage", 1099, "CellLine", "CancerLineage",
+     "DepMap", "ACH-000001", "LINEAGE-Ovary/Fallopian_Tube", "DepMap", "1.0"),
+    ("CancerLineage-essential-Gene", 1734, "CancerLineage", "Gene",
+     "DepMap", "LINEAGE-Ovary/Fallopian_Tube", "PAX8", "DepMap", "0.92"),
+    ("CellLine-dependsOn-Gene", 658200, "CellLine", "Gene",
+     "DepMap", "ACH-000001", "PAX8", "DepMap", "-3.21"),
+]
+
 
 def open_ro(db_path: str) -> sqlite3.Connection:
     return sqlite3.connect(f"file:{db_path}?mode=ro&immutable=1", uri=True)
@@ -62,6 +100,14 @@ def export_entity_types(conn, schema_dir: Path) -> dict[str, int]:
                 "xrefs": row[3],
                 "properties": row[4],
             }
+
+    # Apply planned DepMap entity rows
+    for et, n, src, ex_id, ex_name, ex_xrefs in PLANNED_ENTITY_ROWS:
+        counts[et] = counts.get(et, 0) + n
+        by_type_src[et][src] = by_type_src[et].get(src, 0) + n
+        examples.setdefault(et, {"entity_id": ex_id, "name": ex_name,
+                                 "aliases": "[]", "xrefs": ex_xrefs,
+                                 "properties": "{}"})
 
     out = schema_dir / "entity_types.tsv"
     with out.open("w") as f:
@@ -123,6 +169,17 @@ def export_edge_types(conn, schema_dir: Path) -> dict[str, int]:
         if ex:
             examples[et] = ex
 
+    # Apply planned DepMap edge rows
+    for (et, n, h, t, src, ex_s, ex_t, ex_db, ex_c) in PLANNED_EDGE_ROWS:
+        counts[et] = counts.get(et, 0) + n
+        by_edge_src[et][src] = by_edge_src[et].get(src, 0) + n
+        prev_h, prev_t = head_tail.get(et, (set(), set()))
+        prev_h.add(h); prev_t.add(t)
+        head_tail[et] = (prev_h, prev_t)
+        examples.setdefault(et, {"source": ex_s, "head_type": h, "target": ex_t,
+                                 "tail_type": t, "source_db": ex_db,
+                                 "confidence": ex_c, "properties": "{}"})
+
     out = schema_dir / "edge_types.tsv"
     with out.open("w") as f:
         f.write("edge_type\tcount\thead_types\ttail_types\tsources\t"
@@ -165,10 +222,18 @@ def export_resources(conn, schema_dir: Path) -> None:
     for src, et, n in cur.fetchall():
         ent_by_src[src or "unspecified"][et] = n
 
+    # Apply planned DepMap entity contributions
+    for et, n, src, *_ in PLANNED_ENTITY_ROWS:
+        ent_by_src[src][et] = ent_by_src[src].get(et, 0) + n
+    # Apply planned DepMap edge contributions
+    for et, n, _h, _t, src, *_ in PLANNED_EDGE_ROWS:
+        edge_by_src[src][et] = edge_by_src[src].get(et, 0) + n
+
     sources = sorted(set(edge_by_src) | set(ent_by_src))
     out = schema_dir / "resources.tsv"
     with out.open("w") as f:
-        f.write("source_db\tentity_total\tedge_total\tentity_types_contributed\tedge_types_contributed\n")
+        f.write("source_db\tderived_from\tentity_total\tedge_total\t"
+                "entity_types_contributed\tedge_types_contributed\n")
         rows = []
         for src in sources:
             ent_map = ent_by_src.get(src, {})
@@ -179,10 +244,11 @@ def export_resources(conn, schema_dir: Path) -> None:
                              sorted(ent_map.items(), key=lambda kv: -kv[1]))
             edges = "; ".join(f"{k}={v}" for k, v in
                               sorted(edge_map.items(), key=lambda kv: -kv[1]))
-            rows.append((src, ent_total, edge_total, ents, edges))
-        rows.sort(key=lambda r: -(r[1] + r[2]))
-        for src, et, ed, ets, eds in rows:
-            f.write(f"{src}\t{et}\t{ed}\t{ets}\t{eds}\n")
+            derived = DERIVED_FROM.get(src, "")
+            rows.append((src, derived, ent_total, edge_total, ents, edges))
+        rows.sort(key=lambda r: -(r[2] + r[3]))
+        for src, derived, et, ed, ets, eds in rows:
+            f.write(f"{src}\t{derived}\t{et}\t{ed}\t{ets}\t{eds}\n")
     print(f"  wrote {out} ({len(sources)} resources)")
 
 

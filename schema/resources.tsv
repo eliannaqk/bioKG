@@ -1,32 +1,32 @@
-source_db	entity_total	edge_total	entity_types_contributed	edge_types_contributed
-LINCS_L1000_CRISPR_KO_Consensus_Sigs	0	2477140		KGene-regulates-Gene=2477140
-HPA_v23	0	1035265		Gene-expressedIN-CellType=616565; Anatomy-expresses-Gene=418700
-ChEA_2022	0	501938		Protein-regulates-Gene=501938
-ENCODE_TF_ChIP-seq_2015	0	470577		Protein-regulates-Gene=470577
-STRING	0	306663		Protein-interacts-Protein=306663
-OpenTargets	13937	177499	Disease=13937	Disease-associates-Gene=169540; Disease-localizes-Anatomy=7959
-GO_via_MyGene	10733	175271	BiologicalProcess=7027; MolecularFunction=2796; CellularComponent=910	Gene-participates-BiologicalProcess=74679; Gene-participates-MolecularFunction=52625; Gene-participates-CellularComponent=47967
-ENCODE_and_ChEA_Consensus_TFs_from_ChIP-	0	79474		Protein-regulates-Gene=79474
-unspecified	72200	0	Gene=38025; Protein=24236; Variant=3049; CellType=2248; Neoantigen=1913; TherapyRegimen=1299; CancerType=907; ImmuneFunctionalState=344; HLAAllele=100; TMECompartment=25; Study=20; Pathway=11; BiologicalProcess=10; Phenotype=10; Unknown=3	
-reactome	0	61247		Gene-participates-Pathway=61247
-DGIdb	17065	38322	Compound=17065	Compound-binds-Protein=38322
-UniProt	0	49671		Protein-localizes-CellularComponent=30447; Gene-encodes-Protein=19224
-Reactome	645	47684	Pathway=645	Gene-participates-Pathway=47684
-CollecTRI	0	38420		TF-bindsPromoter-Gene=38420
-TDtool_SL_LASSO	0	28792		Gene-syntheticLethal-Gene=28792
-ChEMBL	4896	23222	Compound=4830; Disease=66	Compound-treats-Disease=23222
-kegg	0	22118		Gene-participates-Pathway=22118
-KEGG	20693	0	Reaction=12384; EC=8309	
-TDtool_CPTAC_essentiality	0	7732		Disease-associates-Gene=7732
-ClinVar	0	4905		Gene-has-Variant=4905
-PanglaoDB	0	3827		TMECompartment-signature-Gene=3827
-CL	0	2713		CellType-isa-CellType=2713
-Reactome_KEGG_via_MyGene	2426	0	Pathway=2426	
-Azimuth_2023	0	2156		ImmuneFunctionalState-marked-by-Gene=2156
-STCAT	0	1240		ImmuneFunctionalState-marked-by-Gene=1240
-OncoTree	0	897		Disease-contains-Disease=897
-TCPGdb_concordance	0	362		Gene-suppresses-ImmunePhenotype=203; Gene-drives-ImmunePhenotype=159
-Taiji2_communities	0	329		Gene-participates-BiologicalProcess=329
-HPA_v23_OpenTargets	88	0	Anatomy=88	
-DepMap	34	0	CancerLineage=34	
-TCPGdb	11	0	ImmuneFunctionalState=11	
+source_db	derived_from	entity_total	edge_total	entity_types_contributed	edge_types_contributed
+LINCS_L1000_CRISPR_KO_Consensus_Sigs		0	2477140		KGene-regulates-Gene=2477140
+HPA_v23		0	1035265		Gene-expressedIN-CellType=616565; Anatomy-expresses-Gene=418700
+DepMap		1133	661033	CellLine=1099; CancerLineage=34	CellLine-dependsOn-Gene=658200; CancerLineage-essential-Gene=1734; CellLine-isa-CancerLineage=1099
+ChEA_2022		0	501938		Protein-regulates-Gene=501938
+ENCODE_TF_ChIP-seq_2015		0	470577		Protein-regulates-Gene=470577
+STRING		0	306663		Protein-interacts-Protein=306663
+OpenTargets		13937	177499	Disease=13937	Disease-associates-Gene=169540; Disease-localizes-Anatomy=7959
+GO_via_MyGene	Gene Ontology (via MyGene.info)	10733	175271	BiologicalProcess=7027; MolecularFunction=2796; CellularComponent=910	Gene-participates-BiologicalProcess=74679; Gene-participates-MolecularFunction=52625; Gene-participates-CellularComponent=47967
+ENCODE_and_ChEA_Consensus_TFs_from_ChIP-	ENCODE + ChEA ChIP-seq consensus	0	79474		Protein-regulates-Gene=79474
+unspecified		72760	0	Gene=38025; Protein=24796; Variant=3049; CellType=2248; Neoantigen=1913; TherapyRegimen=1299; CancerType=907; ImmuneFunctionalState=344; HLAAllele=100; TMECompartment=25; Study=20; Pathway=11; BiologicalProcess=10; Phenotype=10; Unknown=3	
+reactome		0	61247		Gene-participates-Pathway=61247
+DGIdb		17065	38322	Compound=17065	Compound-binds-Protein=38322
+UniProt		0	49671		Protein-localizes-CellularComponent=30447; Gene-encodes-Protein=19224
+Reactome		645	47684	Pathway=645	Gene-participates-Pathway=47684
+CollecTRI		0	38420		TF-bindsPromoter-Gene=38420
+TDtool_SL_LASSO	DepMap (CRISPR dependency, LASSO)	0	28792		Gene-syntheticLethal-Gene=28792
+ChEMBL		4896	23222	Compound=4830; Disease=66	Compound-treats-Disease=23222
+kegg		0	22118		Gene-participates-Pathway=22118
+KEGG		20693	0	Reaction=12384; EC=8309	
+TDtool_CPTAC_essentiality	CPTAC (proteome-essentiality)	0	7732		Disease-associates-Gene=7732
+ClinVar		0	4905		Gene-has-Variant=4905
+PanglaoDB		0	3827		TMECompartment-signature-Gene=3827
+CL		0	2713		CellType-isa-CellType=2713
+Reactome_KEGG_via_MyGene	Reactome + KEGG (via MyGene.info)	2426	0	Pathway=2426	
+Azimuth_2023	Azimuth 2023 PBMC reference	0	2156		ImmuneFunctionalState-marked-by-Gene=2156
+STCAT		0	1240		ImmuneFunctionalState-marked-by-Gene=1240
+OncoTree		0	897		Disease-contains-Disease=897
+TCPGdb_concordance		0	362		Gene-suppresses-ImmunePhenotype=203; Gene-drives-ImmunePhenotype=159
+Taiji2_communities	ENCODE / GEO (Taiji2 PageRank)	0	329		Gene-participates-BiologicalProcess=329
+HPA_v23_OpenTargets	HPA v23 + Open Targets	88	0	Anatomy=88	
+TCPGdb		11	0	ImmuneFunctionalState=11	
