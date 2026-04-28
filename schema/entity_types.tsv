@@ -1,0 +1,24 @@
+entity_type	count	sources	example_id	example_name	example_xrefs
+Gene	38025	unspecified=38025	A1BG	alpha-1-B glycoprotein	{"entrez": "1"}
+Protein	24236	unspecified=24236	P04217	Alpha-1B-glycoprotein	{"gene": "A1BG"}
+Compound	21895	DGIdb=17065; ChEMBL=4830	iuphar.ligand:7635	DUO3	{"source_db": "DGIdb"}
+Disease	14003	OpenTargets=13937; ChEMBL=66	MONDO_0007244	Caffey disease	{"source_db": "OpenTargets"}
+Reaction	12384	KEGG=12384	R00001	polyphosphate polyphosphohydrolase	{"source_db": "KEGG"}
+EC	8309	KEGG=8309	EC:1.1.1.1	alcohol dehydrogenase	{"source_db": "KEGG"}
+BiologicalProcess	7037	GO_via_MyGene=7027; unspecified=10	GO:0141166	chromosomal 5-methylcytosine DNA demethylation pathway	{"source_db": "GO_via_MyGene"}
+Pathway	3082	Reactome_KEGG_via_MyGene=2426; Reactome=645; unspecified=11	R-HSA-5682294	Defective ABCA12 causes ARCI4B	{"source_db": "Reactome_KEGG_via_MyGene"}
+Variant	3049	unspecified=3049	ClinVar:4445985	NR_015380.2(A1BG-AS1):n.1076-65G>C	{"clinvar": "4445985", "significance": ""}
+MolecularFunction	2796	GO_via_MyGene=2796	GO:0001962	alpha-1,3-galactosyltransferase activity	{"source_db": "GO_via_MyGene"}
+CellType	2248	unspecified=2248	CT-appendix-glandular_cells	glandular cells (appendix)	{}
+Neoantigen	1913	unspecified=1913	hsa-mir-6859-1	hsa-mir-6859-1	{"mirbase_id": "MI0022705"}
+TherapyRegimen	1299	unspecified=1299	THR-Carbonic_anhydrase_VII_inhibitor	Carbonic anhydrase VII inhibitor	{"action": "INHIBITOR", "phase": 4}
+CellularComponent	910	GO_via_MyGene=910	GO:0032839	dendrite cytoplasm	{"source_db": "GO_via_MyGene"}
+CancerType	907	unspecified=907	ONCO-THYROID	Thyroid	{"tissue": "Thyroid", "oncotree_code": "THYROID"}
+ImmuneFunctionalState	355	unspecified=344; TCPGdb=11	IFS-STCAT-CD4_Tc	CD4 Tc	{"source": "STCAT_1.7M_cells", "lineage": "CD4", "category": "functional", "n_genes": 3159}
+HLAAllele	100	unspecified=100	A*01:01:01:01	A*01:01:01:01	{"gene": "HLA-DPB1", "class": "II"}
+Anatomy	88	HPA_v23_OpenTargets=88	ANAT-appendix	appendix	{"source_db": "HPA_v23_OpenTargets"}
+CancerLineage	34	DepMap=34	LINEAGE-Ovary/Fallopian_Tube	Ovary/Fallopian Tube	{"source_db": "DepMap"}
+TMECompartment	25	unspecified=25	TME-adipocyte	Adipocytes	{"source": "PanglaoDB_2021"}
+Study	20	unspecified=20	CPTAC_ESS_brca_BRCA	CPTAC Essentiality: breast	{}
+Phenotype	10	unspecified=10	FT:pheno_activation_ctla4	PHENO-activation_CTLA4	{}
+Unknown	3	unspecified=3	FT:h3k9me3_target_genes	H3K9me3_target_genes	{}

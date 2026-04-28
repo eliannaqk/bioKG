@@ -1,0 +1,25 @@
+edge_type	count	head_types	tail_types	sources	example_source	example_target	example_source_db	example_confidence
+KGene-regulates-Gene	2477140	Gene	Gene	LINCS_L1000_CRISPR_KO_Consensus_Sigs=2477140	A1BG	HOMER2	LINCS_L1000_CRISPR_KO_Consensus_Sigs	1.0
+Protein-regulates-Gene	1051989	Gene	Gene	ChEA_2022=501938; ENCODE_TF_ChIP-seq_2015=470577; ENCODE_and_ChEA_Consensus_TFs_from_ChIP-=79474	NANOG	RBFOX2	ENCODE_and_ChEA_Consensus_TFs_from_ChIP-	1.0
+Gene-expressedIN-CellType	616565	Gene	CellType	HPA_v23=616565	TSPAN6	CT-appendix-glandular_cells	HPA_v23	1.0
+Anatomy-expresses-Gene	418700	Anatomy	Gene	HPA_v23=418700	ANAT-appendix	TSPAN6	HPA_v23	1.0
+Protein-interacts-Protein	306663	Gene	Gene	STRING=306663	AASDH	ABHD11	STRING	0.417
+Disease-associates-Gene	177272	Disease	Gene	OpenTargets=169540; TDtool_CPTAC_essentiality=7732	EFO_0004274	A1CF	OpenTargets	0.5349325554194896
+Gene-participates-Pathway	131049	Gene	Pathway	reactome=61247; Reactome=47684; kegg=22118	A1BG	R-HSA-109582	reactome	1.0
+Gene-participates-BiologicalProcess	75008	Gene	BiologicalProcess	GO_via_MyGene=74679; Taiji2_communities=329	A1BG	GO:0060396	GO_via_MyGene	1.0
+Gene-participates-MolecularFunction	52625	Gene	MolecularFunction	GO_via_MyGene=52625	A1BG	GO:0004888	GO_via_MyGene	1.0
+Gene-participates-CellularComponent	47967	Gene	CellularComponent	GO_via_MyGene=47967	A1BG	GO:0005576	GO_via_MyGene	1.0
+TF-bindsPromoter-Gene	38420	Gene	Gene	CollecTRI=38420	MYC	TERT	CollecTRI	1.0
+Compound-binds-Protein	38322	Compound	Gene	DGIdb=38322	iuphar.ligand:7635	AAMP	DGIdb	0.0035087719298245615
+Protein-localizes-CellularComponent	30447	Protein	?	UniProt=30447	P04217	CC-Secreted	UniProt	1.0
+Gene-syntheticLethal-Gene	28792	Gene	Gene	TDtool_SL_LASSO=28792	VHL	HNF1B	TDtool_SL_LASSO	0.9830964317961963
+Compound-treats-Disease	23222	Compound	Disease	ChEMBL=23222	CHEMBL1201823	EFO:0000685	ChEMBL	1.0
+Gene-encodes-Protein	19224	Gene	Protein	UniProt=19224	A1BG	P04217	UniProt	1.0
+Disease-localizes-Anatomy	7959	Disease	Anatomy	OpenTargets=7959	EFO_0000094	ANAT-hematologic_disease	OpenTargets	1.0
+Gene-has-Variant	4905	Gene	Variant	ClinVar=4905	A1BG	ClinVar:4445985	ClinVar	1.0
+TMECompartment-signature-Gene	3827	TMECompartment	Gene	PanglaoDB=3827	TME-adipocyte	LUM	PanglaoDB	1.0
+ImmuneFunctionalState-marked-by-Gene	3396	ImmuneFunctionalState	Gene	Azimuth_2023=2156; STCAT=1240	IFS-STCAT-CD4_Tc	S100A4	STCAT	1.0
+CellType-isa-CellType	2713	CellType	CellType	CL=2713	CL:0000000	CL:4033054	CL	1.0
+Disease-contains-Disease	897	CancerType	CancerType	OncoTree=897	ONCO-TISSUE	ONCO-THYROID	OncoTree	1.0
+Gene-suppresses-ImmunePhenotype	203	Gene	ImmuneFunctionalState	TCPGdb_concordance=203	MAP4K1	PHENO-cytokine_IFNG	TCPGdb_concordance	0.58427
+Gene-drives-ImmunePhenotype	159	Gene	ImmuneFunctionalState	TCPGdb_concordance=159	VAV1	PHENO-cytokine_IFNG	TCPGdb_concordance	1.0
