@@ -7,5 +7,5 @@ __pycache__/
 *.db-shm
 *.db-wal
 .ipynb_checkpoints/
-.scripts/
+scripts/
 schema/schema_private.py

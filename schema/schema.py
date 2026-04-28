@@ -10,27 +10,20 @@ proving a candidate claim. It contains:
   * Intake contract           — PhenotypeDefinition, ConfounderDeclaration,
                                 ResearchQuestionContract
   * Candidate claim node      — CandidateNode + NodeTypeInClaim/NodeRoleInClaim
-  * Wave-1 typed output       — StudyResult, ClaimUpdate, ProvingNodeResult
 
 Not included (intentional):
   * Layer-1 entity primitives — see ``schema_private.py`` (gitignored) and
     ``entity_types.tsv`` / ``edge_types.tsv``.
+  * Wave-1 output contract    — StudyResult / ClaimUpdate / ProvingNodeResult.
   * Evidence layer (Layer 3)  — Dataset, Assay, StatisticalTest, ModelRun, …
   * Logic layer (Layer 4)     — SupportSet (AND/OR), ContradictionCase
   * Meta-analysis, wet-lab proposal, frontier operators, claim families —
     later proving waves and orchestration.
-
-Mandatory rules a wave-1 implementation must respect:
-  1. No node may emit a free-text conclusion without ≥1 StudyResult.
-  2. No multi-study summary without pooled meta-analysis.
-  3. No claim promotion without KG write-back.
-  4. No verdict without a machine-readable L1–L7 coverage map.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -300,71 +293,3 @@ class CandidateNode:
     required: bool = True                          # load-bearing for claim truth?
     compartment: str = ""                          # tumor_intrinsic | immune_effector | myeloid | …
     notes: str = ""
-
-
-# ═══════════════════════════════════════════════════════════════════════════
-# WAVE-1 OUTPUT CONTRACT — typed result every DAG 2 node must emit
-# ═══════════════════════════════════════════════════════════════════════════
-
-@dataclass
-class StudyResult:
-    """Structured output from a single study within a proving node.
-
-    Every node emits one or more of these. Negative and null results
-    are stored — claim status is derived from the result graph,
-    not written as a side effect of one positive analysis.
-    """
-    question_id: str
-    study_id: str
-    evidence_family: str              # "in_vitro_association", "tumor_multiomics", …
-    cohort_name: str = ""
-    context: dict[str, str] = field(default_factory=dict)
-    assay: str = ""                   # "expression_correlation", "crispr_ko", "meta_analysis"
-    comparison: str = ""              # "discordant_low vs concordant_high"
-    model_type: str = ""              # "welch_t", "linear_regression", "deseq2", …
-    covariates: list[str] = field(default_factory=list)
-    n: int = 0
-    effect_size: float | None = None
-    standard_error: float | None = None
-    ci_low: float | None = None
-    ci_high: float | None = None
-    p_value: float | None = None
-    q_value: float | None = None
-    direction: str = ""               # "positive", "negative", "enriched", …
-    classification: str = ""          # "support", "null", "contradict"
-    quality_flags: list[str] = field(default_factory=list)
-    artifact_paths: list[str] = field(default_factory=list)
-
-
-@dataclass
-class ClaimUpdate:
-    """Proposed claim state change from a proving node."""
-    claim_id: str | None = None
-    claim_text: str = ""
-    question_id: str = ""
-    proposed_evidence_status: str = ""   # an EvidenceStatus value
-    proposed_prior_art_status: str | None = None
-    contradiction_targets: list[str] = field(default_factory=list)
-    evidence_refs: list[str] = field(default_factory=list)  # study_result IDs
-    reasoning: str = ""
-
-
-@dataclass
-class ProvingNodeResult:
-    """Standard output from every DAG 2 node.
-
-    Rule 1: No node may emit a free-text conclusion without ≥1 StudyResult.
-    Rule 2: No multi-study summary without pooled meta-analysis.
-    Rule 3: No claim promotion without KG write-back.
-    """
-    node_id: str
-    wave: int                          # 1–4
-    question_id: str
-    passed: bool
-    blocking: bool                     # is this a hard-gate dependency?
-    study_results: list[StudyResult] = field(default_factory=list)
-    claim_updates: list[ClaimUpdate] = field(default_factory=list)
-    summary: str = ""
-    provenance: dict[str, Any] = field(default_factory=dict)
-    elapsed_seconds: float = 0.0
-    errors: list[str] = field(default_factory=list)

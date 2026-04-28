@@ -19,22 +19,9 @@ schema/
   table_schemas.sql     CREATE TABLE / CREATE INDEX statements from the live SQLite DB
   schema.py             DAG-2 entry-layer dataclasses — ClaimType, the three
                         orthogonal claim axes, ResearchQuestionContract,
-                        CandidateNode, StudyResult / ProvingNodeResult
+                        CandidateNode
   KG_PROVENANCE.md      curated provenance map: license, API, proof-level per source
 ```
-
-## Regenerating the export
-
-```bash
-# defaults to /home/eqk3/scratch_pi_mg269/eqk3/coscientist_data/gbd_knowledge_graph.db
-python scripts/export_kg.py
-
-# or point at a different DB
-python scripts/export_kg.py --db /path/to/gbd_knowledge_graph.db
-GBD_KG_DB=/path/to/db python scripts/export_kg.py
-```
-
-The script only needs Python 3.11+ stdlib (`sqlite3`, `json`, `pathlib`).
 
 ## What this repo covers
 
