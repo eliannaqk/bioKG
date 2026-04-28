@@ -21,7 +21,19 @@ schema/
                         orthogonal claim axes, ResearchQuestionContract,
                         CandidateNode
   KG_PROVENANCE.md      curated provenance map: license, API, proof-level per source
+ingest/                 redacted ingestion scripts (one per source) + SLURM wrapper
+INGEST.md               per-source recipe: endpoint, query, version, what it produces
+ID_CONVENTIONS.md       entity_id and edge_id grammar (prefixes, slug rules)
+versions.lock           pinned versions / release IDs for every source
 ```
+
+## Reproducing the KG
+
+`schema/` tells you the **shape** of the data; `INGEST.md` + `ID_CONVENTIONS.md`
++ `versions.lock` + `ingest/` together are the recipe for **rebuilding** it.
+Set `KG_DATA_ROOT` and `EXTERNAL_DATA_ROOT`, drop your DepMap / CPTAC bulk
+downloads in place, then run `ingest/populate_kg.sh` (or step through the
+phases in `ingest/README.md`).
 
 ## What this repo covers
 
