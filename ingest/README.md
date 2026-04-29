@@ -1,10 +1,5 @@
 # Ingestion scripts
 
-Redacted copies of the scripts that built `gbd_knowledge_graph.db` from
-public APIs. Use these together with [`../INGEST.md`](../INGEST.md) (recipes per source),
-[`../ID_CONVENTIONS.md`](../ID_CONVENTIONS.md) (entity / edge ID grammar) and
-[`../versions.lock`](../versions.lock) (pinned source versions).
-
 ## Required environment
 
 ```bash
@@ -84,12 +79,3 @@ loader is safe.
 | `merge_kg_shards.py` | Batch-insert all `kg_shards/*.json` into SQLite. |
 | `populate_kg.sh` | SLURM wrapper for `populate_knowledge_graph.py --phase all`. |
 
-## Known omissions (in the public repo)
-
-- The SLURM partition / account / mail-user lines in `populate_kg.sh` are
-  generic — adjust to your cluster.
-- `populate_kg_inferred.py`, `populate_kg_parallel.sh`, `populate_kg_ppi.sh`,
-  `submit_phase_c_kg.sh` are working-repo helpers and not shipped.
-- Anything that writes to `claims` / `evidence` / `support_sets` /
-  `contradictions` (Layers 2–4) lives in the private working repo. This
-  ingest set populates `entities` and `backbone_edges` only.

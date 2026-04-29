@@ -1,28 +1,7 @@
 #!/usr/bin/env python3
-"""Populate the GBD Knowledge Graph with SPOKE-like backbone data.
+"""Populate the bioKG
+sbatch scripts/populate_kg.sh
 
-Focuses on cancer immunology subset first:
-  - ~2000 genes (immune, cancer, signaling, metabolism)
-  - GO terms, pathways, protein interactions
-  - Disease associations, cell type expression
-  - LINCS perturbation edges (KGene, OGene)
-  - HPA tissue/cell type expression
-
-Data sources (all free public APIs):
-  1. MyGene.info → Gene, GO BP/CC/MF, Pathway (Reactome/KEGG), InterPro
-  2. STRING-DB → Protein-Protein interactions
-  3. Enrichr/LINCS → KGene/OGene perturbation edges
-  4. HPA → Cell type expression, tissue expression
-  5. Disease Ontology → Disease hierarchy
-  6. UniProt → Protein localization, domains
-
-Run on SLURM:
-  sbatch scripts/populate_kg.sh
-
-Or incrementally:
-  python scripts/populate_knowledge_graph.py --phase genes
-  python scripts/populate_knowledge_graph.py --phase interactions
-  python scripts/populate_knowledge_graph.py --phase lincs
 """
 import argparse
 import json

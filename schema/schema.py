@@ -1,25 +1,4 @@
-"""Knowledge Graph Schema — DAG 2 entry layer (claims + study contract).
 
-This is the public, partial schema for the **first layer of DAG 2** — the
-data structures that DAG 1 emits and that DAG 2 consumes when it begins
-proving a candidate claim. It contains:
-
-  * Claim taxonomy            — ClaimType
-  * Three orthogonal axes     — EvidenceStatus, PriorArtStatus,
-                                ReviewStatus, PublicationStatus
-  * Intake contract           — PhenotypeDefinition, ConfounderDeclaration,
-                                ResearchQuestionContract
-  * Candidate claim node      — CandidateNode + NodeTypeInClaim/NodeRoleInClaim
-
-Not included (intentional):
-  * Layer-1 entity primitives — see ``schema_private.py`` (gitignored) and
-    ``entity_types.tsv`` / ``edge_types.tsv``.
-  * Wave-1 output contract    — StudyResult / ClaimUpdate / ProvingNodeResult.
-  * Evidence layer (Layer 3)  — Dataset, Assay, StatisticalTest, ModelRun, …
-  * Logic layer (Layer 4)     — SupportSet (AND/OR), ContradictionCase
-  * Meta-analysis, wet-lab proposal, frontier operators, claim families —
-    later proving waves and orchestration.
-"""
 from __future__ import annotations
 
 from dataclasses import dataclass, field
