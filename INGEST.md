@@ -85,3 +85,96 @@ Each shard JSON is a flat list of records with the schema:
 ```
 
 Re-running a phase is idempotent (the merger keys on `entity_id` / `edge_id`).
+
+## How the TDtool edges were created
+
+`TDtool_SL_LASSO` and `TDtool_CPTAC_essentiality` are not third-party
+databases — they are in-house pipelines that sit on top of public sources
+(DepMap CRISPR + CPTAC tumor RNA-seq + TCPGdb / BioGRID-ORCS). The
+loader at `ingest/populate_kg_genomic_taiji.py` reads precomputed CSVs
+from those pipelines and writes them as backbone edges. If you want to
+reproduce them you need to re-run the pipeline — the public KG only
+contains the *output* edges.
+
+### `TDtool_SL_LASSO` → 28,792 `Gene-syntheticLethal-Gene` edges
+
+**Pipeline.** For each candidate (mutation_gene, target_gene) pair,
+fit an L1-penalised regression of target gene's CERES dependency score
+on the mutation status of the partner gene across DepMap cell lines,
+controlling for lineage. Multiple-test correct (Benjamini-Hochberg) at
+the per-target level. Keep pairs with non-zero LASSO coefficient and
+`fdr_q < 0.10`. The optional `mutually_exclusive` flag marks pairs
+whose mutations are mutually exclusive in TCGA — a classical SL
+signature.
+
+**Inputs.** DepMap `CRISPRGeneEffect.csv` (CERES scores), DepMap
+`OmicsSomaticMutationsMatrixDamaging.csv` (binary mutation calls),
+`Model.csv` for lineage covariates.
+
+**Output file the loader reads.** `${EXTERNAL_DATA_ROOT}/depmap/tdtool_pan_cancer/graph/sl_lasso_filtered.csv` with columns `mutation_gene`,
+`target_gene`, `lasso_coef`, `fdr_q`, `mutually_exclusive`.
+
+**Edge construction** (`ingest/populate_kg_genomic_taiji.py:populate_sl_pairs`):
+```
+edge_id        = f"SL-{mutation_gene}-{target_gene}"
+edge_type      = "Gene-syntheticLethal-Gene"
+source_id      = mutation_gene
+target_id      = target_gene
+source_db      = "TDtool_SL_LASSO"
+confidence     = clamp(1.0 - fdr_q, 0, 1)
+properties     = {"relationship": "synthetic_lethality",
+                  "lasso_coef": …, "fdr_q": …, "mutually_exclusive": …}
+```
+
+### `TDtool_CPTAC_essentiality` → 7,732 `Disease-associates-Gene` edges
+
+**Pipeline.** Project CPTAC patient-tumor RNA-seq (10 cancer types)
+into the DepMap cell-line latent space using Celligner, then train an
+elastic-net per gene to predict CERES dependency from gene-expression
+context. Apply the trained model to each patient tumor and call a gene
+"essential" in that tumor when the predicted dependency falls below a
+fixed CERES cutoff. `frac_essential` is the fraction of patient tumors
+in the cancer-type cohort where the gene is called essential;
+`mean_essentiality` is the mean predicted dependency.
+
+**Inputs.** DepMap CRISPR dependency for training; CPTAC patient
+tumor RNA-seq (PDC) for inference; Celligner reference for projection.
+
+**Cancer types covered (10).** `breast` (BRCA), `renal` (KIRC),
+`colorectal` (COAD), `glioblastoma` (GBM), `head_neck` (HNSCC),
+`lung_squamous` (LUSC), `lung_adenocarcinoma` (LUAD), `ovarian` (OV),
+`pancreatic` (PDAC), `endometrial` (UCEC).
+
+**Output files the loader reads.** `${EXTERNAL_DATA_ROOT}/depmap/tdtool_pan_cancer/per_study_rnaseq/<study>/gene_tumor_summary.csv` with columns
+`gene`, `mean_essentiality`, `frac_essential`, `model_cv_r`.
+
+**Filter.** Only rows with `frac_essential > 0.5` enter the KG.
+
+**Edge construction** (`ingest/populate_kg_genomic_taiji.py:populate_essentiality`):
+```
+edge_id        = f"TESS-{study_name}-{gene}"
+edge_type      = "Disease-associates-Gene"
+source_id      = f"cancer_{cancer}"          # CancerType entity (per-study)
+target_id      = gene                         # HGNC symbol
+source_db      = "TDtool_CPTAC_essentiality"
+confidence     = model_cv_r                   # cross-validation R of the elastic-net
+properties     = {"relationship": "predicted_tumor_essentiality",
+                  "mean_essentiality": …, "frac_essential": …,
+                  "model_cv_r": …, "study": <study_name>,
+                  "pipeline": "CPTAC RNA-seq → Celligner → DepMap CERES elastic net"}
+```
+
+A `Study` entity (`CPTAC_ESS_<study_name>`) is also written so the
+edge has full provenance back to the cohort.
+
+### What's *not* in the KG
+
+TDtool produces a much larger set of analytical outputs that the agent
+consumes at runtime via tool calls (`phenotype_rankings.csv`,
+`concordance_analysis.csv`, `cross_phenotype_comparison.csv`,
+`clinical_scores.csv`, `transition_scores.csv`,
+`gene_state_essentiality.csv`, `taiji_upstream_regulators.csv`).
+These live in `${EXTERNAL_DATA_ROOT}/tcpgdb/tdtool_output/` and are
+read by tools at proving time — they are not loaded as backbone edges
+because they are claim-shaped (gene × phenotype × screen-context),
+not entity-shaped.
