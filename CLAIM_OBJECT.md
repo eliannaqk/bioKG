@@ -1,439 +1,196 @@
-# Claim object — complete architecture
+# Claim object — current architecture (post-Part-X)
 
-This is the field-by-field reference for the **claim object**: the
-atomic unit of work in the system. DAG 1 emits claims, DAG 2 proves
-them, the KG stores them. Every belief in the system is one row in
-the `claims` table, augmented at runtime with parsed ontology and a
-view over the result graph.
+This is the field-by-field reference for the **claim object** as it
+exists in production today (Part X cut over 2026-04-29; 881k claim
+rows migrated).
 
-The doc has two halves:
+The doc has three parts:
 
-- **Part A — Fields.** Every column on the `claims` table; every
-  Pydantic class in the typed-ontology layer; every enum.
-- **Part B — Tree structure.** How claims connect to *other* claims
-  (refinement, decomposition, competition, supersession, contradiction)
-  and to the participants / evidence / contexts that scope them.
+- **Part A — `claims` table** (56 columns).
+- **Part B — side-tables** that hold what `claims` used to carry
+  inline: `claim_rankings`, `claim_participants`, `claim_relations`,
+  `claim_embeddings`, plus the result/evidence tables.
+- **Part C — `edge_signature`**: the new set-based, structural-role-driven
+  derivation that makes the same biological assertion dedup across
+  sources.
 
----
-
-## Architecture in one picture
-
-After Part X (April 2026), `CandidateClaim` and `Claim` collapsed into
-a single dataclass: a "candidate" is just a `Claim` row with
-`evidence_status = DRAFT` and the typed ontology attached as transient
-runtime decoration. The three "layers" below describe **stages of the
-same row's life**, not three separate types.
-
-```
-                            ┌──────────────────────────────┐
-                            │  KG (entities + backbone     │
-                            │       edges)  +  Literature  │
-                            └──────────────┬───────────────┘
-                                           │
-                run_literature_grounded_hypothesis_generation()
-                                           │
-                                           ▼
-        ┌──────────────────────────────────────────────────────────┐
-        │  Stage 1: Claim row (DRAFT)                              │
-        │  ─ candidate_id == claim_id                              │
-        │  ─ claim_text, candidate_gene/participants               │
-        │  ─ DAG-1 ranking: novelty, tractability, kg_connectivity │
-        │  ─ source: kg_traversal | literature_gap | contradiction │
-        └──────────────────────────┬───────────────────────────────┘
-                                   │
-                            analyze_claim()
-                       (parse → typed ontology)
-                                   │
-                                   ▼
-        ┌──────────────────────────────────────────────────────────┐
-        │  Stage 2: Claim row + ClaimReasoning attached            │
-        │  ─ structured_claim_json persisted                       │
-        │  ─ structured_claim, causal_chain,                       │
-        │    competing_explanations, mechanism_hypotheses          │
-        │    attached as TRANSIENT decoration (not on disk)        │
-        └──────────────────────────┬───────────────────────────────┘
-                                   │
-                             DAG-2 waves:
-              observe → replicate → perturb → mechanise →
-                          externally_support
-                                   │
-                                   ▼
-        ┌──────────────────────────────────────────────────────────┐
-        │  Stage 3: Claim row, fully evidenced                     │
-        │  ─ axes promoted along hard gates                        │
-        │  ─ confidence_summary recomputed from result graph       │
-        │  ─ children, contradictions, competitors, supersedence   │
-        │    materialised as separate Claim rows + edges           │
-        └──────────────────────────────────────────────────────────┘
-```
-
-Below is every field, every enum, every relation.
+`CandidateClaim` and `Claim` collapsed into a single dataclass in
+Part X. A "candidate" is just a `Claim` row with
+`evidence_status = "draft"` and the typed ontology cached transiently.
 
 ---
 
-# Part A — Fields
+# Part A — the `claims` table (56 columns)
 
-## A.1 The persisted `Claim` row
+Grouped by purpose. Source: `gbd/knowledge_graph/graph.py` CREATE
+TABLE block + `_p1_claim_columns` ALTERs. Full DDL in
+`schema/table_schemas.sql`.
 
-Schema: `gbd/knowledge_graph/schema.py`. SQLite DDL: `schema/table_schemas.sql`
-(table `claims`, 56 columns post-Phase-T).
+## A.1 Identity (5)
 
-### A.1.1 Identity
-
-| Field | Type | Notes |
+| Column | Type | Notes |
 |---|---|---|
-| `claim_id` | `str` PRIMARY KEY | canonical id |
-| `candidate_id` | `str` | filled to `claim_id` when none provided (Part X collapse) |
-| `claim_type` | `ClaimType` | see §A.5 |
-| `claim_text` | `str` | atomic statement in natural language |
-| `human_readable` | `str` | one-liner for logs / reports |
-| `edge_signature` | `str` | `SHA256(subject_node_id|relation_name|object_node_id)`; cross-source dedup primitive (polarity intentionally excluded — opposite-polarity claims with the same subject/relation/object are *the same biological assertion under contention* and route to a `stance="contradicts"` SupportSet) |
-| `created_at` / `created_by` | `str` / `str` | provenance metadata |
+| `claim_id` | TEXT PRIMARY KEY | canonical id |
+| `claim_type` | TEXT NOT NULL | one of 40+ `ClaimType` values |
+| `claim_text` | TEXT | atomic statement, natural language |
+| `human_readable` | TEXT | one-liner for logs / reports |
+| `edge_signature` | TEXT | set-based dedup primitive — see Part C |
 
-### A.1.2 Typed assertion
+## A.2 Typed assertion (2)
 
-| Field | Type | Notes |
+| Column | Type | Notes |
 |---|---|---|
-| `relation_name` | `str` | typed predicate from `relation_registry.py` (e.g. `destabilizes`, `phosphorylates`, `represses`); empty on composites |
-| `relation_polarity` | `str` | `positive` \| `negative` \| `bidirectional` \| `null` \| `unknown` |
-| `direction` | `str` | DERIVED from `relation_polarity` in `__post_init__`; legacy presentation field, do not pass in new code |
-| `effect_size` | `float` | aggregated only; per-result effects live on `BiologicalResult` |
-| `effect_unit` | `str` | `CERES` / `log2FC` / `Pearson_r` / `hazard_ratio` / … |
+| `relation_name` | TEXT | typed predicate (`destabilizes`, `phosphorylates`, `represses`, …); NULL on composites |
+| `relation_polarity` | TEXT | `positive` \| `negative` \| `bidirectional` \| `null` \| `unknown`; NULL on composites |
 
-### A.1.3 The three orthogonal axes (KG §4)
+`direction` / `effect_size` / `effect_unit` were dropped in Part X.
+Effect sizes are per-result on `biological_results` only.
 
-Independent categorical tags. Together they say *how mature*, *how
-novel*, and *how clean* the claim is — without collapsing those
-dimensions into one number.
+## A.3 Three orthogonal axes (4)
 
-| Field | Type / enum | Values |
+| Column | Type | Values |
 |---|---|---|
-| `evidence_status` | `EvidenceStatus` | `draft` → `observed` → `replicated` → `causal` → `mechanistic` → `externally_supported` |
-| `prior_art_status` | `PriorArtStatus` (nested under `prior_art`) | `unsearched` \| `canonical` \| `related_prior_art` \| `context_extension` \| `evidence_upgrade` \| `plausibly_novel` \| `ambiguous` |
-| `review_status` | `ReviewStatus` | `clean` \| `in_review` \| `contradicted` \| `superseded` \| `needs_experiment` |
-| `proof_level` | `ProofLevel` (`int` enum) | `1` ontology_fact \| `2` observational_association \| `3` model_prediction \| `4` perturbational_molecular \| `5` perturbational_phenotypic \| `6` orthogonal_reproduction \| `7` published_established |
+| `evidence_status` | TEXT | `draft` → `observed` → `replicated` → `causal` → `mechanistic` → `externally_supported` |
+| `prior_art_status` | TEXT | `unsearched` \| `canonical` \| `related_prior_art` \| `context_extension` \| `evidence_upgrade` \| `plausibly_novel` \| `ambiguous` |
+| `review_status` | TEXT | `clean` \| `in_review` \| `contradicted` \| `superseded` \| `needs_experiment` |
+| `proof_level` | INTEGER | `1` ontology_fact \| `2` observational_association \| `3` model_prediction \| `4` perturbational_molecular \| `5` perturbational_phenotypic \| `6` orthogonal_reproduction \| `7` published_established |
 
-A claim can be `replicated + plausibly_novel + clean` (a strong, novel
-finding) or `causal + canonical + clean` (a successful replication of
-known biology) — both are useful, one drives discovery, one calibrates.
+A claim is `replicated + plausibly_novel + clean` (strong novel
+finding) or `causal + canonical + clean` (validated replication of
+known biology) — both useful, never collapsed into one number.
 
-### A.1.4 Participants & context (canonical projection)
+## A.4 Participants context (3)
 
-| Field | Type | Notes |
+The canonical participants live in `claim_participants` (Part B).
+The fields below are the persisted projections used by readers.
+
+| Column | Type | Notes |
 |---|---|---|
-| `participants` | `list[ClaimParticipant]` | canonical participants — see §A.3 |
-| `context_operator` | `str` | `AND` \| `OR` — how participants combine |
-| `participant_combinator` | `str` | `AND` \| `OR` — combinator on the SUBJECT/EFFECTOR side when there are >1 entities (Part X §56.3) |
-| `cell_states_json` | `str` (JSON) | persisted projection of `StructuredClaim.cell_states` |
-| `context_set_json` | `str` (JSON) | typed-graph projection of `gbd.core.context_provenance.ContextSet`; queryable via ancestor traversal |
-| `candidate_gene` | `str` | HGNC symbol; legacy fast-index field (read `participants[role=EFFECTOR]` in new code) |
-| `candidate_nodes` | `list` | legacy multi-entity field; mapped into `participants` in `__post_init__` if `participants` is empty |
-| `phenotype` | `PhenotypeDefinition \| None` | legacy free-form phenotype object kept for readers (paper.py, report.py, …) |
-| `context` | `dict[str, str]` | legacy free-form context dict; new code reads `context_set_json` |
+| `cell_states_json` | TEXT (JSON) | list of `CellStateCondition` (state_type, state_name, markers, is_required, …) |
+| `context_set_json` | TEXT (JSON) | typed-graph projection of `gbd.core.context_provenance.ContextSet`; queryable via ancestor traversal; what `EdgeView.context` surfaces |
+| `context_operator` | TEXT | `AND` \| `OR` — how participants combine |
 
-### A.1.5 Provenance
+## A.5 Cross-evidence count rollups (12 — added in Part X)
 
-| Field | Type | Notes |
+Populated by a recomputed-on-attach hook over
+`biological_results JOIN result_to_claim WHERE attached=1`. Confidence
+summary reads from these without re-aggregating per read.
+
+| Column | Type | Notes |
 |---|---|---|
-| `source_dataset` | `str` | e.g. `DepMap_24Q2` / `GSE91061` / `CPTAC_PDC000127` |
-| `source_release` | `str` | dataset release tag |
-| `assay_type` | `str` | `CRISPR_Chronos` / `RNA-seq` / `mass_spec` / … |
-| `model_name` / `model_version` | `str` / `str` | `ElasticNet`, `DerSimonian-Laird`, … |
-| `artifact_id` | `str` | hash of raw data that produced this |
-| `source` | `str` | `kg_traversal` \| `literature_gap` \| `contradiction_gap` |
-| `kg_evidence` | `list[str]` (JSON) | backbone-edge IDs that suggested this claim |
-| `kg_suggested` | `bool` | True if suggested by KG traversal |
+| `n_studies` | INTEGER | independent studies |
+| `n_modalities` | INTEGER | independent modalities |
+| `n_supporting_results` | INTEGER | added in Part X |
+| `n_refuting_results` | INTEGER | added in Part X |
+| `n_null_results` | INTEGER | added in Part X |
+| `n_inconclusive` | INTEGER | added in Part X |
+| `n_assays` | INTEGER | added in Part X |
+| `n_datasets` | INTEGER | added in Part X |
+| `n_supporting_pmids` | INTEGER | added in Part X |
+| `polarity_consistency` | REAL | renamed from `direction_consistency` in Part X |
+| `decisive_coverage` | REAL | fraction of `latent_state.decisive_observations` actually run |
+| `proxy_coverage` | REAL | fraction of `latent_state.proxy_observations` actually run |
 
-### A.1.6 DAG-1 ranking (was on `CandidateClaim` pre-Part-X)
+## A.6 Provenance (8)
 
-All `None` until DAG 1 has ranked the candidate. **`None` ≠ `0.0`** —
-`None` means "not yet ranked", `0.0` means "ranked, score is zero".
-
-| Field | Type | Notes |
+| Column | Type | Notes |
 |---|---|---|
-| `novelty_score` | `float \| None` | 0 = textbook, 1 = completely novel — drives ranking |
-| `tractability_score` | `float \| None` | data availability at proof levels 1–3 |
-| `kg_connectivity_score` | `float \| None` | KG structural support |
-| `priority_score` | `float \| None` | composite sort key (sourced from `claim_rankings` table) |
+| `source_dataset` | TEXT | e.g. `DepMap_24Q2`, `GSE91061`, `CPTAC_PDC000127` (per-result migration pending) |
+| `source_release` | TEXT | dataset release tag |
+| `assay_type` | TEXT | `CRISPR_Chronos`, `RNA-seq`, `mass_spec`, … (per-result migration pending) |
+| `model_name` | TEXT | `ElasticNet`, `DerSimonian-Laird`, … |
+| `model_version` | TEXT | model release tag |
+| `artifact_id` | TEXT | hash of raw data that produced this |
+| `source` | TEXT | `kg_traversal` \| `literature_gap` \| `contradiction_gap` |
+| `kg_evidence` | TEXT (JSON list) | backbone-edge IDs that suggested this claim |
 
-### A.1.7 Cross-evidence aggregates (Axis-4)
+## A.7 Legacy candidate fields (2 — Part III pending)
 
-Per-result statistics live on `BiologicalResult`; the claim only
-records aggregate reproducibility.
+Kept on the row as denormalised fast-index. New code reads
+`claim_participants[role=EFFECTOR]`.
 
-| Field | Type | Notes |
+| Column | Type | Notes |
 |---|---|---|
-| `n_studies` | `int` | independent studies |
-| `n_modalities` | `int` | independent modalities |
-| `direction_consistency` | `float` | fraction of studies with same direction (renamed → `polarity_consistency` in Part II) |
+| `candidate_gene` | TEXT | HGNC symbol; legacy fast-index |
+| `candidate_id` | TEXT | equals `claim_id` after Part X collapse |
 
-### A.1.8 Publication authority (Axis-5)
+## A.8 Audit / synthesis (7)
 
-| Field | Type | Notes |
+| Column | Type | Notes |
 |---|---|---|
-| `publication_support` | `PublicationSupport \| None` | nested object with all paper-level evidence — see §A.4 |
-| `prior_art` | `PriorArt` | nested LLM-context-economy view: status + pmids + reasoning + n_papers |
+| `created_at` | TEXT | ISO timestamp |
+| `created_by` | TEXT | `gbd_agent`, `manual`, `geo_agent` |
+| `superseded_by` | TEXT | `claim_id` that replaces this one (single forward link) |
+| `full_data` | TEXT (JSON) | grab-bag of serialised payload — being drained in Part IV-L |
+| `confidence_summary` | TEXT | categorical ordinal — see §C.4 |
+| `narrative` | TEXT | running synthesis (§46) |
+| `narrative_updated_at` | TEXT | last-write timestamp for the narrative |
 
-### A.1.9 Hierarchy / refinement / context-split
+## A.9 What is **not** here
 
-Three reasons a claim has a parent — see §B.1 for tree structure.
+These were tried and rejected — they are **not** columns on `claims`
+and Part X confirmed they will not be re-added:
 
-| Field | Type | Notes |
-|---|---|---|
-| `parent_claim_id` | `str` | single link to the parent |
-| `refinement_type` | `str` | `narrow` \| `branches_from` \| `pivot` \| `expand` \| `""` |
-| `refinement_rationale` | `str` | LLM rationale for the refinement |
-| `refinement_confidence` | `float \| None` | judge confidence in the refinement |
-| `splits_on_dimension` | `str` | `"residue"` / `"cell_type"` / … when born from a context split (P9 splitter) |
-| `is_general` | `bool` | True on a parent that has been split into children |
-| `target_mechanism_ids` | `list[str]` | claim-ids of mechanism subgraph M(c) |
-| `inherited_evidence_ids` | `list[str]` | evidence inherited from a more-general parent |
-| `tools_to_prioritise` | `list[str]` | planner hint, regenerable from claim |
-| `cancer_type_scope` | `str` | narrowed type from `RefinedClaim` |
-| `embedding_text` | `str` | text used to compute the claim embedding |
-
-### A.1.10 Supersession & contradiction
-
-| Field | Type | Notes |
-|---|---|---|
-| `superseded_by` | `str` | `claim_id` that replaces this one |
-| `contradiction_case_ids` | `list[str]` | open or resolved `ContradictionCase` ids |
-
-### A.1.11 Persisted parse output
-
-| Field | Type | Notes |
-|---|---|---|
-| `structured_claim_json` | `str` (JSON) | serialised `StructuredClaim` produced by `analyze_claim()` — persisted to `claims.full_data` |
-
-### A.1.12 Transient runtime decoration
-
-These fields are **not** persisted to SQL. They carry live Python
-objects used by DAG 2 mid-run. `to_kg_row()` excludes them; `repr=False`
-keeps them out of `dataclass.__repr__`; `compare=False` keeps them out
-of equality so two `Claim`s with the same persisted state compare equal
-regardless of attached caches.
-
-| Field | Type | Notes |
-|---|---|---|
-| `structured_claim` | `StructuredClaim` | the parsed ontology, see §A.2 |
-| `causal_chain` | `CausalChain` | typed perturbation→consequence→phenotype→relevance |
-| `competing_explanations` | `list[CompetingExplanation]` | biology-native alternative explanations |
-| `mechanism_hypotheses` | `list[MechanismHypothesis]` | granular "how" hypotheses |
-| `literature_profile` | `CandidateLiteratureProfile` | DAG-1 grounding |
-| `kg_context` | `dict` | enriched KG facts about the participants |
-| `children_claim_ids` | `list[str]` | downward links materialised at runtime |
-| `_hypothesis_context` | `HypothesisContext` | bridge to DAG-2 planner |
-| `_claim_reasoning_obj` | `ClaimReasoning` | bundled output of `analyze_claim()` |
-| `_evidence_profile` | `dict` | runtime evidence-coverage cache |
-
-`_TRANSIENT_FIELDS` is a `frozenset` constant on the dataclass listing
-exactly these names so the persistence helper can never accidentally
-write them.
+- `posterior_probability`, `prior_probability`, `noisy_or_confidence`
+  — categorical `confidence_summary` is the source of truth.
+- `graduation_status`, `graduated_at`, `graduation_evidence_ids`,
+  `inverse_claim_id` — never made it through migration.
+- `tractability_score`, `kg_connectivity_score`, `priority_score`,
+  `tools_to_prioritise`, `cancer_type_scope`, `embedding_text` —
+  dropped in Part X. Rankings live in `claim_rankings` (Part B);
+  embedding text lives in `claim_embeddings`; planner hints
+  regenerated on demand.
+- `direction`, `effect_size`, `effect_unit` — dropped in Part X.
+  Effect sizes are per-result on `biological_results`; polarity is on
+  `relation_polarity`.
+- All hierarchy/refinement fields (`parent_claim_id`,
+  `refinement_type`, `is_general`, `splits_on_dimension`, …) —
+  moved to `claim_relations` in Phase T.
 
 ---
 
-## A.2 Typed ontology — `ClaimReasoning`
+# Part B — side-tables
 
-Source: `gbd/core/claim_ontology.py`. Produced by `analyze_claim()` in
-`gbd/core/claim_reasoning.py`. Persisted as `structured_claim_json`;
-attached at runtime as `_claim_reasoning_obj`.
+What `claims` rows used to carry inline now lives in dedicated tables.
+Each has its own concerns and life-cycle.
 
-### A.2.1 `ClaimReasoning`
+## B.1 `claim_rankings` (DAG-1 ranking, per-run)
 
-```python
-class ClaimReasoning(BaseModel):
-    ontology:               StructuredClaim
-    evidence_strategy:      EvidenceRelevanceMap
-    competing_explanations: list[CompetingExplanation]
-    causal_chain:           CausalChain | None
-    mechanism_hypotheses:   list[MechanismHypothesis]
+```
+CREATE TABLE claim_rankings (
+    claim_id          TEXT NOT NULL,
+    run_id            TEXT NOT NULL,
+    priority_score    REAL NOT NULL,
+    kg_connectivity   REAL,
+    novelty_component REAL,
+    probe_signal      REAL,
+    rank_in_run       INTEGER,
+    computed_at       TEXT NOT NULL,
+    rationale_json    TEXT DEFAULT '{}',
+    PRIMARY KEY (claim_id, run_id),
+    FOREIGN KEY (claim_id) REFERENCES claims(claim_id)
+);
+CREATE INDEX idx_rankings_run_priority
+    ON claim_rankings(run_id, priority_score DESC);
+CREATE INDEX idx_rankings_claim
+    ON claim_rankings(claim_id);
 ```
 
-### A.2.2 `StructuredClaim`
+Per-`(claim, run)` keying gives ranking history for free — you can ask
+"how did this claim rank in last week's run vs. today's." Pre-Part-X
+data was backfilled with `run_id='pre_phase_x'`.
 
-| Field | Type | Notes |
-|---|---|---|
-| `entity` | `str` | HGNC symbol or pathway name |
-| `entity_id` | `str` | resolved KG `entity_id` (populated post-parse) |
-| `entity_type` | `EntityCategory` | `gene` \| `protein` \| `protein_complex` \| `pathway` \| `cell_population` \| `metabolite` \| `epigenetic_mark` \| `immune_state` |
-| `alteration` | `AlterationType` | 16-value enum — see §A.5 |
-| `alteration_detail` | `str` | free-text disambiguator from the LLM |
-| `phenotype_statement` | `str` | "resistance to anti-PD1 therapy" |
-| `phenotype_direction` | `str` | `increased` \| `decreased` \| `abolished` |
-| `relation_name` | `str` | typed predicate (canonical or LLM-proposed via `propose_relation()`) |
-| `relation_polarity` | `str` | `positive` \| `negative` \| `bidirectional` \| `null` \| `unknown` |
-| `context` | `ClaimContext` | full biological context — see §A.2.3 |
-| `cell_states` | `list[CellStateCondition]` | conditional cell-state qualifiers — see §A.2.4 |
-| `latent_state` | `LatentBiologicalState \| None` | the underlying biology vs. what assays measure — see §A.2.5 |
-| `parse_confidence` | `float` ∈ [0, 1] | LLM self-rated parse quality |
-| `parse_ambiguities` | `list[str]` | residual ambiguities the parser flagged |
+Readers (`pipeline.py`, `portfolio_explorer.py`,
+`literature_grounded_hypotheses.py`) all route through
+`kg.get_ranking(claim_id, run_id)` / `kg.write_ranking(...)`.
 
-### A.2.3 `ClaimContext`
+## B.2 `claim_participants` (entity ↔ claim with role)
 
-| Field | Type | Notes |
-|---|---|---|
-| `tissue` | `str` | free-text |
-| `cell_type` | `str` | free-text (canonical lookup is `mechanism_location.cell_type_id`) |
-| `treatment_condition` | `str` | drug, cytokine, perturbation context |
-| `timepoint` | `str` | hour-, day-, stage-resolved |
-| `species` | `str` | default `"Homo sapiens"` |
-| `disease` | `str` | indication |
-| `microenvironment` | `str` | `tumor_core`, `invasive_margin`, … |
-| `effector_compartment` | `EffectorCompartment` | `tumor_intrinsic` \| `immune_effector` \| `myeloid` \| `stromal` \| `multi_compartment` \| `unknown` — coarse routing fast-path |
-| `compartment_entity_id` | `str` | canonical `entity_id` (`CL:0000084`, `UBERON:0002048`, `GO:0005886`, or `FT:<slug>` fallback) — DEPRECATED in Phase H, superseded by `mechanism_location` |
-| `mechanism_location` | `MechanismLocation` | six-axis structured "where" — see §A.2.6 |
-| `target_mechanism_location` | `MechanismLocation \| None` | for inter-cellular claims (LIGAND_RECEPTOR, JUXTACRINE, SECRETED_PARACRINE) — `mechanism_location` carries SOURCE, this carries TARGET |
-| `mechanism_profile` | `MechanismProfile \| None` | LLM-derived snapshot for routing/narrative |
-| `immune_cell_subtype` | `ImmuneCellSubtype` | 17-value enum — see §A.5 |
-| `immune_cell_subtype_reasoning` | `str` | LLM justification for the subtype assignment |
-| `valid_in_lineages` | `list[str]` | lineages where the claim holds |
-| `not_valid_in` | `list[str]` | lineages where it doesn't |
-
-### A.2.4 `CellStateCondition`
-
-| Field | Type | Notes |
-|---|---|---|
-| `state_type` | `CellStateType` | `immune_functional` \| `cytokine_exposure` \| `stromal_state` \| `tumour_state` \| `metabolic` \| `differentiation` \| `cell_cycle` \| `stress_response` \| `activation_state` \| `other` |
-| `state_name` | `str` | `"exhausted"`, `"IFNγ_exposed"`, `"senescent_CAF"` |
-| `description` | `str` | free-text nuance |
-| `is_required` | `bool` | must the cell be in this state for the claim to hold? |
-| `markers` | `list[str]` | e.g. `["PD1+", "TIM3+", "TOX+"]` |
-| `evidence_for_state` | `str` | how to verify cells are in this state (flow panel, IHC, phospho-Western, …) |
-
-Multiple `CellStateCondition`s with `is_required=True` are **AND-combined**
-(compound state: "exhausted CD8 + IFNγ-exposed").
-
-### A.2.5 `LatentBiologicalState`
-
-The bridge between "what the biology actually is" and "what an assay
-can observe."
-
-| Field | Type | Notes |
-|---|---|---|
-| `primary_layer` | `BiologicalLayer` | `genomic` \| `epigenomic` \| `transcriptomic` \| `post_transcriptional` \| `translational` \| `proteomic` \| `post_translational` \| `localization` \| `functional` \| `cell_composition` \| `organismal` |
-| `state_description` | `str` | e.g. "B2M protein absent from tumor cell surface" |
-| `possible_upstream_causes` | `list[UpstreamCause]` | ranked by prior frequency |
-| `decisive_observations` | `list[AssayRelevance]` | directly observe the state |
-| `supportive_observations` | `list[AssayRelevance]` | consistent but not proof |
-| `proxy_observations` | `list[AssayRelevance]` | correlated, not the state itself |
-
-`UpstreamCause`: `cause_layer`, `description`, `distinguishing_assay`,
-`prior_frequency` ∈ {`common`, `uncommon`, `rare`, `unknown`}.
-
-`AssayRelevance`: `assay_type`, `relevance` (`EvidenceRelevanceLevel`),
-`reasoning`, `what_it_actually_measures`, `failure_modes: list[str]`.
-The `what_it_actually_measures` field is what lets the planner
-distinguish "mRNA abundance" from "protein surface level" when the
-claim is about localisation.
-
-### A.2.6 `MechanismLocation` — six orthogonal axes
-
-Replaces the legacy 6-value `EffectorCompartment` enum + free-text
-`compartment_entity_id` as the canonical "where" field. Each axis is
-optional; empty means "unconstrained on that axis".
-
-| Axis | Field | Namespace |
-|---|---|---|
-| 1. Subcellular site | `subcellular_site_ids: list[str]` | `GO:` \| `FT:` |
-| 2. Cell type | `cell_type_id: str` | `CL:` \| `FT:` |
-| 3. Cell state | `cell_state_id: str` | `CELL_STATE:` \| `FT:` |
-| 4. Tissue / anatomical site | `tissue_id: str` | `UBERON:` \| `FT:` |
-| 5. (more axes — treatment / lineage / disease) | … | … |
-
-The entity resolver normalises free-form values to `FT:<slug>`;
-established vocabularies (`CL:0000084`, `UBERON:0002048`, `GO:0005886`)
-pass through unchanged.
-
-### A.2.7 `MechanismHypothesis` — granular "how"
-
-| Field | Type | Notes |
-|---|---|---|
-| `hypothesis_id` | `str` | `MH-1`, `MH-2`, … |
-| `title` | `str` | short label (e.g. `"RBMS1-3'UTR-IFNB1"`) |
-| `mediator_entity` | `str` | the proposed molecular intermediary |
-| `interaction_type` | `str` | `binds_3utr` / `sequesters_mrna` / `phosphorylates` / `blocks_nuclear_translocation` / `induces_lineage_shift` / … |
-| `proposed_mechanism` | `str` | 1–3 sentence molecular story |
-| `predicted_signature` | `str` | what we'd expect to see in DATA |
-| `distinguishing_assay` | `str` | the assay that DISCRIMINATES this from siblings |
-| `falsification_criterion` | `str` | what result would falsify it |
-| `prior_plausibility` | `str` | `high` \| `moderate` \| `low` |
-| `layer` | `BiologicalLayer` | which layer the mechanism primarily operates at |
-| `evidence_status` | `str` | `unverified` \| `supported` \| `refuted` \| `inconclusive` |
-| `supporting_result_ids` | `list[str]` | from the wave loop |
-| `refuting_result_ids` | `list[str]` | from the wave loop |
-
-### A.2.8 `CompetingExplanation`
-
-| Field | Type | Notes |
-|---|---|---|
-| `explanation_id` | `str` | identifier within the parent claim |
-| `category` | `CompetingExplanationCategory` | 17-value biology-native confound enum (`tumor_purity_artifact`, `immune_infiltration_confound`, `batch_effect`, `cnv_driven_expression`, `proliferation_confound`, …) |
-| `description` | `str` | what the alternative is |
-| `how_to_test` | `str` | concrete probe |
-| `how_to_rule_out` | `str` | criteria for elimination |
-| `prior_plausibility` | `str` | `high` / `moderate` / `low` |
-| `status` | `str` | `untested` \| `excluded` \| `plausible` \| `confirmed` |
-| `test_result_ids` | `list[str]` | from the wave loop |
-| `ruling_reasoning` | `str` | LLM rationale once the alternative is resolved |
-
-### A.2.9 `CausalChain` and `CausalChainLink`
-
-The four canonical levels: `perturbation` → `molecular_consequence` →
-`cellular_phenotype` → `human_relevance`. Each is a `CausalChainLink`,
-optionally augmented by `intermediate_steps`.
-
-```python
-class CausalChainLink(BaseModel):
-    step: int
-    layer: BiologicalLayer
-    entity: str                          # free-text label
-    entity_id: str = ""                  # resolved KG entity_id
-    state_change: str                    # "B2M frameshift → protein truncation"
-    evidence_required: str               # what would prove this step
-    evidence_status: str = "unverified"  # unverified | supported | contradicted
-    supporting_result_ids: list[str]
-    supporting_pmids: list[str]
-    claim_id: str = ""                   # = f"{composite_id}__link-{step}"
-    parent_composite_claim_id: str = ""
-    is_canonical_backbone: bool = True   # the 4 canonical levels are backbone
 ```
-
-Each link is **also** persisted as a first-class `Claim` of type
-`CAUSAL_CHAIN_LINK` with `parent_claim_id = parent_composite_claim_id`
-— see §B.2 for the decomposition tree.
-
-`CausalChain` derived properties:
-- `all_links` — sorted by `step`
-- `completeness` — fraction of canonical links with `evidence_status == "supported"`
-- `weakest_link` — the canonical step with the weakest evidence
-
-### A.2.10 `EvidenceRelevanceMap`
-
-```python
-class EvidenceRelevanceMap(BaseModel):
-    claim_id: str
-    provider_relevance: dict[str, ProviderRelevance]
-```
-
-Each `ProviderRelevance` carries `provider_type`, `relevance`
-(`EvidenceRelevanceLevel`), `reasoning`, `what_positive_means`,
-`what_negative_means`, `failure_modes`. Helpers:
-`decisive_providers()`, `supportive_providers()`, `proxy_providers()`,
-`misleading_providers()`, `get_tier(provider_type)`.
-
-The wave executor reads this map to decide which providers to call,
-in what order, and whether a null result counts.
-
----
-
-## A.3 Participants — `ClaimParticipant` and `ParticipantRole`
-
-```python
-@dataclass
-class ClaimParticipant:
-    entity_id: str
-    role: ParticipantRole
-    properties: dict[str, Any]
+claim_id   TEXT FK, entity_id TEXT FK,
+role       TEXT NOT NULL,   -- ParticipantRole
+properties TEXT DEFAULT '{}'  -- JSON
+INDEX idx_participants_entity ON claim_participants(entity_id)
 ```
 
 ### Six structural roles (Part X §55.2 — preferred)
@@ -447,408 +204,396 @@ class ClaimParticipant:
 | `MEDIATOR` | any | intermediate participant; not principal |
 | `CONTEXT` | any | conditional participant — narrows when claim holds |
 
-`participant_combinator` (`AND` \| `OR`) on the `Claim` distinguishes
-conjunctive co-requirement from disjunctive redundancy when a side has
->1 entity.
+Entity type is read from the `entity_id` namespace prefix (`HGNC:`,
+`DRUG:`, `MONDO:`, `COMPLEX:`, `GO:`, `CL:`, `UBERON:`, `PWY:`, `FT:`),
+not encoded in the role.
 
-### Legacy 16-value roles (deprecated; aliases)
+### Legacy 16-value roles (kept as aliases, never written by new code)
 
 `EFFECTOR_GENE`, `TARGET_GENE`, `CONTEXT_MUTATION`,
 `CONTEXT_CANCER_TYPE`, `CONTEXT_CELL_TYPE`, `CONTEXT_IMMUNE_STATE`,
 `CONTEXT_CELL_STATE`, `CONTEXT_THERAPY`, `CONTEXT_CELL_LINE`,
 `PHENOTYPE_GENE`, `PATHWAY`, `COMPOUND`, `CONFOUNDER`, `REGULATOR_TF`,
-`REGULATEE`, `MEDIATOR`. Translated by `normalize_role(claim_shape, role)`
-into the six structural values; never used in new code. Entity type is
-read from the `entity_id` namespace prefix (`HGNC:`, `DRUG:`, `MONDO:`,
-`COMPLEX:`, `GO:`, `CL:`, `UBERON:`, `PWY:`, `FT:`), not encoded in the
-role.
+`REGULATEE`, `MEDIATOR`. Translated via
+`normalize_role(claim_shape, role, properties)` into the six
+structural values.
+
+`participant_combinator` (`AND` \| `OR`) on the claim distinguishes
+conjunctive co-requirement from disjunctive redundancy when a side has
+> 1 entity.
+
+## B.3 `claim_relations` (the tree — Phase T)
+
+```
+relation_id      TEXT PRIMARY KEY,
+source_claim_id  TEXT FK, target_claim_id TEXT FK,
+relation_type    TEXT NOT NULL,
+rationale        TEXT,
+confidence       REAL,
+source_run_id    TEXT,
+judge_model      TEXT,
+created_at       TEXT,
+properties       TEXT DEFAULT '{}'
+```
+
+Replaced the per-row hierarchy/refinement fields. Nine relation types,
+split into structural (parent links) and non-structural (sibling
+links):
+
+### Structural — at most one parent edge of any given type per claim
+
+| `relation_type` | Meaning |
+|---|---|
+| `chain_link_of` | source is a `CAUSAL_CHAIN_LINK` of the composite target — the four canonical levels (perturbation → molecular_consequence → cellular_phenotype → human_relevance) and any intermediates |
+| `branches_from` | source is a refinement of target (sibling exploration of an alternative mechanism) |
+| `context_split_of` | source was born from the P9 splitter when the target was flagged `is_general` and split on `splits_on_dimension` (`residue` / `cell_type` / `cancer_type` …) |
+| `mediator_specific_of` | source narrows target to a specific mediator participant |
+| `polarity_inverse_of` | source asserts the opposite polarity of the same `(subject, relation, object, context)` — drives the contradiction triage |
+
+### Non-structural — sibling edges, can be many-to-many
+
+| `relation_type` | Meaning |
+|---|---|
+| `refines` | source is a more-specific version of target (different from `branches_from` — no parent-child commitment) |
+| `competes_with` | source and target are competing explanations for the same observation; planner maintains a posterior over the set |
+| `contradicts` | source and target disagree at the evidence level; backed by a `contradiction_case` row |
+| `enables` | source's truth is required for target's truth (mechanism prerequisite) |
+
+A `MechanismHypothesis` and a `CompetingExplanation` are candidate
+competitors — the planner promotes them to first-class `Claim` rows
+with `relation_type='competes_with'` once they earn enough evidence to
+be tested independently.
+
+## B.4 `claim_embeddings` (text → vector cache)
+
+```
+claim_id           TEXT PRIMARY KEY,
+embedding_text     TEXT,
+embedding_vec_json TEXT,
+embedding_model    TEXT,
+created_at         TEXT
+```
+
+After Part X this is the **only** home for embeddable text — the
+old `claims.embedding_text` column was dropped.
+
+## B.5 Result graph
+
+`claims` carries content; evidence lives separately and links through
+`result_to_claim` or `support_sets`.
+
+### `biological_results` — per-tool, per-claim raw output
+
+```
+result_id PK, claim_id FK,
+result_type, assay, provider,
+context (JSON), outcome, effect_direction, effect_size,
+confidence_interval, p_value, n,
+statistical_test_performed (0|1),
+evidence_category   -- statistical_test | frequency_observation | qualitative_finding
+depends_on (JSON), validity_scope, timestamp,
+agent_run_id, artifact_paths (JSON)
+INDEX idx_results_claim ON biological_results(claim_id)
+```
+
+Every CRISPR Chronos run, every Cox model, every scRNA-DE call lands
+here. One claim → many results.
+
+### `result_to_claim` — quality-gated edges
+
+```
+result_id, claim_id,
+attached (0|1), quality_verdict, rejection_reason,
+confidence, attached_at, attached_by
+PRIMARY KEY (result_id, claim_id)
+```
+
+A single result can be evidence for multiple claims (cap = 5 via
+`MAX_CLAIMS_PER_RESULT`). **Always join with `WHERE attached=1`** when
+reading evidence; rejected attachments stay in the table for audit.
+
+### `evidence` — per-publication / external
+
+```
+evidence_id PK, evidence_type, description, source,
+statistic_name, statistic_value, p_value, effect_size,
+sample_size, confidence_interval, pmid, doi, year, title,
+accession, n_samples, organism, perturbation_type,
+perturbed_gene, readout, cell_line,
+model_name, model_version, cv_metric, cv_value,
+artifact_path, artifact_hash, created_at, full_data
+INDEX idx_evidence_pmid ON evidence(pmid)
+```
+
+External / curated evidence (literature, public datasets). Distinct
+from `biological_results` (internal tool output). Linked into claims
+via `support_sets.evidence_ids`.
+
+### `support_sets` — bag-of-evidence groupings
+
+```
+support_set_id PK, claim_id FK,
+label, logic (AND|OR), stance (supports|refutes),
+evidence_ids (JSON list),
+confidence, proof_level, description
+```
+
+A claim can have multiple distinct evidence sets that each
+independently support or refute it. Internal logic (`AND`/`OR`) acts
+within a set; multiple sets compose **OR** across them.
+
+```
+                       Claim
+                  ┌──────┴─────┐
+                  │            │
+            SupportSet 1  SupportSet 2     ← OR between sets
+            (AND inside)  (AND inside)
+            stance=supports  stance=supports
+            ┌───┼───┐    ┌────────┐
+            ▼   ▼   ▼    ▼        ▼
+          ev  ev  ev    ev       ev
+```
+
+A `contradicts`-stance set is the canonical home for evidence with
+opposite polarity to an existing claim — see Part C for why
+`edge_signature` deliberately excludes polarity.
+
+### `study_results` — DAG-2 proving-node output
+
+```
+study_result_id PK, question_id, study_id, evidence_family,
+cohort_name, context, assay, comparison, model_type,
+covariates, n, effect_size, standard_error, ci_low, ci_high,
+p_value, q_value, direction, classification,
+quality_flags, artifact_paths, node_id, wave, timestamp
+```
+
+One row per study analysed for one proving question. Aggregated
+upward into `biological_results` when the question's claim is touched.
+
+### `contradiction_cases`
+
+```
+case_id PK, claim_a_id FK, claim_b_id FK,
+reason, classification (true_frontier | …), resolution,
+resolution_action, spawned_plans, lineage_specific,
+assay_specific, modality_mismatch, timepoint_dependent, ...
+```
+
+Typed disagreements with classification (`entity_mismatch` |
+`assay_mismatch` | `context_split` | `true_frontier`) and a
+resolution path (`open` → `narrowed` | `resolved` | `halted`). When
+a case resolves into `context_split`, the parent is flagged
+`is_general` and child claims are emitted with `splits_on_dimension`
+set — closing the loop with §B.3 (`context_split_of`).
 
 ---
 
-## A.4 Publication authority — `PublicationSupport`
+# Part C — `edge_signature`
 
-Aggregated paper-level evidence (Axis-5 of uncertainty).
+`edge_signature = SHA256(subject_node_id | relation_name | object_node_id [| context_hash])`
 
-| Field | Type | Notes |
+It is the cross-source dedup primitive: two claims share an
+`edge_signature` iff they make the same biological assertion under
+the same discriminating context. Importing a third source with the
+same assertion lands its evidence on the existing claim instead of
+creating a duplicate row; conflicting polarity goes into a
+`stance="contradicts"` SupportSet on the same claim.
+
+Pre-Part-X the signature was a flat `(subject, relation, object)`
+triple read from denormalised columns. Part X §56 made it
+**set-based, structural-role-driven, and type-agnostic**, and added
+the **8-dimension context hash** so context-discriminating claims
+no longer collide.
+
+## C.1 The new derivation — `_derive_edge_signature(claim)`
+
+Source: `gbd/knowledge_graph/graph.py:115`. Steps:
+
+### Step 1 — collect the SUBJECT-side and OBJECT-side sets
+
+For every `ClaimParticipant` on the claim, normalise its role through
+`normalize_role(claim_shape, role, properties)` and bucket by side:
+
+```
+PRINCIPAL_SUBJECT_ROLES = { SUBJECT, EFFECTOR }
+PRINCIPAL_OBJECT_ROLES  = { OBJECT,  OUTCOME }
+
+subjects = { p.entity_id for p in claim.participants
+             if normalize_role(...) in PRINCIPAL_SUBJECT_ROLES }
+objects  = { p.entity_id for p in claim.participants
+             if normalize_role(...) in PRINCIPAL_OBJECT_ROLES }
+```
+
+Type-agnostic: drugs (`DRUG:`), complexes (`COMPLEX:`), cell types
+(`CL:`), pathways (`PWY:`), phenotypes (`GO:`/`HP:`) flow through
+identically — the entity_id namespace prefix is the only thing that
+distinguishes them, and the signature treats them all as opaque ids.
+
+### Step 2 — fold each set into a stable string
+
+Sort the set lexically to get a deterministic order:
+
+```
+sorted_subjects = sorted(subjects)
+sorted_objects  = sorted(objects)
+```
+
+| Set size | Encoding | Why |
 |---|---|---|
-| `publications` | `list[PublicationEvidence]` | individual paper rows |
-| `n_total_articles` | `int` | total found |
-| `n_direct_evidence` | `int` | direct mechanism + phenotype |
-| `n_tier1_papers` | `int` | Nature, Science, Cell, NEJM, Lancet |
-| `n_tier2_papers` | `int` | Nature Genetics / Nature Medicine / Cancer Cell / Immunity tier |
-| `n_tier3_papers` | `int` | PNAS / JCI / eLife / Genome Biology tier |
-| `n_with_perturbation` | `int` | KO/KD/OE-supporting |
-| `n_with_clinical` | `int` | patient-data-supporting |
-| `n_supporting` / `n_contradicting` | `int` / `int` | direction of paper-level claim |
-| `authority_level` | `str` | `established` \| `well_supported` \| `moderately_supported` \| `weakly_supported` \| `novel` \| `contradicted_in_literature` |
-| `authority_score` | `float` | composite 0–1 |
-| `authority_note` | `str` | human-readable explanation |
-| `novelty` | `str` | `HIGH` \| `MODERATE` \| `LOW` (inverse of authority) |
-| `n_queries_run` / `search_date` / `search_exhaustive` | provenance | how the lit search was done |
+| 1 | the single id verbatim | the common case |
+| > 1 on subject side | `",".join(sorted_subjects) + "|" + participant_combinator` | the combinator (`AND` / `OR`) is part of the assertion's identity — `"X AND Y → Z"` is a different claim from `"X OR Y → Z"` |
+| > 1 on object side | `",".join(sorted_objects)` (no combinator) | object-side multi-entity is always conjunctive (`"RBMS1 destabilises {CXCL9, CXCL10} mRNAs"` — both targets affected) |
 
-Authority levels are computed by `compute_authority()`:
-- `established` ≥ 3 tier-1/2 with direct evidence + ≥ 1 with perturbation
-- `well_supported` ≥ 2 tier-1/2 OR ≥ 3 direct + perturbation
-- `moderately_supported` ≥ 2 direct OR ≥ 1 tier-1/2
-- `weakly_supported` ≥ 1 direct OR ≥ 3 total
-- `contradicted_in_literature` ≥ 2 contradicting AND contradicting ≥ supporting
-- `novel` otherwise
+### Step 3 — fallbacks (preserved from pre-Part-X behaviour)
 
-### `PriorArt` (nested view)
+- **Empty subject side** → fall back to `claim.candidate_gene` (legacy
+  denormalised; Part III drop pending).
+- **Empty object side** → slug of
+  `structured_claim_json.phenotype_statement`,
+  written as `FT:phenotype.<slug>` (≤ 80 chars). Two claims pointing
+  at the same free-text phenotype string then dedup to the same edge.
+- **Relation** → prefer `claim.relation_name`, then
+  `structured_claim_json.relation_name`; lowercased.
+- **Missing any of subject/relation/object** → return `""`. Caller
+  treats empty signature as "no dedup possible"; reconciliation skips
+  the row.
 
-Compact LLM-context-economy projection of prior-art bookkeeping —
-returned by `Claim.prior_art_view()`:
+### Step 4 — context hash (Part X §56.3, P7)
+
+`context` is read from `claim.context_set_json` (canonical), falling
+back to the `context` dict on the StructuredClaim payload. Eight
+dimensions are hashed:
+
+```
+_CONTEXT_DIMENSIONS = (
+    "residue",            # Ser63 / Ser44 — SIGNOR phosphorylation site
+    "modification_type",  # phosphorylation / ubiquitination / acetylation / …
+    "cell_type",          # CL: ID or free-form when unresolved
+    "tissue",             # UBERON: ID or free-form
+    "modulator_complex",  # which complex the modifier sits in
+    "target_complex",     # which complex the target sits in
+    "treatment",          # drug / cytokine / stress condition
+    "disease",            # MONDO: / DOID: ID or free-form
+)
+```
+
+Per dimension, values are normalised to a deterministic string via
+`_normalise_context_value`:
+
+- `None` / empty → `""`
+- list / tuple / set → sorted, deduped, comma-joined
+  (so `["Ser36","Ser63"]` and `["Ser63","Ser36"]` collapse to the same string)
+- scalar → `str(v).strip()`
+
+The 8-pair payload `"k1=v1|k2=v2|…|k8=v8"` is SHA-256'd and the first
+**16 hex chars** are kept as `context_hash`.
+
+### Step 5 — final signature
 
 ```python
-@dataclass
-class PriorArt:
-    status:    PriorArtStatus
-    pmids:     list[str]
-    reasoning: str
-    n_papers:  int
+if context_hash:
+    payload = f"{subject_id}|{relation_name}|{object_id}|{context_hash}"
+else:
+    # Empty context (no discriminating dimensions set) → legacy
+    # 3-component signature so legacy rows keep their precomputed values.
+    payload = f"{subject_id}|{relation_name}|{object_id}"
+
+edge_signature = sha256(payload).hexdigest()    # 64 hex chars
 ```
 
-The flat fields stay on `Claim`; the nested form exists so prompts
-don't carry 50+ PMIDs at the top level by default.
+## C.2 Polarity is *not* in the signature
 
----
+Deliberately. An "STAT1 activates IRF1" claim from Reactome and an
+"STAT1 inhibits IRF1" claim from a hypothetical other source share
+the same `edge_signature` — so the importer **finds the
+contradiction** instead of writing a duplicate row. Polarity is
+recorded on `support_sets.stance` (`supports` | `contradicts`), and
+the P8 triage classifies the collision as one of:
+`true_contradiction` / `context_split` / `duplicate` / `noise`.
 
-## A.5 Enums (one place)
+## C.3 Worked example — multi-residue phosphorylation
 
-### `ClaimType` — what the claim asserts
-
-40+ values; full list in `schema/schema.py` (already exported in this
-repo). Organised by family:
-
-`Essentiality` (3) | `Perturbation` (2) | `Regulatory` (3) |
-`Immune` (3) | `Expression / localization` (4) | `Genomic` (2) |
-`Multi-omics (CPTAC)` (5) | `Inferred activity` (4) |
-`Advanced dependency (DepMap)` (5) | `Correlation / association` (3) |
-`Clinical` (3) | `Compound` (2) | `Meta` (5) |
-`Composite decomposition` (1: `CAUSAL_CHAIN_LINK`).
-
-### `EvidenceStatus`, `PriorArtStatus`, `ReviewStatus`, `PublicationStatus`
-
-Documented in §A.1.3 above. Promotion rules in §B.5.
-
-### `ProofLevel` (1–7)
-
-Ontology fact (1) → Observational association (2) → Model prediction
-(3) → Perturbational molecular (4) → Perturbational phenotypic (5)
-→ Orthogonal reproduction (6) → Published / established (7).
-
-### `AlterationType` (16 values)
+A SIGNOR claim "CSNK2A1 phosphorylates ATF1 at Ser36/Ser38/Ser41/Ser44/Ser63"
+(after function-bucket aggregation):
 
 ```
-GENOMIC_DELETION       GENOMIC_AMPLIFICATION   TRUNCATING_MUTATION
-MISSENSE_MUTATION      EPIGENETIC_SILENCING    TRANSCRIPTIONAL_UP
-TRANSCRIPTIONAL_DOWN   POST_TRANSCRIPTIONAL_LOSS  TRANSLATIONAL_FAILURE
-PROTEIN_DEGRADATION    PROTEIN_MISLOCALIZATION CELL_POPULATION_LOSS
-GAIN_OF_FUNCTION_MUTATION  PHOSPHORYLATION_CHANGE  OVEREXPRESSION
-UNKNOWN
+participants = [
+    {entity_id: "HGNC:CSNK2A1", role: SUBJECT},
+    {entity_id: "HGNC:ATF1",    role: OBJECT},
+]
+relation_name = "phosphorylates"
+context_set_json = {
+    "residue": ["Ser36", "Ser38", "Ser41", "Ser44", "Ser63"],
+    "modification_type": "phosphorylation",
+    "cell_type": "",
+    "tissue": "", "modulator_complex": "",
+    "target_complex": "", "treatment": "", "disease": "",
+}
+
+# Step 2
+subjects = {"HGNC:CSNK2A1"}     → "HGNC:CSNK2A1"
+objects  = {"HGNC:ATF1"}        → "HGNC:ATF1"
+relation = "phosphorylates"
+
+# Step 4 — context
+context_payload = (
+    "residue=Ser36,Ser38,Ser41,Ser44,Ser63"
+    "|modification_type=phosphorylation"
+    "|cell_type=|tissue=|modulator_complex=|"
+    "target_complex=|treatment=|disease="
+)
+context_hash = sha256(context_payload)[:16]
+# = (e.g.) "8a4f2c1b3e9d0a7f"
+
+# Step 5
+payload    = "HGNC:CSNK2A1|phosphorylates|HGNC:ATF1|8a4f2c1b3e9d0a7f"
+edge_signature = sha256(payload).hexdigest()
 ```
 
-Disambiguates "B2M loss" between four mechanistically different
-claims, each requiring different evidence.
+Pre-Part-X, this claim collided with five distinct single-residue
+SIGNOR rows — adding `residue` to the context hash split them out.
+Two claims with the same residue list (regardless of insertion
+order) hash identically, so a re-import doesn't duplicate.
 
-### `BiologicalLayer` (11 values)
-
-`genomic` | `epigenomic` | `transcriptomic` | `post_transcriptional` |
-`translational` | `proteomic` | `post_translational` | `localization`
-| `functional` | `cell_composition` | `organismal`.
-
-### `EvidenceRelevanceLevel` (5 values)
-
-| Level | Meaning |
-|---|---|
-| `DECISIVE` | directly observes the asserted state — pass/fail rests on this |
-| `SUPPORTIVE` | consistent with the claim, not proof on its own |
-| `PROXY` | correlated, doesn't measure the state itself |
-| `IRRELEVANT` | this assay cannot address this claim |
-| `MISLEADING` | this assay may give the *wrong* answer (e.g. wrong compartment) |
-
-### `EntityCategory` (8 values)
-
-`gene` | `protein` | `protein_complex` | `pathway` | `cell_population`
-| `metabolite` | `epigenetic_mark` | `immune_state`.
-
-### `EffectorCompartment` (6 values)
-
-`tumor_intrinsic` | `immune_effector` | `myeloid` | `stromal`
-| `multi_compartment` | `unknown`. **Determined dynamically by LLM**
-at parse time, not from a hardcoded gene→compartment lookup. The same
-gene can operate in different compartments depending on context.
-
-### `ImmuneCellSubtype` (17 values)
-
-T-cell: `cd8_cytotoxic` | `cd8_exhausted` | `cd8_memory` | `cd4_helper`
-| `cd4_treg` | `gamma_delta_t` | `nkt`. NK: `nk_cytotoxic` |
-`nk_regulatory`. Myeloid: `macrophage_m1` | `macrophage_m2` |
-`dendritic_cdc` | `dendritic_pdc` | `mdsc` | `monocyte`. Mixed:
-`mixed_cd4_cd8` | `unresolved`.
-
-`EffectorCompartment` controls **data-source routing**;
-`ImmuneCellSubtype` controls **biological interpretation** (FOXA3 in
-Tregs vs. CD8 effectors are opposite biological claims even though
-both route to immune assays).
-
-### `CellStateType` (10 values)
-
-`immune_functional` | `cytokine_exposure` | `stromal_state` |
-`tumour_state` | `metabolic` | `differentiation` | `cell_cycle` |
-`stress_response` | `activation_state` | `other`.
-
-### `CompetingExplanationCategory` (17 values)
-
-Biology-native confounds: `cell_composition_shift` |
-`tumor_purity_artifact` | `immune_infiltration_confound` |
-`batch_effect` | `platform_artifact` | `treatment_history_confound` |
-`clonality_effect` | `survivorship_bias` | `cytokine_coregulation` |
-`lineage_restriction` | `temporal_confound` | `selection_bias` |
-`measurement_ceiling_floor` | `gene_length_bias` |
-`cnv_driven_expression` | `proliferation_confound` | `other`.
-
-### `JournalTier` (6 values)
-
-`tier1` (Nature, Science, Cell, NEJM, Lancet) | `tier2` (Nature
-Genetics, Cancer Cell, Immunity) | `tier3` (PNAS, JCI, eLife) |
-`tier4` (PLoS Genetics, NAR, Oncogene) | `tier5` | `preprint`
-(bioRxiv, medRxiv).
-
-### `NodeTypeInClaim` and `NodeRoleInClaim`
-
-Already public in `schema/schema.py`. Mirrors `EntityCategory`
-(Layer-1) and `ParticipantRole` (Layer-2) respectively but lives on
-`CandidateNode` so the DAG-2 entry contract doesn't import the full
-core schema.
-
----
-
-# Part B — Tree structure
-
-A claim is never a standalone object. It sits in **five overlapping
-graphs**, each with its own edge type:
-
-1. **Refinement / decomposition tree** — `parent_claim_id` (single parent, many children)
-2. **Composite ↔ chain-link tree** — `parent_composite_claim_id` (special case via `CAUSAL_CHAIN_LINK`)
-3. **Competition graph** — `COMPETES_WITH` edges (declared, can be many-to-many)
-4. **Supersession chain** — `superseded_by` (single forward link)
-5. **Contradiction registry** — `contradiction_case_ids` ↔ `ContradictionCase` rows
-
-Plus the **participant graph** (claim ↔ entity, scoped by role) and
-the **result graph** (claim ↔ `BiologicalResult`, via `SupportSet`s
-that AND/OR over individual results).
-
-## B.1 Refinement / decomposition tree
-
-A claim has a parent for **three reasons**, distinguished by
-`refinement_type`:
-
-| `refinement_type` | Reason | Example |
-|---|---|---|
-| `narrow` | a more general claim was made specific | "B2M loss → ICB resistance" → "B2M frameshift in melanoma → anti-PD1 resistance" |
-| `branches_from` | a child explores a sibling hypothesis | "Mechanism A: protein degradation" vs "Mechanism B: surface mislocalisation" |
-| `pivot` | the claim's subject changed after evidence pushed elsewhere | "Hypothesis: STK11 drives X" → pivot → "Hypothesis: KEAP1 drives X" |
-| `expand` | a sibling adds a context / participant the parent lacked | "X drives resistance" → "X drives resistance + requires IFNγ co-stimulation" |
-| `""` (empty) | this is a root claim | DAG-1 emission, no parent |
-
-A claim flagged `is_general=True` is a placeholder parent that has
-been split into children — `splits_on_dimension` records the axis the
-split was made on (`"residue"`, `"cell_type"`, `"cancer_type"`, …).
-
-```
-                     Claim "X reduces Y in solid tumors"
-                       (is_general=True, splits_on_dimension="cancer_type")
-                         │
-        ┌────────────────┼────────────────┐
-        ▼                ▼                ▼
-  refinement_type=  refinement_type=  refinement_type=
-  "narrow"          "narrow"          "narrow"
-  cancer_type_scope=  cancer_type_scope=  cancer_type_scope=
-   "melanoma"        "colon"            "lung"
-```
-
-`inherited_evidence_ids` lets a child claim re-use a parent's evidence
-without copying it.
-
-## B.2 Composite ↔ causal-chain-link tree
-
-When a `CausalChain` is persisted, its 4 canonical links + any
-intermediates are **each materialised as a separate Claim row** of
-type `CAUSAL_CHAIN_LINK`. The composite parent links to them via
-`target_mechanism_ids`; each link points back via `parent_claim_id`
-and `parent_composite_claim_id`.
-
-```
-   composite Claim
-   claim_type = (e.g.) PERTURBATION_SIGNATURE
-   target_mechanism_ids = [<id>__link-1, <id>__link-2,
-                            <id>__link-3, <id>__link-4]
-        │
-        ├── Claim claim_id="<id>__link-1"  type=CAUSAL_CHAIN_LINK
-        │       parent_claim_id = <composite>
-        │       parent_composite_claim_id = <composite>
-        │       is_canonical_backbone = True
-        │       step = 1, layer = GENOMIC
-        │
-        ├── Claim claim_id="<id>__link-2"  type=CAUSAL_CHAIN_LINK
-        │       step = 2, layer = PROTEOMIC
-        │
-        ├── Claim claim_id="<id>__link-3"  step=3, layer=FUNCTIONAL
-        │
-        └── Claim claim_id="<id>__link-4"  step=4, layer=ORGANISMAL
-```
-
-Why decompose? Sibling sbatches can lock supported links and surgically
-re-test only the under-determined or contradicted ones (`weakest_link`
-points at which). Each link claim has its own `evidence_status` and
-its own `BiologicalResult`s.
-
-## B.3 Competition graph
-
-Two claims that *would explain the same observations* are linked by
-`COMPETES_WITH`. Unlike contradictions (open vs. resolved), competitors
-are simultaneously evaluated and the system maintains a posterior
-distribution over them.
-
-```
-    Claim A "RBMS1 destabilises IFNG mRNA via 3'UTR binding"
-       │
-       │  COMPETES_WITH
-       │
-    Claim A' "RBMS1 acts via TRIM25 ubiquitination of MAVS"
-       │
-       │  COMPETES_WITH
-       │
-    Claim A'' "RBMS1 phenotype is purity confound, not mechanism"
-```
-
-Each `MechanismHypothesis` and each `CompetingExplanation` are
-candidate competitors — the planner promotes them to first-class Claim
-rows when they earn enough evidence to be tested independently.
-
-## B.4 Supersession
-
-A single forward link: `claim.superseded_by = "<replacement_claim_id>"`.
-Used when a new claim replaces an old one wholesale (e.g. after a
-context split, or after a re-analysis with a corrected pipeline). The
-old row stays for traceability with `review_status = "superseded"`.
-
-## B.5 Three orthogonal axes — promotion rules
-
-Hard gates enforced by DAG 2's wave executor.
-
-```
-EVIDENCE_STATUS:
-  draft        → observed:                 ≥1 Wave-1 association test passed
-  observed     → replicated:               ≥2 independent datasets, consistent direction
-  replicated   → causal:                   ≥1 perturbation result (LOF or GOF)
-  causal       → mechanistic:              orthogonal phenotype confirms mechanism
-  mechanistic  → externally_supported:     functional consequence demonstrated
-
-PRIOR_ART_STATUS:
-  unsearched   → canonical:                ≥1 textbook source confirms the claim
-               → related_prior_art:        prior work close but not exact
-               → context_extension:        known gene, new context — pursue
-               → evidence_upgrade:         known association, need causation
-               → plausibly_novel:          no prior art found
-               → ambiguous:                conflicting prior art — flag for review
-
-REVIEW_STATUS:
-  clean ↔ in_review ↔ contradicted ↔ needs_experiment
-        ↘ superseded
-```
-
-Any claim with `review_status ∈ {contradicted, needs_experiment}`
-**blocks** further evidence promotion. The wave executor refuses to
-push such a claim along the evidence-status axis until the review state
-clears.
-
-## B.6 Contradiction registry
-
-`contradiction_case_ids: list[str]` on the claim points at
-`ContradictionCase` rows. Each case is a typed disagreement with a
-classification (`entity_mismatch` | `assay_mismatch` | `context_split`
-| `true_frontier`) and a resolution path
-(`open → narrowed | resolved | halted`).
-
-When a `ContradictionCase` resolves into a `context_split`, the parent
-claim is flagged `is_general=True` and child claims are emitted with
-`splits_on_dimension` set — closing the loop with §B.1.
-
-## B.7 Result graph (claim ↔ evidence)
-
-Every `BiologicalResult` is a typed measurement (assay, comparison,
-model_type, n, effect_size, CI, p, q, direction, classification). Results
-link to claims through `SupportSet`s rather than directly.
-
-A `SupportSet` is an **AND-group** of evidence — multiple SupportSets
-linking to the same claim form an **OR**. This lets the system express
-"either replicate A through B, OR replicate C through D, will satisfy
-the claim's `replicated` gate."
-
-```
-                 ┌────────────────────────────────┐
-                 │  Claim                         │
-                 └────────┬───────────┬───────────┘
-                          │           │
-                  SupportSet 1   SupportSet 2     ← OR between sets
-                  (AND inside)   (AND inside)
-                  ┌─────┼─────┐  ┌──────────┐
-                  ▼     ▼     ▼  ▼          ▼
-              Result  Result  Result   Result   Result
-```
-
-A SupportSet has `stance ∈ {supports, contradicts}`. Conflicting
-evidence routes into a `contradicts`-stance SupportSet on the existing
-claim instead of forming a duplicate row — that's why
-`edge_signature` deliberately excludes polarity (see §A.1.1).
-
-## B.8 Confidence — categorical, not probabilistic
+## C.4 Categorical confidence — *not* probability
 
 The system **does not** persist `posterior_probability`,
-`prior_probability`, or `noisy_or_confidence` on claim rows. Those
-numbers were tried and removed (Phase M rejected): they over-promised
+`prior_probability`, or `noisy_or_confidence` on `claims` rows. They
+were tried and removed (Phase M rejected): they over-promised
 precision the underlying evidence couldn't support and made claims
 look more or less certain than they actually were.
 
-Instead, every claim carries a **layered claim digest** (L0–L4) plus
-a categorical `confidence_summary`:
+`claims.confidence_summary` is one of a small set of categorical
+labels (Phase VIII §47) backed by a **layered claim digest**:
 
-| Layer | What it digests |
-|---|---|
-| L0 | raw `BiologicalResult` rows |
-| L1 | per-study summary |
-| L2 | per-modality summary across studies |
-| L3 | per-evidence-family summary across modalities |
-| L4 | cross-family / cross-modality summary — the headline confidence |
+| Layer | Reads from | What it digests |
+|---|---|---|
+| L0 | `biological_results` | raw per-tool rows |
+| L1 | per-study | per-study summary |
+| L2 | per-modality | per-modality across studies |
+| L3 | per-evidence-family | per-evidence-family across modalities |
+| L4 | cross-family / cross-modality | the headline confidence |
 
-`confidence_summary` is one of a small categorical set; numeric scores
-needed for ranking are *re-derived on demand*, never persisted.
+The 12 count rollups in §A.5 (`n_supporting_results`,
+`n_refuting_results`, `n_assays`, `n_datasets`, `polarity_consistency`,
+`decisive_coverage`, `proxy_coverage`, …) are the inputs the digest
+reads. Numeric scores needed for ranking are re-derived on demand
+from `claim_rankings`, never persisted on the claim row.
 
 ---
 
-## Mandatory rules
-
-1. No node may emit a free-text conclusion without ≥ 1 typed
-   `BiologicalResult` backing it.
-2. No multi-study summary without a pooled meta-analysis row.
-3. No promotion past an `evidence_status` hard gate without the
-   corresponding evidence type (see §B.5).
-4. No verdict without a machine-readable L1–L7 coverage map (which
-   evidence layers were observed, which were null, which are missing).
-5. No claim promotion without KG write-back — the result graph is
-   the ground truth, the row in `claims` is a *view* over it.
-
 ## Pointers
 
-- `schema/schema.py` — public dataclasses for `ClaimType`,
+- `schema/schema.py` — public dataclasses: `ClaimType`,
   `EvidenceStatus`, `PriorArtStatus`, `ReviewStatus`,
   `PublicationStatus`, `PhenotypeDefinition`,
   `ConfounderDeclaration`, `ResearchQuestionContract`, `CandidateNode`.
 - `schema/table_schemas.sql` — full DDL for `claims`,
-  `claim_participants`, `evidence`, `support_sets`,
-  `contradictions`.
+  `claim_participants`, `claim_relations`, `claim_rankings`,
+  `claim_embeddings`, `biological_results`, `result_to_claim`,
+  `evidence`, `support_sets`, `study_results`, `contradiction_cases`.
 - `INGEST.md` — how the backbone-edge layer the claim references
   was built.
-- `ID_CONVENTIONS.md` — entity_id and edge_id grammar.
+- `ID_CONVENTIONS.md` — entity_id grammar (the namespace prefixes
+  Part C reads).
