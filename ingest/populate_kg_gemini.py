@@ -9,8 +9,6 @@ This handles:
 4. HPA tissue expression (from proteinatlas.org v23)
 5. TF-target relationships (from Enrichr gene set libraries)
 
-Uses Gemini API tokens instead of Claude.
-
 Run: python populate_kg_gemini.py --phase all --shard 0 --total-shards 10
 """
 import argparse

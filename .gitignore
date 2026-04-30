@@ -10,3 +10,4 @@ __pycache__/
 scripts/
 schema/schema_private.py
 versions.lock
+CLAIM_OBJECT.md
