@@ -36,9 +36,9 @@ claim-specific evidence interpretation are not duplicated.
                        │    n_supporting_results,           │
                        │    n_refuting_results,             │
                        │    n_null_results, n_datasets, ... │
-                       │  Identity + run state:             │
+                       │  Identity + lightweight runtime:   │
                        │    edge_signature, full_data,      │
-                       │    last_wave_completed, uct2       │
+                       │    last_wave_completed             │
                        └─────────────────┬──────────────────┘
                                          │
             ┌────────────────────────────┼────────────────────────────┐
@@ -137,7 +137,8 @@ context saying when that child helps make the parent true.
 
 ## 2. The claim row — every field
 
-41 columns, listed in storage order.
+Claim-owned fields, listed in storage order. Proof-search state such as
+UCT2 belongs to the dynamic proving architecture, not to the claim object.
 
 ### Identity
 
@@ -207,13 +208,17 @@ context saying when that child helps make the parent true.
 |---|---|---|---|---|
 | 20 | `edge_signature` | TEXT | `''` | SHA-256 of (subject\|relation\|object) — cross-source dedup key. Polarity intentionally NOT in the signature (opposite-polarity claims about the same triple are the same biological assertion under contention). |
 
-### Run state
+### Stored structured payload + lightweight bookkeeping
 
 | # | Column | Type | Default | Meaning |
 |---|---|---|---|---|
 | 14 | `full_data` | TEXT | `'{}'` | Serialised `StructuredClaim` payload (parsed ontology output). |
 | 25 | `last_wave_completed` | INTEGER | `0` | Highest wave that touched this claim. |
-| 40 | `uct2` | TEXT | `''` | Serialized UCT2 proof-search state: `EvidenceCoverageMatrix` plus `DynamicProofDAG` nodes/edges, proof-node gaps, visit/value counts, and selected work history. |
+
+> The biological claim DAG is stored in `claim_relations`. UCT2,
+> `EvidenceCoverageMatrix`, proof-node visit/value counts, and other
+> search-control state are dynamic proving artifacts and should not be
+> serialized onto the claim row.
 
 ### Audit
 
@@ -246,11 +251,13 @@ supersession.
 STRUCTURAL CLAIM-DAG EDGES:
 
   claim_dag_of          - canonical child-in-parent-DAG edge.
-                          A child claim is a node in one or more
-                          possible mechanism paths for the parent.
-                          Within a path the nodes AND; across paths
-                          they OR. One complete supported path can
-                          satisfy the parent.
+                          A child claim is a biological fact that may
+                          be required, sufficient, or partially
+                          contributory for the parent. Composition is
+                          explicit: all children may be required, any
+                          one path may be sufficient, k-of-n children
+                          may be required, or alternatives may be
+                          mutually exclusive in a context.
 
   branches_from         - mechanism alternative.
                           "MH-1 is one way the parent could be true."
@@ -279,7 +286,7 @@ accept both during migration; writers should emit `claim_dag_of`.
 `properties` JSON shape per relation_type:
 
 ```python
-# claim_dag_of - DAG topology plus parent-scoped context
+# claim_dag_of - DAG topology, biological support logic, and parent-scoped context
 {
     "path_ids": ["p1", "p2"],             # paths this child lies on
     "step_in_path": {"p1": 2, "p2": 1},   # position per path
@@ -291,7 +298,19 @@ accept both during migration; writers should emit `claim_dag_of`.
                                           # molecular_consequence /
                                           # cellular_phenotype /
                                           # human_relevance / intermediate
-    "aggregation_logic": "AND_WITHIN_PATH_OR_ACROSS_PATHS",
+    "support_group_id": "mechanism_path_p1",
+    "parent_support_operator": "ANY_OF",  # ANY_OF / ALL_OF / K_OF_N /
+                                          # INDEPENDENT_CAUSES /
+                                          # MUTUALLY_EXCLUSIVE_ALTERNATIVES
+    "path_support_operator": "ALL_OF",    # normally all facts in one
+                                          # mechanism path must hold
+    "min_required": 1,                    # for K_OF_N or ANY_OF
+    "sufficiency": "sufficient_path",     # required_component /
+                                          # sufficient_path /
+                                          # contributory_cause /
+                                          # disambiguating_alternative
+    "coexistence": "can_coexist",         # can_coexist / mutually_exclusive /
+                                          # unknown
     "is_canonical_backbone": True,
     "dag_generation_method": "dynamic_planner",
     "mechanism_hypothesis_id": "MH-1",
@@ -326,10 +345,26 @@ accept both during migration; writers should emit `claim_dag_of`.
  "inherited_interpretation_ids": [...]}
 ```
 
-**Claim DAG semantics:** AND within a path (`path_ids[i]`), OR across
-paths. Any one complete supported path can satisfy the parent. A child
-claim can appear in multiple paths and under multiple parents, but each
-parent edge carries its own relation context and rationale.
+**Claim DAG semantics:** the DAG states which biological facts must be
+true for the parent claim to be true. Composition is explicit, not
+assumed:
+
+- `ALL_OF`: every child/group must be true.
+- `ANY_OF`: at least one child/group is sufficient.
+- `K_OF_N`: at least `min_required` children/groups must be true.
+- `INDEPENDENT_CAUSES`: more than one child can be true at the same time;
+  any single supported cause can partially or fully support the parent,
+  and multiple supported causes increase confidence.
+- `MUTUALLY_EXCLUSIVE_ALTERNATIVES`: candidate mechanisms are viable
+  alternatives, but only one should be true in the same context.
+
+Paths are a convenience for ordered mechanisms. A path usually uses
+`path_support_operator = ALL_OF`, while the parent may use `ANY_OF`
+across paths. That default covers "one complete pathway is enough," but
+the parent can also require all paths, any child, k of n children, or
+independent co-existing causes. A child claim can appear in multiple paths
+and under multiple parents, but each parent edge carries its own relation
+context, support logic, and rationale.
 
 **Lineage:** DAG, not tree. Multi-parent and multi-edge-to-one-parent are
 allowed; cycles are rejected at write time.
@@ -373,18 +408,18 @@ claim DAG as part of claim initialization:
    `edge_signature`.
 3. Build the parent context set from explicit context participants and
    parsed qualifiers.
-4. Ask the dynamic claim-DAG planner for possible mechanism paths,
-   context splits, polarity inverses, and alternative mediator branches.
+4. Ask the dynamic claim-DAG planner for possible child biological facts:
+   required mechanism steps, alternative causal paths, independent
+   co-existing causes, context splits, polarity inverses, and alternative
+   mediator branches.
 5. Persist each proposed child as a normal claim row with its own
    participants, relation, polarity, and intrinsic context.
 6. Persist `claim_relations` rows from child claim to parent claim using
    `claim_dag_of` or the more specific structural relation type. Store
-   path metadata and relation-scoped context on the edge.
-7. Initialize UCT2 on the parent and each child so proof search has a
-   `DynamicProofDAG` and evidence coverage matrix from the start.
-8. Let UCT1 choose which claim/subtree to spend the next wave on; let
-   UCT2 choose which proof node or evidence gap inside the focal claim to
-   execute.
+   path metadata, support logic, and relation-scoped context on the edge.
+7. Store only the biological DAG and composition rules in the KG. Search
+   strategies such as UCT2 may reference this DAG during proving, but they
+   are not part of the claim object.
 
 The DAG may be dynamic. Later results, contradictions, or planner waves
 can add children, mark paths inactive, create context splits, or attach
@@ -443,7 +478,6 @@ polarity_consistency    = 0.0
 decisive_coverage       = 0.0
 proxy_coverage          = 0.0
 participant_combinator  = ''
-uct2                    = ''
 ```
 
 ### 4.2 Positive bucket — `signor:CSNK2A1__ATF1__phos__positive`
@@ -498,7 +532,6 @@ polarity_consistency    = 1.0
 decisive_coverage       = 0.0
 proxy_coverage          = 0.0
 participant_combinator  = ''
-uct2                    = ''
 ```
 
 ### 4.3 Negative bucket — `signor:CSNK2A1__ATF1__phos__negative`
@@ -651,7 +684,7 @@ signor:CSNK2A1__ATF1__phos__negative        established        0.91             
 
 ## 5. Worked example B — parent / claim-DAG child mechanism pair
 
-Composite parent (cohort-level phenotype) + claim-DAG child leaf (one mechanistic step). The DAG child claims AND together within a path and OR across alternative paths to support the parent.
+Composite parent (cohort-level phenotype) + claim-DAG child leaf (one mechanistic step). This example uses `ALL_OF` within each mechanism path and `ANY_OF` across alternative paths, but other parents can require all children, k of n children, independent co-existing causes, or mutually exclusive alternatives.
 
 ### 5.1 Parent (composite) — `mh:PTEN-loss-AKT-glioma-proliferation`
 
@@ -697,7 +730,6 @@ polarity_consistency    = 0.83
 decisive_coverage       = 0.75
 proxy_coverage          = 0.50
 participant_combinator  = ''
-uct2                    = '{"coverage":{...},"dynamic_proof_dag":{...}}'
 ```
 
 ### 5.2 Child DAG claim — `mh:PTEN-loss-AKT-glioma-proliferation__link-1-pten-phosphatase`
@@ -747,7 +779,6 @@ polarity_consistency    = 1.0
 decisive_coverage       = 1.0
 proxy_coverage          = 0.0
 participant_combinator  = ''
-uct2                    = '{"coverage":{...},"dynamic_proof_dag":{...}}'
 ```
 
 ### 5.3 Their participants
@@ -773,25 +804,40 @@ mh:PTEN-loss-…__link-1-pten-phosphatase                               CHEBI:PI
                             └── link-4 (FOXO) ─── link-5 (CDKN1B) ─┘
 ```
 
-`link-1` lies on both paths (`path_ids: ["p1","p2"]`); `p1` and `p2` independently AND their nodes; either path satisfies the parent.
+`link-1` lies on both paths (`path_ids: ["p1","p2"]`). In this parent, `p1` and `p2` each use `path_support_operator = ALL_OF`; the parent uses `parent_support_operator = ANY_OF`, so either complete path can satisfy the parent.
 
 ```
 ─── claim_relations — PARENT's claim_dag_of edges ──────────────────
 source_claim_id              confidence  properties
 …__link-1-pten-phosphatase   0.95        {"path_ids":["p1","p2"], "step_in_path":{"p1":1,"p2":1},
                                           "predecessor_claim_ids":[],
+                                          "parent_support_operator":"ANY_OF",
+                                          "path_support_operator":"ALL_OF",
+                                          "sufficiency":"required_component",
                                           "step_role":"perturbation",          "is_canonical_backbone":true}
 …__link-2-akt-activation     0.92        {"path_ids":["p1"],      "step_in_path":{"p1":2},
                                           "predecessor_claim_ids":["…__link-1-pten-phosphatase"],
+                                          "parent_support_operator":"ANY_OF",
+                                          "path_support_operator":"ALL_OF",
+                                          "sufficiency":"required_component",
                                           "step_role":"molecular_consequence", "is_canonical_backbone":true}
 …__link-3-mtor-engagement    0.90        {"path_ids":["p1"],      "step_in_path":{"p1":3},
                                           "predecessor_claim_ids":["…__link-2-akt-activation"],
+                                          "parent_support_operator":"ANY_OF",
+                                          "path_support_operator":"ALL_OF",
+                                          "sufficiency":"sufficient_path",
                                           "step_role":"cellular_phenotype",    "is_canonical_backbone":true}
 …__link-4-foxo-derepression  0.85        {"path_ids":["p2"],      "step_in_path":{"p2":2},
                                           "predecessor_claim_ids":["…__link-1-pten-phosphatase"],
+                                          "parent_support_operator":"ANY_OF",
+                                          "path_support_operator":"ALL_OF",
+                                          "sufficiency":"required_component",
                                           "step_role":"molecular_consequence", "is_canonical_backbone":true}
 …__link-5-cdkn1b-down        0.83        {"path_ids":["p2"],      "step_in_path":{"p2":3},
                                           "predecessor_claim_ids":["…__link-4-foxo-derepression"],
+                                          "parent_support_operator":"ANY_OF",
+                                          "path_support_operator":"ALL_OF",
+                                          "sufficiency":"sufficient_path",
                                           "step_role":"cellular_phenotype",    "is_canonical_backbone":true}
 ```
 
@@ -938,7 +984,6 @@ polarity_consistency    = 1.0
 decisive_coverage       = 0.67
 proxy_coverage          = 0.0
 participant_combinator  = ''
-uct2                    = '{"coverage":{...},"dynamic_proof_dag":{...}}'
 ```
 
 Its participants:
@@ -971,12 +1016,16 @@ rel_claim_dag_of_…   mh:PTEN-loss-…__link-1-pten-phosphatase         mh:PTEN
                                                                                                                                             "step_in_path":{"p1":1,"p2":1},
                                                                                                                                             "predecessor_claim_ids":[],
                                                                                                                                             "step_role":"perturbation",
+                                                                                                                                            "parent_support_operator":"ANY_OF",
+                                                                                                                                            "path_support_operator":"ALL_OF",
                                                                                                                                             "is_canonical_backbone":true,
                                                                                                                                             "relation_context_set_json":{"cancer_type":"MONDO:GBM"}}
 rel_claim_dag_of_…   mh:PTEN-loss-…__link-1-pten-phosphatase         mh:PTEN-loss-AKT-TNBC-metastasis           claim_dag_of   0.93        {"path_ids":["p1"],
                                                                                                                                             "step_in_path":{"p1":1},
                                                                                                                                             "predecessor_claim_ids":[],
                                                                                                                                             "step_role":"perturbation",
+                                                                                                                                            "parent_support_operator":"ALL_OF",
+                                                                                                                                            "path_support_operator":"ALL_OF",
                                                                                                                                             "is_canonical_backbone":true,
                                                                                                                                             "relation_context_set_json":{"cancer_type":"MONDO:TNBC","outcome":"distant_metastasis"}}
 ```
@@ -1130,26 +1179,28 @@ planner/UCT code that reads and writes this KG.
 4. Create `claim_relations` structural edges from child to parent:
    - `relation_type = claim_dag_of` or a more specific structural type.
    - path ids, step index, predecessor ids, step role.
+   - support operator: `ALL_OF`, `ANY_OF`, `K_OF_N`,
+     `INDEPENDENT_CAUSES`, or `MUTUALLY_EXCLUSIVE_ALTERNATIVES`.
    - relation-scoped context and rationale.
 5. Enforce acyclicity and allow multi-parent child claims.
 6. Backfill existing `chain_dag_of` rows to `claim_dag_of` or support both
    behind one helper API.
 
-### 7.4 UCT1, UCT2, and dynamic planner compatibility
+### 7.4 Dynamic proving compatibility
 
-1. Treat the claim DAG as the inter-claim search graph.
-2. Keep UCT1/RunState responsible for choosing which claim, subtree, or
-   unresolved DAG branch gets the next wave.
-3. Keep UCT2 responsible for proof search inside one focal claim:
-   `EvidenceCoverageMatrix`, `DynamicProofDAG`, proof nodes, evidence gaps,
-   and visit/value counts.
-4. When a new child claim is added to a parent DAG, initialize UCT2 for the
-   child and update the parent's UCT2 proof nodes so the new mechanism path
-   can be selected.
-5. Make planner prompts include:
+1. Treat the claim DAG as biological structure, not proof-search state.
+2. Dynamic proving systems may read the claim DAG to choose claims,
+   subtrees, or unresolved mechanism branches, but their search state
+   stays outside the claim object.
+3. When a new child claim is added to a parent DAG, update only the
+   biological DAG rows and composition metadata in the KG. Any planner,
+   bandit, or proof-search cache can be rebuilt or updated by the runtime.
+4. Make planner prompts include:
    - parent claim content and participants.
    - parent context.
    - existing child DAG paths.
+   - DAG composition semantics: all required, any sufficient, k-of-n,
+     independent co-existing causes, or mutually exclusive alternatives.
    - relation-scoped context requirements for proposed children.
    - reusable analysis/results already available through
      `result_to_claim`.
@@ -1180,11 +1231,11 @@ planner/UCT code that reads and writes this KG.
    - cycles are rejected.
    - `claim_dag_of` and legacy `chain_dag_of` reads return the same
      structural descendants during migration.
-3. UCT tests:
+3. Dynamic proving tests:
    - parent creation initializes a dynamic claim DAG.
-   - child creation initializes UCT2.
-   - adding a new child updates parent proof search without losing existing
-     UCT2 state.
+   - child creation does not require claim-owned proof-search state.
+   - adding a new child updates biological DAG composition without mutating
+     unrelated runtime search artifacts.
 4. Query tests:
    - direct evidence query returns rationale and analysis artifact metadata.
    - subtree evidence query returns descendant interpretations, not
