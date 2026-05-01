@@ -205,12 +205,16 @@ STRUCTURAL-PARENT EDGES (every non-root claim has exactly one
 
   branches_from         — mechanism alternative
                           ("MH-1 is one way the parent could be true")
-  chain_link_of         — step within a composite causal chain
-                          ("link 2 of 4 in the parent's mechanism")
+  chain_dag_of          — node in the parent's mechanism DAG
+                          (parent has multiple paths from start to
+                           outcome; this claim is a node on one or
+                           more of them. Within a path the nodes AND;
+                           across paths they OR — only one complete
+                           path needs to hold for the parent to be true)
   context_split_of      — per-context decomposition
                           ("the melanoma slice of the pan-cancer claim")
-  mediator_specific_of  — alt-mechanism specific to one chain link
-                          ("alternative effector for the same link")
+  mediator_specific_of  — alt-mechanism specific to one DAG node
+                          ("alternative effector for the same step")
   polarity_inverse_of   — auto-disproof inverse claim
 
 NON-STRUCTURAL EDGES (a claim can have many, in any direction):
@@ -230,9 +234,20 @@ NON-STRUCTURAL EDGES (a claim can have many, in any direction):
 {"mechanism_id": "MH-1", "plausibility": "high",
  "layer": "post_transcriptional", "eager_seeded": True}
 
-# chain_link_of
-{"step": 2, "step_role": "molecular_consequence",
- "is_canonical_backbone": True}
+# chain_dag_of  — DAG topology metadata
+{
+    "path_ids": ["p1", "p2"],            # which paths this node lies on
+    "step_in_path": {"p1": 2, "p2": 1},  # position per path
+    "predecessor_claim_ids": [           # immediate upstream nodes in the DAG
+        "claim_id_a",
+        "claim_id_b"
+    ],
+    "step_role": "molecular_consequence", # perturbation /
+                                          # molecular_consequence /
+                                          # cellular_phenotype /
+                                          # human_relevance / intermediate
+    "is_canonical_backbone": True
+}
 
 # context_split_of
 {"dimension": "tissue", "scope_value": "melanoma"}
@@ -246,6 +261,22 @@ NON-STRUCTURAL EDGES (a claim can have many, in any direction):
  "trigger_posterior": 0.12,
  "inherited_evidence_ids": [...]}
 ```
+
+**`chain_dag_of` semantics** — the parent composite's mechanism is a DAG, not a single chain:
+
+```
+                       ┌──── B ────┐
+                       │           │
+              A ───────┼──── C ────┼─────── D  (the parent's outcome)
+                       │           │
+                       └──── E ────┘
+```
+
+- A, B, C, E, D are each their own claim, all `chain_dag_of` the parent D.
+- Two paths from A to D: `A → B → D` and `A → C → E → D`.
+- Within a path, every node must hold (AND). Across paths, **any** complete path holding is sufficient (OR).
+- A node like A can lie on multiple paths simultaneously (`path_ids: ["p1", "p2"]`).
+- The same DAG node can be a `chain_dag_of` for many parent composites — see §5.7.
 
 **Lineage shape: DAG, not tree.** A claim can have:
 
@@ -627,16 +658,60 @@ mh:PTEN-loss-…__link-1-pten-phosphatase                               HGNC:PTE
 mh:PTEN-loss-…__link-1-pten-phosphatase                               CHEBI:PIP3           object             {"principal": true}
 ```
 
-### 5.4 The edge between them
+### 5.4 The edge between them — and the parent's full DAG
+
+The parent has two paths from PTEN-loss to proliferation, both passing
+through the same PIP3-hydrolysis node:
 
 ```
-─── claim_relations ────────────────────────────────────────────────
-relation_id        source_claim_id                                                         target_claim_id                            relation_type    confidence  rationale                                              properties
-rel_chain_link_…   mh:PTEN-loss-AKT-glioma-proliferation__link-1-pten-phosphatase         mh:PTEN-loss-AKT-glioma-proliferation      chain_link_of    0.95        Step 1: PTEN's lipid-phosphatase activity hydrolyses    {"step":1,"step_role":"perturbation","is_canonical_backbone":true}
-                                                                                                                                                                  PIP3 — without this, the rest of the chain doesn't fire
+                         ┌── __link-2-akt-activation ── __link-3-mtor-engagement ──┐
+                         │                                                          │
+   __link-1-pten-          (path p1: AKT → mTOR → cell cycle)                       │
+   phosphatase ────────── │                                                          ├── parent
+   (shared upstream)      │                                                          │   composite
+                         │                                                          │
+                         └── __link-4-foxo-derepression ─── __link-5-cdkn1b-down ──┘
+                                                              (path p2: AKT → FOXO → CDKN1B)
 ```
 
-The parent's three other chain links (`__link-2-akt-activation`, `__link-3-mtor-engagement`, `__link-4-cell-cycle-entry`) carry `properties.step` = 2, 3, 4.
+Each `__link-N` claim is a row in `claims` and carries one
+`chain_dag_of` edge to the parent. The DAG topology lives in the
+edge's `properties` JSON:
+
+```
+─── claim_relations — PARENT's DAG nodes ───────────────────────────
+relation_id              source_claim_id                                                         target_claim_id                            relation_type   confidence  properties
+rel_chain_dag_of_…       …__link-1-pten-phosphatase                                              mh:PTEN-loss-AKT-glioma-proliferation      chain_dag_of    0.95        {"path_ids":["p1","p2"],
+                                                                                                                                                                          "step_in_path":{"p1":1,"p2":1},
+                                                                                                                                                                          "predecessor_claim_ids":[],
+                                                                                                                                                                          "step_role":"perturbation",
+                                                                                                                                                                          "is_canonical_backbone":true}
+rel_chain_dag_of_…       …__link-2-akt-activation                                                mh:PTEN-loss-AKT-glioma-proliferation      chain_dag_of    0.92        {"path_ids":["p1"],
+                                                                                                                                                                          "step_in_path":{"p1":2},
+                                                                                                                                                                          "predecessor_claim_ids":["…__link-1-pten-phosphatase"],
+                                                                                                                                                                          "step_role":"molecular_consequence",
+                                                                                                                                                                          "is_canonical_backbone":true}
+rel_chain_dag_of_…       …__link-3-mtor-engagement                                               mh:PTEN-loss-AKT-glioma-proliferation      chain_dag_of    0.90        {"path_ids":["p1"],
+                                                                                                                                                                          "step_in_path":{"p1":3},
+                                                                                                                                                                          "predecessor_claim_ids":["…__link-2-akt-activation"],
+                                                                                                                                                                          "step_role":"cellular_phenotype",
+                                                                                                                                                                          "is_canonical_backbone":true}
+rel_chain_dag_of_…       …__link-4-foxo-derepression                                             mh:PTEN-loss-AKT-glioma-proliferation      chain_dag_of    0.85        {"path_ids":["p2"],
+                                                                                                                                                                          "step_in_path":{"p2":2},
+                                                                                                                                                                          "predecessor_claim_ids":["…__link-1-pten-phosphatase"],
+                                                                                                                                                                          "step_role":"molecular_consequence",
+                                                                                                                                                                          "is_canonical_backbone":true}
+rel_chain_dag_of_…       …__link-5-cdkn1b-down                                                   mh:PTEN-loss-AKT-glioma-proliferation      chain_dag_of    0.83        {"path_ids":["p2"],
+                                                                                                                                                                          "step_in_path":{"p2":3},
+                                                                                                                                                                          "predecessor_claim_ids":["…__link-4-foxo-derepression"],
+                                                                                                                                                                          "step_role":"cellular_phenotype",
+                                                                                                                                                                          "is_canonical_backbone":true}
+```
+
+- `__link-1-pten-phosphatase` lies on **both** paths (`path_ids: ["p1", "p2"]`) — PIP3 hydrolysis is the shared upstream event.
+- Path `p1` (mTOR-driven) has 3 nodes; path `p2` (FOXO-driven) has 3 nodes.
+- The parent is satisfied when **either** path is fully supported. If `p1` accumulates strong evidence and `p2` falls apart, the parent still holds.
+- `predecessor_claim_ids` encodes the upstream-of-this-node arrows, so the DAG topology can be walked without a separate adjacency table.
 
 ### 5.5 Their evidence
 
@@ -695,7 +770,7 @@ mh:PTEN-loss-AKT-glioma-proliferation     established        0.84             re
 
 ### 5.7 Multi-parent: one biological fact, many composite parents
 
-"PTEN dephosphorylates PIP3" is context-free biology and reused as a `chain_link_of` for many composites (glioma, TNBC, melanoma…). One leaf, multiple inbound `chain_link_of` edges — no duplication, no evidence fragmentation:
+"PTEN dephosphorylates PIP3" is context-free biology and reused as a `chain_dag_of` for many composites (glioma, TNBC, melanoma…). One leaf, multiple inbound `chain_dag_of` edges — no duplication, no evidence fragmentation:
 
 ```
    ┌──────────────────────────────────────────────────────────────┐
@@ -703,7 +778,7 @@ mh:PTEN-loss-AKT-glioma-proliferation     established        0.84             re
    │   context_set_json = {"cancer_type":"MONDO:GBM",              │
    │                        "cell_compartment":"tumor_intrinsic"}  │
    └──────────────┬───────────────────────────────────────────────┘
-                  │ chain_link_of
+                  │ chain_dag_of
                   │ properties = {"step":1,
                   │               "step_role":"perturbation"}
                   ▼
@@ -719,7 +794,7 @@ mh:PTEN-loss-AKT-glioma-proliferation     established        0.84             re
               │     assay + 31P-NMR + ClinVar variant set)  │
               └────────────────────────────────────────────┘
                   ▲
-                  │ chain_link_of
+                  │ chain_dag_of
                   │ properties = {"step":1,
                   │               "step_role":"perturbation"}
    ┌──────────────┴───────────────────────────────────────────────┐
@@ -801,17 +876,27 @@ br-pten-tnbc-cibersort mh:PTEN-loss-AKT-TNBC-metastasis  analysis      CIBERSORT
 br-pten-tnbc-ihc-mki67 mh:PTEN-loss-AKT-TNBC-metastasis  analysis      MKI67 IHC (TNBC TMA)                          provider:ihc_tnbc    positive     1.4          0.012       58     1                           statistical_test     2026-04-29T11:02Z
 ```
 
-#### 5.7.2 The shared leaf carries TWO inbound `chain_link_of` edges
+#### 5.7.2 The shared leaf carries TWO inbound `chain_dag_of` edges
 
 ```
 ─── claim_relations ────────────────────────────────────────────────
-relation_id        source_claim_id                                                  target_claim_id                            relation_type   confidence  properties
-rel_chain_link_…   mh:PTEN-loss-…__link-1-pten-phosphatase                         mh:PTEN-loss-AKT-glioma-proliferation      chain_link_of   0.95        {"step":1,"step_role":"perturbation","is_canonical_backbone":true}
-rel_chain_link_…   mh:PTEN-loss-…__link-1-pten-phosphatase                         mh:PTEN-loss-AKT-TNBC-metastasis           chain_link_of   0.93        {"step":1,"step_role":"perturbation","is_canonical_backbone":true}
+relation_id          source_claim_id                                  target_claim_id                            relation_type  confidence  properties
+rel_chain_dag_of_…   mh:PTEN-loss-…__link-1-pten-phosphatase         mh:PTEN-loss-AKT-glioma-proliferation      chain_dag_of   0.95        {"path_ids":["p1","p2"],
+                                                                                                                                            "step_in_path":{"p1":1,"p2":1},
+                                                                                                                                            "predecessor_claim_ids":[],
+                                                                                                                                            "step_role":"perturbation",
+                                                                                                                                            "is_canonical_backbone":true}
+rel_chain_dag_of_…   mh:PTEN-loss-…__link-1-pten-phosphatase         mh:PTEN-loss-AKT-TNBC-metastasis           chain_dag_of   0.93        {"path_ids":["p1"],
+                                                                                                                                            "step_in_path":{"p1":1},
+                                                                                                                                            "predecessor_claim_ids":[],
+                                                                                                                                            "step_role":"perturbation",
+                                                                                                                                            "is_canonical_backbone":true}
 ```
 
+- The same leaf is on the GBM parent's two-path DAG AND the TNBC parent's single-path DAG.
+- `path_ids` are scoped per parent; `["p1","p2"]` for GBM and `["p1"]` for TNBC are independent namespaces.
 - `kg.structural_parents(leaf_id)` returns both parents.
-- Leaf's 3 evidence rows shared by both composites; no duplication.
+- Leaf's 3 evidence rows shared; no duplication.
 - New evidence attached to the leaf flows into both parents' subtree rollups (§6.2).
 - Leaf's `context_set_json = '{}'`; composites carry the cancer-type context.
 
@@ -839,13 +924,13 @@ WITH RECURSIVE tree(claim_id, depth) AS (
     SELECT source_claim_id AS claim_id, 0
       FROM claim_relations
      WHERE target_claim_id = :composite_id
-       AND relation_type IN ('chain_link_of','context_split_of',
+       AND relation_type IN ('chain_dag_of','context_split_of',
                              'mediator_specific_of','polarity_inverse_of',
                              'branches_from')
     UNION ALL
     SELECT cr.source_claim_id, t.depth + 1
       FROM claim_relations cr JOIN tree t ON cr.target_claim_id = t.claim_id
-     WHERE cr.relation_type IN ('chain_link_of','context_split_of',
+     WHERE cr.relation_type IN ('chain_dag_of','context_split_of',
                                 'mediator_specific_of','polarity_inverse_of',
                                 'branches_from')
        AND t.depth < 10
