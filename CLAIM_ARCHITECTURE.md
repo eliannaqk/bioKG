@@ -1,10 +1,8 @@
 # Claim Object
 
-The `claims` table is the central unit of the GBD knowledge graph.
-This document is the field-by-field schema reference plus two
-worked examples: a bifurcated Signor curated claim, and a
-parent-child mechanism pair. Every field is shown for every
-example, even when empty.
+Field-by-field schema for `claims` and its satellites, plus two
+worked examples (bifurcated Signor curated claim; parent-child
+mechanism pair with a multi-parent leaf).
 
 ---
 
@@ -90,19 +88,19 @@ holds one axis; nothing is duplicated.
    └──────────────────────┘    └──────────────────────┘    └──────────────────────┘
 ```
 
-The `claims` row is **content + status only**. How the evidence was
-produced (assay, dataset, model version) lives on the
-`biological_results` rows that supply it. Who/what changed the
-claim and when lives in `claim_events`. Curated literature lives in
-`support_sets` + `publication_support`. The claim row never picks
-an arbitrary winner across multiple data sources.
+- **claims**: content + status only.
+- **claim_participants**: which entities (subject / object / context).
+- **biological_results**: per-tool evidence rows (assay, outcome, p, n, etc.).
+- **claim_relations**: claim ↔ claim edges (lineage + non-structural).
+- **support_sets**: AND-grouped evidence bundles.
+- **publication_support**: per-claim literature rollup.
+- **claim_events**: append-only audit trail.
 
 ---
 
 ## 2. The claim row — every field
 
-41 columns, listed in storage order with type, default, and
-meaning.
+41 columns, listed in storage order.
 
 ### Identity
 
@@ -195,10 +193,7 @@ meaning.
 | 6 | `q_value` | REAL | NULL | Flat q-value. |
 | 7 | `confidence_interval` | TEXT | NULL | Flat CI string. |
 
-> Per-row flat statistics pick an arbitrary winner when many
-> `biological_results` rows are attached. The authoritative
-> per-evidence statistics live on `biological_results`. Keeping the
-> flat columns gives older code paths a fast read without joining.
+> Authoritative per-evidence statistics are on `biological_results`. These row-level columns are a fast read for legacy callers.
 
 ---
 
@@ -252,37 +247,18 @@ NON-STRUCTURAL EDGES (a claim can have many, in any direction):
  "inherited_evidence_ids": [...]}
 ```
 
-The lineage shape is a **directed acyclic graph, not a tree**. A
-claim can have:
+**Lineage shape: DAG, not tree.** A claim can have:
 
-- multiple inbound structural-parent edges to the **same** parent
-  (e.g. both `branches_from` and `mediator_specific_of` to one
-  parent, layered as metadata richness);
-- multiple inbound structural-parent edges to **different** parents.
+- multiple inbound structural-parent edges to the **same** parent (e.g. `branches_from` + `mediator_specific_of`);
+- multiple inbound structural-parent edges to **different** parents (one biological fact reused across many composites — see §5.7).
 
-The second case is the load-bearing one: a leaf claim representing
-a fundamental biological fact ("PTEN dephosphorylates PIP3") can be
-a `chain_link_of` for many overarching mechanism composites (PI3K
-signaling in glioma; PI3K signaling in TNBC; AKT activation in
-melanoma). Without multi-parent leaves, that single biological fact
-would have to be duplicated once per composite, and any new evidence
-attached to one duplicate wouldn't propagate to the others.
-
-The only structural rejection is **cycles**: walking parent → … →
-parent must terminate. Validated at write time inside
-`add_claim_relation` via a BFS upward through every inbound
-structural edge; any path that re-enters the source claim raises.
+Only **cycles** are rejected at write time. `add_claim_relation` runs a BFS upward; any path re-entering the source raises.
 
 ---
 
 ## 4. Worked example A — bifurcated claim (Signor curated)
 
-The Signor curated import produces three sibling claim rows for
-each (subject, object, mechanism) triple where the curated
-literature reports both polarity directions: a parent **general**
-claim plus two polarity-bucket children. The parent is not directly
-provable; one of its two children is correct in any specific
-context.
+A general parent + two polarity-bucket children, written when curated literature reports both signs of the same triple. `context_set_json` on each bucket records the residue / co-factor / cell state that distinguishes them.
 
 ### 4.1 Parent — `signor:CSNK2A1__ATF1__phos__general`
 
@@ -448,11 +424,64 @@ ss-csnk2a1-atf1-neg-1       signor:CSNK2A1__ATF1__phos__negative           Signo
 
 ### 4.7 No `biological_results` rows
 
-The Signor curated import produces no `biological_results` rows;
-all evidence is literature-grounded and lives in `support_sets`
-(via `evidence_ids` referencing `evidence` table publication rows).
-A typical Signor claim has `n_supporting_results = 0` but
-`n_supporting_pmids` ≥ 1.
+Signor curated claims carry no `biological_results`. All evidence is literature, in `support_sets.evidence_ids` → `evidence` table. `n_supporting_results = 0`, `n_supporting_pmids ≥ 1`.
+
+### 4.7.1 The `evidence` table — the actual PMIDs
+
+`support_sets.evidence_ids` is a JSON list pointing at rows in
+the `evidence` table, one row per cited publication. Schema:
+
+```
+evidence_id, evidence_type, description, source,
+statistic_name, statistic_value, p_value, effect_size,
+sample_size, confidence_interval,
+pmid, doi, year, title, accession,
+n_samples, organism, perturbation_type, perturbed_gene,
+readout, cell_line, model_name, model_version,
+cv_metric, cv_value, artifact_path, artifact_hash,
+created_at, full_data
+```
+
+A handful of rows for the **negative bucket's 12 PMIDs**
+(`evidence_ids = ['ev-pmid-15159389', 'ev-pmid-12477932', …×12]`):
+
+```
+─── evidence — negative bucket sample ──────────────────────────────
+evidence_id        evidence_type  pmid       doi                            year  title                                                                       organism      perturbation_type  perturbed_gene  readout                       cell_line   source                       created_at
+ev-pmid-15159389   publication    15159389   10.1074/jbc.M403673200         2004  CK2-mediated phosphorylation of ATF1 modulates DNA-binding affinity         human         knockdown          CSNK2A1         EMSA on CRE element            HeLa        Signor curated literature    2026-04-21T14:32Z
+ev-pmid-12477932   publication    12477932   10.1006/bbrc.2002.6722         2002  Casein kinase II phosphorylation reduces ATF1 transcriptional activity     human         pharmacological    CSNK2A1         CRE-luciferase reporter        HEK293      Signor curated literature    2026-04-21T14:32Z
+ev-pmid-19124467   publication    19124467   10.1074/jbc.M807762200         2009  CK2 phosphorylation in the bZIP domain abrogates ATF1 DNA binding          human         in_vitro_kinase    CSNK2A1         in-vitro DNA binding          (cell-free) Signor curated literature    2026-04-21T14:32Z
+ev-pmid-22113613   publication    22113613   10.1038/onc.2011.553           2012  Threonine-184 phosphorylation of ATF1 by CK2 inhibits CRE engagement       human         site_mutagenesis   CSNK2A1         ChIP-qPCR on CRE                MCF7        Signor curated literature    2026-04-21T14:32Z
+…  (8 more rows)
+```
+
+A handful of rows for the **positive bucket's 47 PMIDs**:
+
+```
+─── evidence — positive bucket sample ──────────────────────────────
+evidence_id        evidence_type  pmid       doi                            year  title                                                                                  organism  perturbation_type  perturbed_gene  readout                            cell_line     source                       created_at
+ev-pmid-9398070    publication    9398070    10.1074/jbc.272.50.31515       1997  Phosphorylation of ATF1 at Ser-63 by protein kinase CK2 stimulates CRE-binding…       human     point_mutation     CSNK2A1         CRE-luciferase reporter            COS-7         Signor curated literature    2026-04-21T14:32Z
+ev-pmid-10867028   publication    10867028   10.1074/jbc.M001775200         2000  Cooperation of CSNK2A1 with CREB1 on activation of CRE-driven transcription           human     coimmunoprecipitation CSNK2A1      CRE-luciferase + co-IP             HEK293        Signor curated literature    2026-04-21T14:32Z
+ev-pmid-15604296   publication    15604296   10.1158/0008-5472.CAN-04-2459   2005  CK2-dependent ATF1 Ser63 phosphorylation drives proliferative gene expression in… human    knockdown          CSNK2A1         RNA-seq in CK2 KD              MCF7          Signor curated literature    2026-04-21T14:32Z
+…  (44 more rows)
+```
+
+> The 47 vs. 12 split mirrors the curated literature: more
+> publications find Ser63-mediated activation than Thr184-mediated
+> repression. The ratio is informational, not a vote — both buckets
+> are independently supported.
+
+### 4.7.2 The `publication_support` rollup
+
+For each polarity bucket, a single `publication_support` row
+summarises its citation profile:
+
+```
+─── publication_support ────────────────────────────────────────────
+claim_id                                    authority_level    authority_score  novelty       n_total_articles  n_direct_evidence  n_tier1_papers  n_with_perturbation  n_supporting  n_contradicting  publications
+signor:CSNK2A1__ATF1__phos__positive        established        0.97             canonical     47                47                 18              31                   47            0                ['9398070','10867028','15604296',…×47]
+signor:CSNK2A1__ATF1__phos__negative        established        0.91             canonical     12                12                  4               9                   12            0                ['15159389','12477932','19124467','22113613',…×12]
+```
 
 ### 4.8 The shape of the bifurcation
 
@@ -478,22 +507,15 @@ A typical Signor claim has `n_supporting_results = 0` but
                 ◄────────  competes_with  ────────►
 ```
 
-The general parent encodes "this PTM event happens"; the two
-children encode "and the consequence on ATF1's activity is +" vs
-"and the consequence is −". Curated literature backs both — the
-correct bucket in any given context is determined by the cell
-state / co-factors, which is why both are kept rather than one
-superseding the other.
+- Parent: "PTM happens" (polarity NOT_APPLICABLE).
+- Children: "PTM consequence on activity is +" vs "is −".
+- Selection between buckets is context-driven (residue + co-factor + cell state); both kept, neither supersedes the other.
 
 ---
 
 ## 5. Worked example B — parent / chain-link child mechanism pair
 
-A composite mechanism claim plus one of the chain-link leaves
-inside its causal chain. This pattern is the typical
-hypothesis-then-decompose flow: the parent asserts a high-level
-phenotype consequence; the chain-link children name each
-mechanistic step that has to hold for the parent to be true.
+Composite parent (cohort-level phenotype) + chain-link leaf (one mechanistic step). The four chain links AND together to support the parent.
 
 ### 5.1 Parent (composite) — `mh:PTEN-loss-AKT-glioma-proliferation`
 
@@ -614,17 +636,11 @@ rel_chain_link_…   mh:PTEN-loss-AKT-glioma-proliferation__link-1-pten-phosphat
                                                                                                                                                                   PIP3 — without this, the rest of the chain doesn't fire
 ```
 
-The parent has its own structural-parent edges to its other three
-chain links (`__link-2-akt-activation`, `__link-3-mtor-engagement`,
-`__link-4-cell-cycle-entry`); each one carries
-`properties.step` = 1, 2, 3, 4 respectively. Together the four
-links AND together to support the parent.
+The parent's three other chain links (`__link-2-akt-activation`, `__link-3-mtor-engagement`, `__link-4-cell-cycle-entry`) carry `properties.step` = 2, 3, 4.
 
 ### 5.5 Their evidence
 
-The parent carries cohort-level evidence (TCGA GBM survival, scRNA
-proliferation signatures, IHC); the leaf carries direct enzymatic
-evidence (in-vitro lipid phosphatase assay, NMR of PIP3 conversion).
+Parent: cohort-level (TCGA Cox HR, TIDE, IHC). Leaf: direct enzymatic (lipid phosphatase assay, ³¹P-NMR, ClinVar).
 
 ```
 ─── biological_results — PARENT (mh:PTEN-loss-AKT-glioma-proliferation) ─────────
@@ -642,37 +658,44 @@ result_id            claim_id                                          result_ty
 br-pten-lipid-1      …__link-1-pten-phosphatase                        analysis      In-vitro lipid phosphatase assay (PIP3→PIP2) provider:in_vitro     positive  0.71         1.4e-9      6      1                           statistical_test     2026-04-29T10:18Z
 br-pten-nmr-1        …__link-1-pten-phosphatase                        analysis      31P-NMR of PIP3 conversion                  provider:nmr_assay    positive  1.0          5e-6        4      1                           statistical_test     2026-04-29T10:19Z
 br-pten-clinvar-1    …__link-1-pten-phosphatase                        lookup        ClinVar PTEN catalytic-domain variants      provider:clinvar      positive  1.0          NULL        47     0                           qualitative_finding  2026-04-29T10:21Z
-                                                                                                                                                                                                                                  ↑ all three results agree — this leaf
-                                                                                                                                                                                                                                    is the most directly-supported piece
-                                                                                                                                                                                                                                    of the parent's mechanism
 ```
+
+#### Parent's literature side — `evidence` table sample (12 PMIDs)
+
+```
+─── evidence — PARENT (mh:PTEN-loss-AKT-glioma-proliferation) ──────
+evidence_id        evidence_type  pmid       doi                              year  title                                                                                       organism  perturbation_type  perturbed_gene  readout                            cell_line       source                created_at
+ev-pmid-9072974    publication    9072974    10.1126/science.275.5308.1943    1997  PTEN, a putative protein tyrosine phosphatase gene mutated in human brain, breast and… human     —                  PTEN            positional cloning                  patient_tissue  literature_mining     2026-04-29T09:48Z
+ev-pmid-9853615    publication    9853615    10.1126/science.282.5396.1943    1998  PTEN/MMAC1/TEP1 dephosphorylates PIP3 and antagonises PI 3-kinase signalling           human     biochemical        PTEN            in-vitro lipid phosphatase          (cell-free)     literature_mining     2026-04-29T09:48Z
+ev-pmid-12048243   publication    12048243   10.1038/nrg814                   2002  PTEN: a tumour suppressor with lipid- and protein-phosphatase activity                  multiple  review             PTEN            review                              n/a             literature_mining     2026-04-29T09:49Z
+ev-pmid-18927578   publication    18927578   10.1158/0008-5472.CAN-08-1559    2008  Loss of PTEN function correlates with poor outcome in glioblastoma multiforme         human     observational      PTEN            survival outcome (TCGA)             patient_tissue  literature_mining     2026-04-29T09:49Z
+ev-pmid-23945592   publication    23945592   10.1158/0008-5472.CAN-13-1100    2013  PI3K/AKT pathway activation drives proliferation in PTEN-null GBM xenografts          mouse     pharmacological    AKT1            xenograft growth                    U87, U251       literature_mining     2026-04-29T09:49Z
+ev-pmid-27270579   publication    27270579   10.1158/2159-8290.CD-15-1352     2016  Genomic landscape and survival in glioblastoma — TCGA pan-glioma study                 human     observational      multiple        TCGA WES + clinical                  patient_tissue  literature_mining     2026-04-29T09:50Z
+…  (6 more rows)
+```
+
+#### Parent's `publication_support` rollup
+
+```
+─── publication_support ────────────────────────────────────────────
+claim_id                                  authority_level    authority_score  novelty               n_total_articles  n_direct_evidence  n_tier1_papers  n_with_perturbation  n_supporting  n_contradicting  publications
+mh:PTEN-loss-AKT-glioma-proliferation     established        0.84             related_prior_art     12                10                 5               4                    11            1                ['9072974','9853615','12048243','18927578','23945592','27270579',…×12]
+```
+
+> 1 contradicting publication corresponds to a paper showing
+> PTEN-low GBM cohorts where AKT activation does not predict
+> proliferation — same row that the DepMap co-essentiality
+> `biological_result` flagged.
 
 ### 5.6 The two evidence buckets
 
-The parent's `n_supporting_results = 5` counts only the parent's
-own attached results (the 5 rows above); the leaf's `n_supporting_results = 3`
-counts only the leaf's own. Neither claim's row shows the other's
-count.
-
-To answer "what is the total evidence supporting the parent
-mechanism?" — you walk `claim_relations` from the parent down,
-collecting each descendant's `biological_results`. The parent has
-its own 5 rows plus its 4 chain-link descendants' rows (3 from
-the example leaf + however many the other 3 leaves have). Same
-SQL pattern as in §6.2 below.
+- Parent `n_supporting_results = 5` counts only the parent's own attached results.
+- Leaf `n_supporting_results = 3` counts only the leaf's own.
+- "Total evidence for the parent mechanism" = walk descendants via `claim_relations`, union each descendant's `biological_results` (§6.2).
 
 ### 5.7 Multi-parent: one biological fact, many composite parents
 
-The leaf "PTEN dephosphorylates PIP3" is a fundamental biochemical
-fact — it doesn't depend on the cancer type, the cell line, or the
-upstream stimulus. The same leaf claim is a `chain_link_of` for
-many overarching composites: PI3K activation in glioblastoma, PI3K
-activation in TNBC, AKT-driven survival in melanoma, and so on.
-
-Rather than duplicating the leaf once per composite (which would
-fragment its evidence and force re-attaching every new wet-lab
-result to N copies), one leaf carries multiple inbound
-`chain_link_of` edges:
+"PTEN dephosphorylates PIP3" is context-free biology and reused as a `chain_link_of` for many composites (glioma, TNBC, melanoma…). One leaf, multiple inbound `chain_link_of` edges — no duplication, no evidence fragmentation:
 
 ```
    ┌──────────────────────────────────────────────────────────────┐
@@ -787,23 +810,10 @@ rel_chain_link_…   mh:PTEN-loss-…__link-1-pten-phosphatase                  
 rel_chain_link_…   mh:PTEN-loss-…__link-1-pten-phosphatase                         mh:PTEN-loss-AKT-TNBC-metastasis           chain_link_of   0.93        {"step":1,"step_role":"perturbation","is_canonical_backbone":true}
 ```
 
-`kg.structural_parents("mh:PTEN-loss-…__link-1-pten-phosphatase")` returns
-**both** parents. The leaf's evidence (the lipid-phosphatase assay,
-the NMR, the ClinVar variant set) is shared by both composites
-without duplication. New wet-lab evidence attached to the leaf
-flows into the count rollups of both parents simultaneously when
-either parent's subtree is rolled up via §6.2.
-
-#### 5.7.3 Why this is correct
-
-The leaf claim asserts a context-free biochemical fact — its
-`context_set_json` is `'{}'` because the dephosphorylation
-reaction itself isn't tissue-specific. The composites are
-context-bound (one to GBM, one to TNBC), and the chain-link
-relationship is "in this composite's mechanism, this leaf is the
-step that hydrolyses PIP3". A fundamental biology fact holds in
-many contexts, so it's a child of many composites. Duplicating
-it would fragment the evidence and let the duplicates drift apart.
+- `kg.structural_parents(leaf_id)` returns both parents.
+- Leaf's 3 evidence rows shared by both composites; no duplication.
+- New evidence attached to the leaf flows into both parents' subtree rollups (§6.2).
+- Leaf's `context_set_json = '{}'`; composites carry the cancer-type context.
 
 ---
 
@@ -850,18 +860,14 @@ SELECT br.*
 
 ### 6.3 Promotion — leaf becomes a `backbone_edges` row
 
-When a leaf claim graduates (`evidence_status = 'externally_supported'`,
-sufficient `n_supporting_results`, no open `contradicts` edges), its
-content already matches the encoding of `backbone_edges` exactly:
+On graduation (`evidence_status='externally_supported'`, no open `contradicts`), a leaf maps directly to a backbone edge:
 
 ```
 LEAF claim:                                  backbone_edges row:
   participants[role=subject].entity_id  ─→     source_id
   participants[role=object].entity_id   ─→     target_id
   relation_name + relation_polarity     ─→     relation_name + relation_polarity
-  edge_signature                        ─→     edge_id (or stable hash)
+  edge_signature                        ─→     edge_id
 ```
 
-This is why every leaf's structure is locked to "exactly one
-SUBJECT participant + exactly one OBJECT participant" — that's
-what makes a leaf isomorphic to a typed graph edge.
+Lock: exactly one SUBJECT + one OBJECT principal participant per leaf — the leaf-edge invariant.
