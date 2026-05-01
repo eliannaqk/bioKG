@@ -64,14 +64,9 @@ KG. Each table holds one axis; nothing is duplicated.
                        │  CONTEXT scope:                   │
                        │    context_set_json,              │
                        │    cell_states_json               │
-                       │  PROVENANCE:                      │
-                       │    source, source_dataset,        │
-                       │    created_at, created_by,        │
-                       │    edge_signature                 │
-                       │  DAG-1 RANKING:                   │
-                       │    tractability_score,            │
-                       │    kg_connectivity_score,         │
-                       │    priority_score                 │
+                       │  IDENTITY + AUDIT (minimal):      │
+                       │    edge_signature  (dedup hash)   │
+                       │    created_at, created_by         │
                        │  NARRATIVE (Part VIII):           │
                        │    narrative,                     │
                        │    narrative_updated_at           │
@@ -109,20 +104,62 @@ KG. Each table holds one axis; nothing is duplicated.
    └──────────────────────┘    └──────────────────────┘    └──────────────────────┘
 ```
 
-The `claims` row holds **content + status + provenance**. Everything
-else hangs off it through one of the satellites:
+The `claims` row holds **content + status + minimal audit**.
+Everything else hangs off it through one of the satellites:
 
 - **claim_participants** — who/what is involved (entity-graph
   linkage). Replaces the legacy `candidate_gene` column.
 - **biological_results** — direct evidence rows, one per tool
   invocation. Joined back to claims by `claim_id`, gated by
-  `result_to_claim`.
+  `result_to_claim`. **Provenance of HOW the evidence was produced
+  lives here**: `assay`, `provider`, `source_dataset`,
+  `source_release`, `model_name`, `model_version`, `artifact_id`.
+  Not on the claim row.
 - **claim_relations** — every relationship between two claims,
   including the structural-parent edge (Phase T).
-- **support_sets** — AND-grouped evidence bundles.
+- **support_sets** — AND-grouped evidence bundles. Carries
+  publication / curated-source provenance for the bundle.
 - **publication_support** — literature rollup per claim.
-- **claim_events** — audit trail of every state transition (review
-  status, evidence status, narrative regeneration).
+- **claim_events** — append-only audit trail. Every state
+  transition (review status, evidence status, narrative
+  regeneration, graduation) writes one row with actor + reason +
+  timestamp. **This is where "who changed this and why" lives** —
+  not on the claim row.
+
+### 2.0.1 What's NOT useful on the claim row
+
+A handful of column groups currently persist on `claims` but are
+either redundant with satellite tables or used only at one
+transient point in the pipeline. They're slated for retirement
+under future plan parts:
+
+- **DAG-1 ranking scores** (`tractability_score`,
+  `kg_connectivity_score`, `priority_score`) — computed once during
+  candidate selection, never re-read once the claim enters DAG-2.
+  Belong on a `dag1_candidates` log table, not the persisted
+  claim. Phase T did NOT retire these; the columns still exist on
+  the row but are dead weight for any post-DAG-1 reader.
+- **Per-row provenance scalars** (`source`, `source_dataset`,
+  `source_release`, `assay_type`, `model_name`, `model_version`,
+  `artifact_id`) — these describe HOW the claim came to be, which
+  is a property of the evidence that built it, not the assertion
+  itself. The same claim ("RBMS1 destabilises CXCL9 mRNA") can be
+  supported by evidence from CPTAC + DepMap + a perturbation screen,
+  each with its own dataset version. Putting one set of source
+  attributes on the claim row picks an arbitrary winner. The
+  satellite shape — provenance per evidence row in
+  `biological_results`, per support bundle in `support_sets`, per
+  state transition in `claim_events` — is more honest. The flat
+  scalars on the row should be retired alongside Part IV's flat
+  statistics.
+
+The minimal audit kept on the row (`created_at`, `created_by`,
+`edge_signature`) is structurally load-bearing:
+- `edge_signature` is the cross-source dedup hash; it has to be on
+  the row to support the WHERE-clause in reconciliation.
+- `created_at` / `created_by` answer "when did this assertion first
+  enter the KG?", which `claim_events` doesn't because it only
+  records *state transitions*, not the initial insert.
 
 ### 2.1 Population numbers in production
 
@@ -294,6 +331,139 @@ When multiple structural edges point at the same parent, the
 most-specific type wins:
 `chain_link_of > context_split_of > mediator_specific_of >
 polarity_inverse_of > branches_from`.
+
+### 4.5 PROPOSED — chain-DAG composites (multiple parallel paths)
+
+The current `chain_link_of` model assumes a **linear** chain
+A → B → C → D where every link is required (AND). That's a
+faithful encoding of one mechanism story but not of how mechanism
+hypotheses actually look in biology — most composites are reachable
+through several parallel paths, only one of which needs to hold.
+
+A typical RBMS1 → reduced CD8 infiltration composite might
+decompose into:
+
+```
+                              ┌──── B1 (CXCL9 mRNA decay) ────┐
+                              │                                ▼
+   A (RBMS1↑) ─────────────── ├──── B2 (CXCL10 mRNA decay) ── D (less CD8 infiltration)
+                              │                                ▲
+                              └──── C  (IDO1 upregulation) ───┘
+```
+
+Three paths from A to D:
+- A → B1 → D                  (chemokine path 1)
+- A → B2 → D                  (chemokine path 2 — redundant with B1)
+- A → C  → D                  (alternative metabolic path)
+
+Within a path, every link is required (AND). Across paths, **any
+one path being supported is sufficient** for D (OR). The current
+schema can't express this cleanly: putting all five intermediates
+as `chain_link_of` siblings of D implies every link is required,
+which is wrong; making them `branches_from` siblings loses the
+within-path AND structure.
+
+Two ways to fix this. **Recommended is Option B** — it composes
+existing primitives instead of adding a new edge type.
+
+**Option A — new `chain_dag_of` edge type**
+
+Add `chain_dag_of` to the structural-parent vocabulary, with
+`properties.path_id` grouping links into AND-bundles:
+
+```python
+# Each leaf gets:
+{
+    "path_id": "p1",            # "p1" / "p2" / "p3"
+    "step": 1,                  # position within the path (AND)
+    "is_required_in_path": True,
+}
+```
+
+Composite belief becomes
+`OR(path) AND(link in path) believe(link)`.
+
+**Option B — pure existing primitives, with one intermediate composite per path**
+
+Use the existing `branches_from` (= OR — any branch sufficient) and
+`chain_link_of` (= AND — every link required) edges to express the
+DAG natively. Each path becomes a path-composite that is itself a
+branch of the parent:
+
+```
+   composite D ("RBMS1 OE → reduced CD8 infiltration")
+   │
+   ├─ branches_from ─── path-composite p1 ("via CXCL9 decay")
+   │                    │
+   │                    ├── chain_link_of ── A (RBMS1↑)
+   │                    └── chain_link_of ── B1 (CXCL9 mRNA destab.)
+   │
+   ├─ branches_from ─── path-composite p2 ("via CXCL10 decay")
+   │                    │
+   │                    ├── chain_link_of ── A
+   │                    └── chain_link_of ── B2 (CXCL10 mRNA destab.)
+   │
+   └─ branches_from ─── path-composite p3 ("via IDO1")
+                        │
+                        ├── chain_link_of ── A
+                        └── chain_link_of ── C (IDO1↑)
+```
+
+Semantics fall out for free:
+- `branches_from` from D's perspective is OR — D needs *any* one
+  of its branches to hold.
+- `chain_link_of` within a path-composite is AND — that path needs
+  *every* link to hold.
+- Each path-composite can carry its own cohort-level evidence
+  (e.g. "TCGA SKCM survival HR for high-RBMS1 + low-CXCL9" is
+  evidence specific to path p1, not to the parent D).
+- The shared upstream node A is referenced from each path; sharing
+  is an entity-level property (same `claim_id`), not a schema
+  feature.
+
+**Why Option B over Option A:**
+
+| | Option A (`chain_dag_of` + path_id) | Option B (path-composites) |
+|---|---|---|
+| Edge types in the registry | +1 (`chain_dag_of`) | 0 |
+| Belief computation | new path-aggregation rule | reuses Part VI §30's `noisy_or(own, children_p)` recursively |
+| Wet-lab gate | new "any path closed" rule | a path-composite is closed when its leaves are — same gate as any composite |
+| Per-path own evidence | needs another edge type or another column | path-composite has its own row; own evidence attaches the same way as any composite |
+| Structural-parent invariant | needs a special case (multiple `chain_dag_of` edges to one parent are fine if same path_id) | already handled — multiple `chain_link_of` to the same path-composite is the ordinary case |
+
+Option B is structurally cleaner because the OR / AND logic is
+already what `branches_from` and `chain_link_of` mean. The "DAG-ness"
+emerges from the entity-level reuse of upstream nodes (A in the
+example), not from a new edge type.
+
+**Migration cost**: zero new schema. Today's linear-chain
+composites either:
+1. Stay as-is (single path, no parallelism) — the current
+   `chain_link_of` rooted directly at the parent is exactly
+   "one path, every link required". This is just Option B with
+   one branch.
+2. Get re-rooted under a path-composite when a second alternative
+   mechanism is added. The conversion is mechanical: insert a
+   path-composite, re-point the existing leaves' `chain_link_of`
+   edges at it, add a `branches_from` edge from the path-composite
+   up to the original parent.
+
+**Open questions**:
+- *Naming.* If we ship Option B, do path-composites need a typed
+  marker (e.g. `claim_type = MECHANISM_PATH`) so readers can tell
+  them apart from "ordinary" composites? The L1 header already
+  shows `claim_type`, so this falls out for free if we add a new
+  ClaimType value.
+- *When to split.* Today the wave orchestrator emits MH-1, MH-2,
+  MH-3 as direct `branches_from` siblings of the parent. That's
+  the "OR with no within-path AND" case — which is Option B
+  degenerate. The work is only when a single MH itself decomposes
+  into a multi-link chain that has alternative routes.
+
+This proposal is **not yet implemented.** No code, no schema
+change, no plan-part number assigned. It's recorded here as the
+canonical answer to "how do we encode parallel mechanism paths
+without adding a new edge type to the registry."
 
 ---
 
@@ -575,7 +745,12 @@ parent composite is NOT promoted — its leaves are.
 ## 8. Schema summary table
 
 After Parts I-IX of `REMOVE_CLAIM_DIRECTION_FIELD_PLAN.md`, the
-`claims` row carries 56 columns organised into seven axes:
+`claims` row carries 56 columns. The columns split into a **load-
+bearing core** that the runtime reads on every wave, and a
+**retirement queue** of fields that are persisted today but slated
+to move off the row.
+
+### 8.1 Load-bearing core (kept on the row)
 
 | Axis | Columns |
 |---|---|
@@ -585,15 +760,21 @@ After Parts I-IX of `REMOVE_CLAIM_DIRECTION_FIELD_PLAN.md`, the
 | Proof ladder + replication | `proof_level`, `n_studies`, `n_modalities`, `direction_consistency` |
 | Confidence (categorical) | `confidence_summary`, `narrative`, `narrative_updated_at` |
 | Context & dedup | `context_set_json`, `cell_states_json`, `context_operator`, `cancer_type_scope`, `edge_signature` |
-| Source & ranking | `source`, `source_dataset`, `source_release`, `assay_type`, `model_name`, `model_version`, `artifact_id`, `kg_evidence`, `tractability_score`, `kg_connectivity_score`, `priority_score`, `tools_to_prioritise`, `embedding_text`, `last_wave_completed`, `full_data` |
+| Live-run state | `kg_evidence`, `tools_to_prioritise`, `embedding_text`, `last_wave_completed`, `full_data` |
 
-Plus four flat fields kept as fast indexes (`candidate_gene`,
-`candidate_id`, `effect_size`, `effect_unit`, `p_value`, `q_value`,
-`confidence_interval`) — these are slated for retirement under
-Parts III/IV's gated drops once their readers are migrated.
+### 8.2 Retirement queue
 
-The 8 lineage columns retired by Phase T live now in
-`claim_relations.relation_type` + `properties` JSON.
+| Group | Columns | Why retire | Where it lives instead |
+|---|---|---|---|
+| Lineage (Phase T — DONE) | `parent_claim_id`, `refinement_type`, `refinement_rationale`, `refinement_confidence`, `splits_on_dimension`, `target_mechanism_ids`, `inherited_evidence_ids`, `is_general` | Mixed structure into content; one parent in 8 columns | `claim_relations.relation_type` + `properties` JSON |
+| DAG-1 ranking (proposed) | `tractability_score`, `kg_connectivity_score`, `priority_score` | Computed once at candidate selection, never re-read after the claim enters DAG-2 | A `dag1_candidates` log table — keep the score for audit, off the persisted claim |
+| Per-row provenance scalars (proposed) | `source`, `source_dataset`, `source_release`, `assay_type`, `model_name`, `model_version`, `artifact_id` | Describe HOW one piece of evidence was produced, not what the claim asserts; one claim can be backed by evidence from multiple datasets each with its own version | `biological_results` (per evidence row) + `support_sets` (per bundle) + `claim_events` (per state transition) |
+| Flat statistics (Part IV — pending) | `effect_size`, `effect_unit`, `p_value`, `q_value`, `confidence_interval` | One claim, many results, each with its own statistics — the row picks an arbitrary winner | `biological_results.effect_size` / `p_value` / etc. per row |
+| Identity aliases (Part III — pending) | `candidate_gene`, `candidate_id` | Duplicate `claim_participants[role=effector_gene]` and `claim_id` respectively | Already in those tables |
+
+Each retirement happens in its own gated drop call (same recipe as
+Phase T's `drop_legacy_lineage_columns`): write the audit gate, run
+the rebuild, fix any reader/writer that touches the dropped column.
 
 ---
 
