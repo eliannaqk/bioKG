@@ -190,8 +190,8 @@ UCT2 belongs to the dynamic proving architecture, not to the claim object.
 | # | Column | Type | Default | Meaning |
 |---|---|---|---|---|
 | 26 | `confidence_summary` | TEXT | `'unknown'` | 5-level ordinal: `unknown` / `weak` / `moderate` / `strong` / `established`. Derived from `evidence_status`, `prior_art_status`, `review_status`, `proof_level`, `n_studies`, `n_modalities`. |
-| 27 | `narrative` | TEXT | `''` | LLM-rendered prose summary. |
-| 28 | `narrative_updated_at` | TEXT | `''` | ISO timestamp of last narrative regeneration. |
+| 27 | `narrative` | TEXT | `''` | Generated evidence-state summary: plain-language explanation of current DAG satisfaction, supported/refuted/unproven child claims, key evidence, and why the current confidence label follows. |
+| 28 | `narrative_updated_at` | TEXT | `''` | ISO timestamp of last evidence-state summary regeneration. |
 
 ### Context
 
@@ -312,6 +312,17 @@ accept both during migration; writers should emit `claim_dag_of`.
     "coexistence": "can_coexist",         # can_coexist / mutually_exclusive /
                                           # unknown
     "is_canonical_backbone": True,
+    "dag_edge_status": "active",          # proposed / active / inactive /
+                                          # retired / superseded
+    "contribution_state": "unproven",     # satisfied / partially_satisfied /
+                                          # unproven / refuted / mixed
+    "evidence_rollup": {
+        "supporting_interpretation_ids": [],
+        "refuting_interpretation_ids": [],
+        "null_interpretation_ids": [],
+        "summary": "No decisive evidence yet for this child in the parent context."
+    },
+    "last_evaluated_at": "2026-05-01T...",
     "dag_generation_method": "dynamic_planner",
     "mechanism_hypothesis_id": "MH-1",
 
@@ -421,9 +432,54 @@ claim DAG as part of claim initialization:
    strategies such as UCT2 may reference this DAG during proving, but they
    are not part of the claim object.
 
-The DAG may be dynamic. Later results, contradictions, or planner waves
-can add children, mark paths inactive, create context splits, or attach
-new parent edges to an existing child claim.
+The DAG is dynamic. Later results, contradictions, or planner waves can
+add children, mark paths inactive, retire a mechanism, create context
+splits, change support operators, or attach new parent edges to an
+existing child claim. These changes are not proof-search state; they are
+changes to the current biological explanation graph for the parent claim.
+
+### 3.3 Dynamic DAG state and evidence-state summary
+
+Each parent claim should have a generated evidence-state summary in
+`claims.narrative`. This text is regenerated whenever the parent claim's
+DAG, child claim status, or attached result interpretations change. It is
+not a loose abstract. It must be grounded in:
+
+- the parent claim content and context;
+- active child claims in the claim DAG;
+- each child edge's support operator and relation-scoped context;
+- child claim states: supported, refuted, mixed, unproven, or not tested;
+- attached `result_to_claim` interpretations and their rationales;
+- the resulting `confidence_summary`.
+
+The summary should explain how the DAG currently evaluates in language:
+
+```
+Strong / confident:
+  The parent claim is currently strong because path p1 is satisfied:
+  child claim A and child claim B are both supported by decisive results
+  in the parent context. No active child in this path has refuting
+  evidence. Because the parent uses ANY_OF across paths, one satisfied
+  path is enough to support the parent.
+
+Mixed / unresolved:
+  The parent claim remains unresolved. Child claim A is supported by two
+  tumor multi-omics analyses, but child claim B is still unproven and
+  child claim C has one refuting result in the anti-PD1 melanoma context.
+  Because this parent uses ALL_OF for the active mechanism path, the
+  parent cannot be considered mechanistically supported until B is tested
+  and the conflict on C is resolved.
+
+Alternative mechanisms:
+  Two viable child mechanisms exist. Mechanism p1 is supported, while p2
+  is untested. Because these are independent causes, p1 can support the
+  parent on its own, and future support for p2 would increase confidence
+  rather than replace p1.
+```
+
+`claims.confidence_summary` is the compact categorical state. The
+`claims.narrative` field is the human-readable explanation of why that
+state follows from the active DAG and evidence.
 
 ---
 
@@ -1181,12 +1237,34 @@ planner/UCT code that reads and writes this KG.
    - path ids, step index, predecessor ids, step role.
    - support operator: `ALL_OF`, `ANY_OF`, `K_OF_N`,
      `INDEPENDENT_CAUSES`, or `MUTUALLY_EXCLUSIVE_ALTERNATIVES`.
+   - dynamic edge state: proposed, active, inactive, retired, superseded.
+   - contribution state: satisfied, partially satisfied, unproven,
+     refuted, or mixed.
    - relation-scoped context and rationale.
 5. Enforce acyclicity and allow multi-parent child claims.
-6. Backfill existing `chain_dag_of` rows to `claim_dag_of` or support both
+6. Add a DAG evaluator that recomputes parent satisfaction from active
+   child claims, support operators, and child evidence states.
+7. Backfill existing `chain_dag_of` rows to `claim_dag_of` or support both
    behind one helper API.
 
-### 7.4 Dynamic proving compatibility
+### 7.4 Evidence-state summaries
+
+1. Implement a summary generator for `claims.narrative`.
+2. Regenerate the summary whenever:
+   - active child DAG edges change.
+   - child claim evidence status changes.
+   - new `result_to_claim` interpretations attach to the parent or child.
+   - a child edge's contribution state changes.
+3. The generator should output grounded language, not a free-form essay:
+   - parent claim and context;
+   - which active child claims are supported, refuted, mixed, or unproven;
+   - which support operator is currently decisive;
+   - decisive supporting/refuting result ids and short rationales;
+   - why the current `confidence_summary` follows.
+4. Store the output in `claims.narrative` and update
+   `claims.narrative_updated_at`.
+
+### 7.5 Dynamic proving compatibility
 
 1. Treat the claim DAG as biological structure, not proof-search state.
 2. Dynamic proving systems may read the claim DAG to choose claims,
@@ -1205,7 +1283,7 @@ planner/UCT code that reads and writes this KG.
    - reusable analysis/results already available through
      `result_to_claim`.
 
-### 7.5 Backfill
+### 7.6 Backfill
 
 1. Create `analysis_runs` rows for existing result-producing work by
    grouping legacy `biological_results` on provider, assay, dataset,
@@ -1218,7 +1296,7 @@ planner/UCT code that reads and writes this KG.
 5. Rename new structural writes to `claim_dag_of`; keep legacy reads for
    `chain_dag_of` until all historical rows are migrated.
 
-### 7.6 Tests and acceptance criteria
+### 7.7 Tests and acceptance criteria
 
 1. Schema tests:
    - one `analysis_run` can produce many `biological_results`.
@@ -1231,12 +1309,21 @@ planner/UCT code that reads and writes this KG.
    - cycles are rejected.
    - `claim_dag_of` and legacy `chain_dag_of` reads return the same
      structural descendants during migration.
+   - parent DAG evaluates `ALL_OF`, `ANY_OF`, `K_OF_N`,
+     `INDEPENDENT_CAUSES`, and `MUTUALLY_EXCLUSIVE_ALTERNATIVES`
+     correctly.
 3. Dynamic proving tests:
    - parent creation initializes a dynamic claim DAG.
    - child creation does not require claim-owned proof-search state.
    - adding a new child updates biological DAG composition without mutating
      unrelated runtime search artifacts.
-4. Query tests:
+4. Summary tests:
+   - supported path summary explains why the parent is confident.
+   - mixed path summary identifies supported, refuted, and unproven child
+     claims.
+   - summary cites result interpretation ids and rationales used to reach
+     the confidence label.
+5. Query tests:
    - direct evidence query returns rationale and analysis artifact metadata.
    - subtree evidence query returns descendant interpretations, not
      duplicate raw result rows.
