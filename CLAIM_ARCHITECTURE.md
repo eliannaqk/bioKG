@@ -1,246 +1,228 @@
-# Claim Architecture
+# Claim Object
 
-The Claim object is the central unit of the GBD knowledge graph.
-This document is a schema reference for the post-Phase-T production
-layout (2026-04-29): what a claim is, what's persisted where, how
-parent-child relationships are encoded as edges, how a leaf becomes
-a canonical-biology edge on graduation, and where the direct vs.
-subtree evidence physically lives.
-
-The plan that produced this shape is in
-`REMOVE_CLAIM_DIRECTION_FIELD_PLAN.md`.
+The `claims` table is the central unit of the GBD knowledge graph.
+This document is the field-by-field schema reference plus two
+worked examples: a bifurcated Signor curated claim, and a
+parent-child mechanism pair. Every field is shown for every
+example, even when empty.
 
 ---
 
-## 1. What a claim is
+## 1. The claim row — every field
 
-A **claim** is an assertion about biology that is *contextual* (true
-in some scope and not others), *typed* (carries a relation predicate,
-not a free-text verb), and *graduating* (moves through an evidence
-ladder from `draft` to `externally_supported` based on what gets
-attached to it).
+`claims` carries 59 columns. Listed in storage order with type,
+default, and what each column means.
 
-Two shapes exist:
+### Identity
 
-```
-LEAF            One typed edge between two entities.
-                Subject —[relation_name, polarity]→ Object  (in some context)
-                Has its own evidence.
-                Promotable to backbone_edges on graduation.
+| # | Column | Type | Default | Meaning |
+|---|---|---|---|---|
+| 0 | `claim_id` | TEXT | — | Unique stable id (PRIMARY KEY). |
+| 1 | `claim_type` | TEXT | — | Enum value from `ClaimType` (e.g. `GeneGeneCorrelationClaim`, `MechanismHypothesisClaim`, `CausalChainLinkClaim`, …). |
+| 2 | `status` | TEXT | `''` | Free-text legacy status; superseded by `evidence_status` / `review_status`. |
 
-COMPOSITE       Higher-level assertion ("X drives phenotype Y in
-                cohort Z"). Decomposes into chain_link / branch /
-                context-split children. Has its own cohort/scRNA
-                evidence AND derives belief from its leaves.
-```
+### Content — what the claim asserts
 
-The **leaf-edge invariant** (§38 of the plan): every leaf claim has
-exactly one principal `SUBJECT` participant and exactly one principal
-`OBJECT` participant. That makes a leaf isomorphic to a typed edge —
-which is why "claims are edges, never claims" is enforceable and why
-graduated leaves can promote into the canonical `backbone_edges`
-table without re-encoding.
+| # | Column | Type | Default | Meaning |
+|---|---|---|---|---|
+| 20 | `claim_text` | TEXT | `''` | Atomic statement in natural language. |
+| 14 | `description` | TEXT | `''` | Long-form description (often empty). |
+| 3 | `human_readable` | TEXT | `''` | One-liner for logs and paper sections. |
+| 30 | `relation_name` | TEXT | `''` | Typed predicate from the relation registry (e.g. `regulates_mrna_stability`, `phosphorylates`, `binds`, `drives_phenotype`). |
+| 31 | `relation_polarity` | TEXT | `''` | `positive` / `negative` / `bidirectional` / `null` / `unknown` / `''` (= NOT_APPLICABLE — the predicate carries no sign, e.g. `binds`). |
 
----
+### Status — three orthogonal axes
 
-## 2. Where the claim's data lives
+| # | Column | Type | Default | Meaning |
+|---|---|---|---|---|
+| 17 | `evidence_status` | TEXT | `'draft'` | Where on the evidence ladder: `draft` / `observed` / `replicated` / `causal` / `mechanistic` / `externally_supported`. |
+| 18 | `prior_art_status` | TEXT | `'unsearched'` | PubMed adjudication: `unsearched` / `canonical` / `related_prior_art` / `context_extension` / `evidence_upgrade` / `plausibly_novel` / `ambiguous`. |
+| 19 | `review_status` | TEXT | `'clean'` | Lifecycle: `clean` / `in_review` / `contradicted` / `superseded` / `needs_experiment`. |
+| 15 | `superseded_by` | TEXT | `''` | If superseded, the `claim_id` that replaces this one. |
 
-A claim's persistence is split across **eight tables** in the SQLite
-KG. Each table holds one axis; nothing is duplicated.
+### Proof + cross-evidence aggregates
 
-```
-                       ┌───────────────────────────────────┐
-                       │              CLAIMS               │
-                       │  (56 columns, 881 660 rows)       │
-                       │                                   │
-                       │  WHAT the claim says:             │
-                       │    claim_text, relation_name,     │
-                       │    relation_polarity              │
-                       │  HOW MATURE the evidence is:      │
-                       │    evidence_status, proof_level,  │
-                       │    n_studies, n_modalities,       │
-                       │    direction_consistency,         │
-                       │    confidence_summary  (§47)      │
-                       │  CONTEXT scope:                   │
-                       │    context_set_json,              │
-                       │    cell_states_json               │
-                       │  IDENTITY + AUDIT (minimal):      │
-                       │    edge_signature  (dedup hash)   │
-                       │    created_at, created_by         │
-                       │  NARRATIVE (Part VIII):           │
-                       │    narrative,                     │
-                       │    narrative_updated_at           │
-                       └─────────────────┬─────────────────┘
-                                         │
-            ┌────────────────────────────┼────────────────────────────┐
-            │                            │                            │
-            ▼                            ▼                            ▼
-   ┌────────────────┐         ┌──────────────────────┐    ┌──────────────────────┐
-   │ claim_         │         │ biological_results    │    │ claim_relations      │
-   │ participants   │         │ (per-tool result)     │    │ (claim ↔ claim edges)│
-   │                │         │                       │    │                      │
-   │ entity_id, role│         │ result_id, claim_id,  │    │ source_claim_id,     │
-   │ properties JSON│         │ assay, outcome,       │    │ target_claim_id,     │
-   │                │         │ effect_size, p_value, │    │ relation_type,       │
-   │ Resolved via   │         │ statistical_test_     │    │ rationale, confidence│
-   │ entity_aliases │         │ performed             │    │ properties JSON      │
-   │                │         │                       │    │                      │
-   │ Roles:         │         │ Gated by              │    │ See §4 for the 9     │
-   │   SUBJECT,     │         │ result_to_claim       │    │ relation_type values │
-   │   OBJECT,      │         │ (attached=1 to count) │    │                      │
-   │   CONTEXT_*    │         │                       │    │                      │
-   └────────────────┘         └──────────────────────┘    └──────────────────────┘
+| # | Column | Type | Default | Meaning |
+|---|---|---|---|---|
+| 4 | `proof_level` | INTEGER | `2` | 1=ontology_fact, 2=observational_assoc, 3=model_prediction, 4=perturbational_molecular, 5=perturbational_phenotypic, 6=orthogonal_reproduction, 7=published_established. |
+| 8 | `n_studies` | INTEGER | `0` | How many independent studies. |
+| 9 | `n_modalities` | INTEGER | `0` | How many distinct evidence modalities. |
+| 39 | `n_supporting_results` | INTEGER | `0` | COUNT(`biological_results.outcome='positive'`). |
+| 40 | `n_refuting_results` | INTEGER | `0` | COUNT(`outcome='negative'`). |
+| 41 | `n_null_results` | INTEGER | `0` | COUNT(`outcome='null'`). |
+| 42 | `n_inconclusive` | INTEGER | `0` | COUNT(`outcome='inconclusive'`). |
+| 43 | `n_assays` | INTEGER | `0` | DISTINCT(`biological_results.assay`). |
+| 44 | `n_datasets` | INTEGER | `0` | DISTINCT(`biological_results.source_dataset`). |
+| 45 | `n_supporting_pmids` | INTEGER | `0` | Literature supporting count. |
+| 46 | `polarity_consistency` | REAL | `0.0` | Fraction of results whose polarity matches the claim's. |
+| 47 | `decisive_coverage` | REAL | `0.0` | (n_supporting + n_refuting) / total_results. |
+| 48 | `proxy_coverage` | REAL | `0.0` | Coverage of proxy assays. |
 
-   ┌──────────────────────┐    ┌──────────────────────┐    ┌──────────────────────┐
-   │ support_sets         │    │ publication_support  │    │ claim_events         │
-   │ (AND-grouped         │    │ (per-claim lit       │    │ (append-only audit   │
-   │  evidence bundles)   │    │  rollup)             │    │  trail)              │
-   │                      │    │                      │    │                      │
-   │ stance: supports /   │    │ authority_level,     │    │ axis, old_value,     │
-   │   contradicts /      │    │ n_supporting,        │    │ new_value, reason,   │
-   │   refines            │    │ n_contradicting,     │    │ actor, wave,         │
-   │ logic = AND          │    │ pmids                │    │ timestamp            │
-   │ confidence (0-1)     │    │                      │    │                      │
-   └──────────────────────┘    └──────────────────────┘    └──────────────────────┘
-```
+### Categorical confidence + narrative
 
-The `claims` row holds **content + status + minimal audit**.
-Everything else hangs off it through one of the satellites:
+| # | Column | Type | Default | Meaning |
+|---|---|---|---|---|
+| 36 | `confidence_summary` | TEXT | `'unknown'` | 5-level ordinal: `unknown` / `weak` / `moderate` / `strong` / `established`. Derived from `evidence_status`, `prior_art_status`, `review_status`, `proof_level`, `n_studies`, `n_modalities`. |
+| 37 | `narrative` | TEXT | `''` | LLM-rendered prose summary. |
+| 38 | `narrative_updated_at` | TEXT | `''` | ISO timestamp of last narrative regeneration. |
 
-- **claim_participants** — who/what is involved (entity-graph
-  linkage). Replaces the legacy `candidate_gene` column.
-- **biological_results** — direct evidence rows, one per tool
-  invocation. Joined back to claims by `claim_id`, gated by
-  `result_to_claim`. **Provenance of HOW the evidence was produced
-  lives here**: `assay`, `provider`, `source_dataset`,
-  `source_release`, `model_name`, `model_version`, `artifact_id`.
-  Not on the claim row.
-- **claim_relations** — every relationship between two claims,
-  including the structural-parent edge (Phase T).
-- **support_sets** — AND-grouped evidence bundles. Carries
-  publication / curated-source provenance for the bundle.
-- **publication_support** — literature rollup per claim.
-- **claim_events** — append-only audit trail. Every state
-  transition (review status, evidence status, narrative
-  regeneration, graduation) writes one row with actor + reason +
-  timestamp. **This is where "who changed this and why" lives** —
-  not on the claim row.
+### Context
 
-### 2.0.1 What's NOT useful on the claim row
+| # | Column | Type | Default | Meaning |
+|---|---|---|---|---|
+| 21 | `context_set_json` | TEXT | `'{}'` | Typed graph projection of biological context (cell type / cancer type / immune state / therapy / cell line). |
+| 34 | `cell_states_json` | TEXT | `'[]'` | List of `CellStateCondition` (e.g. exhausted CD8, IFNγ-exposed). |
+| 27 | `context_operator` | TEXT | `'AND'` | How participants combine: `AND` / `OR`. |
+| 49 | `participant_combinator` | TEXT | `''` | For composite multi-effector claims (`OR` for pathway redundancy). |
 
-A handful of column groups currently persist on `claims` but are
-either redundant with satellite tables or used only at one
-transient point in the pipeline. They're slated for retirement
-under future plan parts:
+### Identity dedup + entity index
 
-- **DAG-1 ranking scores** (`tractability_score`,
-  `kg_connectivity_score`, `priority_score`) — computed once during
-  candidate selection, never re-read once the claim enters DAG-2.
-  Belong on a `dag1_candidates` log table, not the persisted
-  claim. Phase T did NOT retire these; the columns still exist on
-  the row but are dead weight for any post-DAG-1 reader.
-- **Per-row provenance scalars** (`source`, `source_dataset`,
-  `source_release`, `assay_type`, `model_name`, `model_version`,
-  `artifact_id`) — these describe HOW the claim came to be, which
-  is a property of the evidence that built it, not the assertion
-  itself. The same claim ("RBMS1 destabilises CXCL9 mRNA") can be
-  supported by evidence from CPTAC + DepMap + a perturbation screen,
-  each with its own dataset version. Putting one set of source
-  attributes on the claim row picks an arbitrary winner. The
-  satellite shape — provenance per evidence row in
-  `biological_results`, per support bundle in `support_sets`, per
-  state transition in `claim_events` — is more honest. The flat
-  scalars on the row should be retired alongside Part IV's flat
-  statistics.
+| # | Column | Type | Default | Meaning |
+|---|---|---|---|---|
+| 22 | `edge_signature` | TEXT | `''` | SHA-256 of (subject\|relation\|object) — cross-source dedup key. Polarity intentionally NOT in the signature (opposite-polarity claims about the same triple are the same biological assertion under contention). |
+| 32 | `candidate_gene` | TEXT | `''` | HGNC effector index (mirrors `claim_participants[role=effector_gene]`). |
+| 33 | `candidate_id` | TEXT | `''` | Mirror of `claim_id`. |
 
-The minimal audit kept on the row (`created_at`, `created_by`,
-`edge_signature`) is structurally load-bearing:
-- `edge_signature` is the cross-source dedup hash; it has to be on
-  the row to support the WHERE-clause in reconciliation.
-- `created_at` / `created_by` answer "when did this assertion first
-  enter the KG?", which `claim_events` doesn't because it only
-  records *state transitions*, not the initial insert.
+### Lineage (also represented as `claim_relations` edges)
 
-### 2.1 Population numbers in production
+| # | Column | Type | Default | Meaning |
+|---|---|---|---|---|
+| 50 | `parent_claim_id` | TEXT | `''` | Parent's `claim_id`. The structural parent edge is also written into `claim_relations`. |
+| 51 | `refinement_type` | TEXT | `''` | `branches_from` / `chain_link` / `context_split` / `mediator_specific` / `polarity_inverse` / `narrow` / `pivot` / `expand`. |
+| 52 | `refinement_rationale` | TEXT | `''` | Free-text justification. |
+| 53 | `refinement_confidence` | REAL | NULL | Judge's confidence in the refinement (0–1). |
+| 54 | `splits_on_dimension` | TEXT | `''` | Dimension claim was split on (e.g. `tissue`, `residue`). |
+| 55 | `is_general` | INTEGER | `0` | `1` if this claim has been split into polarity-bucket children; derivable from outbound `branches_from` edges. |
+| 56 | `target_mechanism_ids` | TEXT | `'[]'` | JSON list of mechanism IDs this claim targets. |
+| 57 | `inherited_evidence_ids` | TEXT | `'[]'` | Evidence IDs inherited from parent. |
 
-```
-claims              881 660 rows  (56 columns)
-backbone_edges    5 557 464 rows  (relation_name + relation_polarity populated)
-entities            137 705 rows  (canonical, resolvable via entity_aliases)
-claim_participants    ~1.7 M rows
-biological_results    3 257 rows  (sparse — only attached to active claims)
-claim_relations         158 rows  (95 are structural-parent edges)
-```
+### Provenance
 
-ConfidenceSummary distribution: `ESTABLISHED` 24 005 / `STRONG` 75 131
-/ `MODERATE` 1 906 / `WEAK` 780 515 / `UNKNOWN` 103.
+| # | Column | Type | Default | Meaning |
+|---|---|---|---|---|
+| 28 | `source` | TEXT | `''` | Pipeline origin: `kg_traversal` / `literature_gap` / `contradiction_gap` / `signor_curated` / etc. |
+| 10 | `source_dataset` | TEXT | `''` | E.g. `DepMap_24Q2`, `GSE91061`, `CPTAC_PDC000127`, `OmniPath_v2`. |
+| 23 | `source_release` | TEXT | `''` | Release tag. |
+| 11 | `assay_type` | TEXT | `''` | E.g. `CRISPR_Chronos`, `RNA-seq`, `mass_spec`. |
+| 24 | `model_name` | TEXT | `''` | E.g. `ElasticNet`, `DerSimonian-Laird`. |
+| 25 | `model_version` | TEXT | `''` | Version string. |
+| 26 | `artifact_id` | TEXT | `''` | Hash of raw data that produced this claim. |
+| 29 | `kg_evidence` | TEXT | `'[]'` | JSON list of `backbone_edges.edge_id` values that suggested this claim. |
+
+### Run state
+
+| # | Column | Type | Default | Meaning |
+|---|---|---|---|---|
+| 16 | `full_data` | TEXT | `'{}'` | Serialised `StructuredClaim` payload (parsed ontology output). |
+| 35 | `last_wave_completed` | INTEGER | `0` | Highest wave that touched this claim. |
+| 58 | `uct2` | TEXT | `''` | UCT-2 score for the planner's bandit ranking. |
+
+### Audit
+
+| # | Column | Type | Default | Meaning |
+|---|---|---|---|---|
+| 12 | `created_at` | TEXT | `''` | ISO timestamp of insertion. |
+| 13 | `created_by` | TEXT | `''` | Actor: `gbd_agent`, `manual`, `signor_curated_import`, etc. |
+
+### Flat statistics (kept for legacy readers)
+
+| # | Column | Type | Default | Meaning |
+|---|---|---|---|---|
+| 5 | `p_value` | REAL | NULL | Flat p-value summary (one winner across attached results). |
+| 6 | `q_value` | REAL | NULL | Flat q-value. |
+| 7 | `confidence_interval` | TEXT | NULL | Flat CI string. |
+
+> Per-row flat statistics pick an arbitrary winner when many
+> `biological_results` rows are attached. The authoritative
+> per-evidence statistics live on `biological_results`. Keeping the
+> flat columns gives older code paths a fast read without joining.
 
 ---
 
-## 3. The categorical confidence ordinal (§47)
+## 2. Satellite tables
 
-Every claim row carries a single 5-level `confidence_summary` derived
-purely from already-populated fields:
+### `claim_participants` — entity-graph linkage
 
-```python
-def confidence_summary(claim) -> ConfidenceSummary:
-    es = (claim.evidence_status or "draft").lower()
-    pa = (claim.prior_art_status or "unsearched").lower()
-    rs = (claim.review_status or "clean").lower()
-    pl = int(claim.proof_level or 2)
-    n_studies, n_modalities = int(claim.n_studies or 0), int(claim.n_modalities or 0)
+| Column | Type | Default | Meaning |
+|---|---|---|---|
+| `claim_id` | TEXT | — | Foreign key. |
+| `entity_id` | TEXT | — | Resolved canonical id (HGNC, UniProt, MONDO, CL, …) via `entity_aliases`. |
+| `role` | TEXT | — | `subject` / `object` / `effector_gene` / `target_gene` / `phenotype_gene` / `regulator_tf` / `protein` / `pathway` / `outcome` / `disease` / `alteration_carrier` / `cohort_outcome` / `context_mutation` / `context_cancer_type` / `context_cell_type` / `context_immune_state` / `context_cell_state` / `context_therapy` / `context_cell_line`. |
+| `properties` | TEXT | `'{}'` | JSON: `{"principal": True/False, "compartment": "...", "alteration": "...", "required_state": "..."}`. |
 
-    # Hard knockouts
-    if rs == "contradicted":         return WEAK
-    if rs == "superseded":           return UNKNOWN
+### `biological_results` — per-tool result rows
 
-    # ESTABLISHED — published / canonical / orthogonally reproduced
-    if es == "externally_supported": return ESTABLISHED
-    if pa == "canonical":            return ESTABLISHED
-    if pl >= 7:                      return ESTABLISHED
-    if pl >= 6 and n_modalities>=2:  return ESTABLISHED
+| Column | Type | Default | Meaning |
+|---|---|---|---|
+| `result_id` | TEXT | — | Unique result id (PRIMARY KEY). |
+| `claim_id` | TEXT | — | Which claim the result targets. |
+| `result_type` | TEXT | — | `analysis` / `lookup` / `meta_analysis` / etc. |
+| `assay` | TEXT | `''` | E.g. `Pearson correlation (DepMap CRISPR)`, `actinomycin-D mRNA decay`, `CLIP-seq`. |
+| `provider` | TEXT | `''` | Tool / agent that produced the result. |
+| `context` | TEXT | `'{}'` | JSON of the assay's context. |
+| `outcome` | TEXT | `''` | `positive` / `negative` / `null` / `inconclusive` / `data_available`. |
+| `effect_direction` | TEXT | `''` | Legacy direction string. |
+| `effect_size` | REAL | `0.0` | Numeric effect (units vary by assay; check `assay`). |
+| `confidence_interval` | TEXT | `'(0.0, 0.0)'` | "(low, high)". |
+| `p_value` | REAL | `1.0` | Two-sided p-value. |
+| `n` | INTEGER | `0` | Sample size. |
+| `statistical_test_performed` | INTEGER | `0` | `1` = a real test ran; `0` = qualitative observation. |
+| `evidence_category` | TEXT | `'statistical_test'` | `statistical_test` / `frequency_observation` / `qualitative_finding`. |
+| `depends_on` | TEXT | `'[]'` | JSON list of upstream `result_id`s. |
+| `validity_scope` | TEXT | `''` | When the result holds. |
+| `timestamp` | TEXT | `''` | ISO timestamp. |
+| `agent_run_id` | TEXT | `''` | Wave / run id. |
+| `artifact_paths` | TEXT | `'[]'` | JSON list of paths to raw artifacts. |
 
-    # STRONG — causal mechanism + replication
-    if es in ("causal","mechanistic"):       return STRONG
-    if pl >= 5 and n_modalities>=2:          return STRONG
-    if pl >= 5 and n_studies>=3:             return STRONG
+`result_to_claim` is a separate gating table: `(result_id, claim_id, attached: 0/1, quality_verdict, rejection_reason, confidence, attached_at, attached_by)`. A result counts toward the claim's belief only when its `result_to_claim.attached = 1` (or no `result_to_claim` row exists).
 
-    # MODERATE — observed across modalities OR replicated
-    if es == "replicated":                   return MODERATE
-    if es == "observed" and n_studies>=2:    return MODERATE
-    if pl == 5 and n_modalities>=1:          return MODERATE
-    if pl == 4:                              return MODERATE
+### `claim_relations` — claim ↔ claim edges
 
-    # WEAK / UNKNOWN
-    if es == "observed" and n_studies==1:    return WEAK
-    if pl == 3:                              return WEAK
-    if n_studies >= 1:                       return WEAK
-    return UNKNOWN
-```
+| Column | Type | Default | Meaning |
+|---|---|---|---|
+| `relation_id` | TEXT | — | Deterministic SHA-256(source\|relation_type\|target). |
+| `source_claim_id` | TEXT | — | Child / proposing claim. |
+| `target_claim_id` | TEXT | — | Parent / target claim. |
+| `relation_type` | TEXT | — | See §4 — 9 values (5 structural-parent + 4 non-structural). |
+| `rationale` | TEXT | `''` | Free-text justification. |
+| `confidence` | REAL | `0.5` | Judge's confidence in the edge (0–1). |
+| `source_run_id` | TEXT | `''` | Wave / run id that wrote the edge. |
+| `judge_model` | TEXT | `''` | LLM that authored the edge. |
+| `created_at` | TEXT | — | ISO timestamp. |
+| `properties` | TEXT | `'{}'` | Typed metadata payload (varies by relation_type). |
 
-**No posterior, no Bayesian numbers.** Calibrating a posterior across
-heterogeneous biological evidence (CRISPR + scRNA + IHC + cohort
-survival) is hard and surfacing an uncalibrated number gives readers
-false precision. The categorical ordinal is the source of truth;
-it's auto-recomputed on every write that touches its inputs and
-indexed via `idx_claims_confidence` for queries like "all MODERATE
-claims with ≥1 contradiction".
+### `support_sets` — AND-grouped evidence bundles
+
+| Column | Type | Default | Meaning |
+|---|---|---|---|
+| `support_set_id` | TEXT | — | Unique bundle id. |
+| `claim_id` | TEXT | — | Which claim this bundle supports. |
+| `label` | TEXT | `''` | Human label (e.g. "DepMap co-essentiality"). |
+| `logic` | TEXT | `'AND'` | `AND` (every evidence_id required) / `OR`. |
+| `evidence_ids` | TEXT | `'[]'` | JSON list of `result_id`s and/or `evidence_id`s. |
+| `confidence` | REAL | `0.0` | Bundle-level confidence (0–1). |
+| `proof_level` | INTEGER | `2` | Maturity tier reached by the bundle. |
+| `stance` | TEXT | `'supports'` | `supports` / `contradicts` / `refines`. |
+| `description` | TEXT | `''` | Free text. |
+
+### `claim_events` — append-only audit trail
+
+| Column | Type | Default | Meaning |
+|---|---|---|---|
+| `event_id` | INTEGER | autoincrement | Unique. |
+| `claim_id` | TEXT | — | Which claim transitioned. |
+| `axis` | TEXT | — | Which axis transitioned: `evidence_status` / `review_status` / `narrative` / etc. |
+| `old_value` | TEXT | NULL | Previous value. |
+| `new_value` | TEXT | NULL | New value. |
+| `reason` | TEXT | NULL | Free-text explanation. |
+| `actor` | TEXT | NULL | Who made the change. |
+| `agent_run_id` | TEXT | `''` | Wave / run id. |
+| `wave` | INTEGER | `0` | Wave number. |
+| `timestamp` | TEXT | — | ISO timestamp. |
 
 ---
 
-## 4. Parent–child via `claim_relations` (Phase T)
-
-Before Phase T, each claim row carried 8 lineage columns:
-`parent_claim_id`, `refinement_type`, `refinement_rationale`,
-`refinement_confidence`, `splits_on_dimension`,
-`target_mechanism_ids`, `inherited_evidence_ids`, `is_general`. That
-worked but mixed structure into content; the row no longer tells you
-"what this claim says" without filtering.
-
-Post Phase T, all eight fields live on `claim_relations` rows. The
-`claims` row is **content only**. Lineage is **typed edges**.
-
-### 4.1 The relation_type vocabulary (9 values)
+## 3. The 9 `claim_relations.relation_type` values
 
 ```
 STRUCTURAL-PARENT EDGES (every non-root claim has exactly one
@@ -248,30 +230,25 @@ STRUCTURAL-PARENT EDGES (every non-root claim has exactly one
 
   branches_from         — mechanism alternative
                           ("MH-1 is one way the parent could be true")
-  chain_link_of         — step within a composite
-                          ("link 2 of 4 in the parent's causal chain")
+  chain_link_of         — step within a composite causal chain
+                          ("link 2 of 4 in the parent's mechanism")
   context_split_of      — per-context decomposition
                           ("the melanoma slice of the pan-cancer claim")
-  mediator_specific_of  — alt-mechanism for one chain link
-                          ("RC3H1 instead of RBMS1 at link 2-2")
+  mediator_specific_of  — alt-mechanism specific to one chain link
+                          ("alternative effector for the same link")
   polarity_inverse_of   — auto-disproof inverse claim
-                          ("the negative-polarity sibling created when the
-                           original was refuted")
 
-NON-STRUCTURAL EDGES (claim can have many, in any direction):
+NON-STRUCTURAL EDGES (a claim can have many, in any direction):
 
-  refines               — supersession ("this newer claim replaces that one")
-  competes_with         — mutual-exclusion ("alt-mechanism, both being investigated")
+  refines               — supersession
+  competes_with         — mutual-exclusion (alternative under joint investigation)
   contradicts           — open polarity / refutation conflict
   corroborates          — extra support without supersession
   enables               — PTM event → consequence linkage
-                          (Part VII §37.3 — phosphorylation_event enables
-                           regulates_activity downstream)
+                          (e.g. phosphorylation_event ENABLES regulates_activity)
 ```
 
-### 4.2 The `properties` JSON blob
-
-Each edge carries a typed metadata payload per §51:
+`properties` JSON shape per relation_type:
 
 ```python
 # branches_from
@@ -287,281 +264,470 @@ Each edge carries a typed metadata payload per §51:
 
 # mediator_specific_of
 {"mediator_entity_id": "HGNC:RC3H1",
- "alt_for_link_id": "rbms1...__link-2-2"}
+ "alt_for_link_id": "parent...__link-2-2"}
 
 # polarity_inverse_of
-{"auto_created_at": "2026-04-28T...",
+{"auto_created_at": "2026-04-29T...",
  "trigger_posterior": 0.12,
  "inherited_evidence_ids": [...]}
 ```
 
-The same metadata that used to spread across 8 row columns now lives
-on the edge that means it.
-
-### 4.3 The `validate_lineage` CI gate
-
-`gbd.knowledge_graph.lineage_phase_t.validate_lineage(conn, claim_id)`
-runs after every `add_claim_relation` call and rejects:
-
-- **Multiple inbound structural-parent edges to *different* parents**
-  — a claim has one parent. Multiple structural edges to the *same*
-  parent are fine and additive (e.g. `branches_from` +
-  `mediator_specific_of` to the same parent stack as metadata
-  richness — the more-specific type wins for parent resolution).
-- **Cycles** in the structural-parent chain — walking parent →
-  parent's parent → … must terminate (depth-bounded at 32).
-
-A failed gate rolls the just-written edge back so the table never
-holds a corrupt state.
-
-### 4.4 Read helpers
-
-`KnowledgeGraph` exposes four lineage methods:
-
-```python
-kg.structural_parent(claim_id)        # str | None — direct parent ID
-kg.structural_parent_edge(claim_id)   # dict | None — full edge row
-kg.lineage_property(claim_id, key)    # any — read one key from
-                                      #       edge.properties JSON
-kg.is_general_claim(claim_id)         # bool — derived: ≥2 outbound
-                                      #       branches/splits = "general"
-```
-
-When multiple structural edges point at the same parent, the
-most-specific type wins:
-`chain_link_of > context_split_of > mediator_specific_of >
-polarity_inverse_of > branches_from`.
-
-### 4.5 PROPOSED — chain-DAG composites (multiple parallel paths)
-
-The current `chain_link_of` model assumes a **linear** chain
-A → B → C → D where every link is required (AND). That's a
-faithful encoding of one mechanism story but not of how mechanism
-hypotheses actually look in biology — most composites are reachable
-through several parallel paths, only one of which needs to hold.
-
-A typical RBMS1 → reduced CD8 infiltration composite might
-decompose into:
-
-```
-                              ┌──── B1 (CXCL9 mRNA decay) ────┐
-                              │                                ▼
-   A (RBMS1↑) ─────────────── ├──── B2 (CXCL10 mRNA decay) ── D (less CD8 infiltration)
-                              │                                ▲
-                              └──── C  (IDO1 upregulation) ───┘
-```
-
-Three paths from A to D:
-- A → B1 → D                  (chemokine path 1)
-- A → B2 → D                  (chemokine path 2 — redundant with B1)
-- A → C  → D                  (alternative metabolic path)
-
-Within a path, every link is required (AND). Across paths, **any
-one path being supported is sufficient** for D (OR). The current
-schema can't express this cleanly: putting all five intermediates
-as `chain_link_of` siblings of D implies every link is required,
-which is wrong; making them `branches_from` siblings loses the
-within-path AND structure.
-
-Two ways to fix this. **Recommended is Option B** — it composes
-existing primitives instead of adding a new edge type.
-
-**Option A — new `chain_dag_of` edge type**
-
-Add `chain_dag_of` to the structural-parent vocabulary, with
-`properties.path_id` grouping links into AND-bundles:
-
-```python
-# Each leaf gets:
-{
-    "path_id": "p1",            # "p1" / "p2" / "p3"
-    "step": 1,                  # position within the path (AND)
-    "is_required_in_path": True,
-}
-```
-
-Composite belief becomes
-`OR(path) AND(link in path) believe(link)`.
-
-**Option B — pure existing primitives, with one intermediate composite per path**
-
-Use the existing `branches_from` (= OR — any branch sufficient) and
-`chain_link_of` (= AND — every link required) edges to express the
-DAG natively. Each path becomes a path-composite that is itself a
-branch of the parent:
-
-```
-   composite D ("RBMS1 OE → reduced CD8 infiltration")
-   │
-   ├─ branches_from ─── path-composite p1 ("via CXCL9 decay")
-   │                    │
-   │                    ├── chain_link_of ── A (RBMS1↑)
-   │                    └── chain_link_of ── B1 (CXCL9 mRNA destab.)
-   │
-   ├─ branches_from ─── path-composite p2 ("via CXCL10 decay")
-   │                    │
-   │                    ├── chain_link_of ── A
-   │                    └── chain_link_of ── B2 (CXCL10 mRNA destab.)
-   │
-   └─ branches_from ─── path-composite p3 ("via IDO1")
-                        │
-                        ├── chain_link_of ── A
-                        └── chain_link_of ── C (IDO1↑)
-```
-
-Semantics fall out for free:
-- `branches_from` from D's perspective is OR — D needs *any* one
-  of its branches to hold.
-- `chain_link_of` within a path-composite is AND — that path needs
-  *every* link to hold.
-- Each path-composite can carry its own cohort-level evidence
-  (e.g. "TCGA SKCM survival HR for high-RBMS1 + low-CXCL9" is
-  evidence specific to path p1, not to the parent D).
-- The shared upstream node A is referenced from each path; sharing
-  is an entity-level property (same `claim_id`), not a schema
-  feature.
-
-**Why Option B over Option A:**
-
-| | Option A (`chain_dag_of` + path_id) | Option B (path-composites) |
-|---|---|---|
-| Edge types in the registry | +1 (`chain_dag_of`) | 0 |
-| Belief computation | new path-aggregation rule | reuses Part VI §30's `noisy_or(own, children_p)` recursively |
-| Wet-lab gate | new "any path closed" rule | a path-composite is closed when its leaves are — same gate as any composite |
-| Per-path own evidence | needs another edge type or another column | path-composite has its own row; own evidence attaches the same way as any composite |
-| Structural-parent invariant | needs a special case (multiple `chain_dag_of` edges to one parent are fine if same path_id) | already handled — multiple `chain_link_of` to the same path-composite is the ordinary case |
-
-Option B is structurally cleaner because the OR / AND logic is
-already what `branches_from` and `chain_link_of` mean. The "DAG-ness"
-emerges from the entity-level reuse of upstream nodes (A in the
-example), not from a new edge type.
-
-**Migration cost**: zero new schema. Today's linear-chain
-composites either:
-1. Stay as-is (single path, no parallelism) — the current
-   `chain_link_of` rooted directly at the parent is exactly
-   "one path, every link required". This is just Option B with
-   one branch.
-2. Get re-rooted under a path-composite when a second alternative
-   mechanism is added. The conversion is mechanical: insert a
-   path-composite, re-point the existing leaves' `chain_link_of`
-   edges at it, add a `branches_from` edge from the path-composite
-   up to the original parent.
-
-**Open questions**:
-- *Naming.* If we ship Option B, do path-composites need a typed
-  marker (e.g. `claim_type = MECHANISM_PATH`) so readers can tell
-  them apart from "ordinary" composites? The L1 header already
-  shows `claim_type`, so this falls out for free if we add a new
-  ClaimType value.
-- *When to split.* Today the wave orchestrator emits MH-1, MH-2,
-  MH-3 as direct `branches_from` siblings of the parent. That's
-  the "OR with no within-path AND" case — which is Option B
-  degenerate. The work is only when a single MH itself decomposes
-  into a multi-link chain that has alternative routes.
-
-This proposal is **not yet implemented.** No code, no schema
-change, no plan-part number assigned. It's recorded here as the
-canonical answer to "how do we encode parallel mechanism paths
-without adding a new edge type to the registry."
+The structural-parent invariant: a claim may have multiple
+inbound structural edges only if they all point to the **same**
+parent (e.g. `branches_from` + `mediator_specific_of` to the same
+parent — both are valid metadata). Multiple structural edges to
+**different** parents is rejected at write time.
 
 ---
 
-## 5. Edge creation paths
+## 4. Worked example A — bifurcated claim (Signor curated)
 
-Two ways an edge enters `claim_relations`:
+The Signor curated import produces three sibling claim rows for
+each (subject, object, mechanism) triple where the curated
+literature reports both polarity directions: a parent **general**
+claim plus two polarity-bucket children. The parent is not directly
+provable; one of its two children is correct in any specific
+context.
 
-### 5.1 Direct call: `kg.add_claim_relation`
-
-```python
-kg.add_claim_relation(
-    source_claim_id="rbms1-mh-2",       # child
-    target_claim_id="rbms1-composite",  # parent
-    relation_type="chain_link_of",
-    rationale="Step 2: RBMS1 destabilises the chemokine mRNAs",
-    confidence=0.85,
-    judge_model="dispatch",
-    properties={
-        "step": 2,
-        "step_role": "molecular_consequence",
-        "is_canonical_backbone": True,
-    },
-)
-```
-
-The function:
-1. Validates `relation_type` against `KnowledgeGraph.CLAIM_RELATION_TYPES`.
-2. Computes a deterministic `relation_id` (SHA-256 of
-   `source|relation_type|target`) so re-asserting the same edge is
-   idempotent.
-3. INSERT-OR-REPLACE the row with `properties` JSON-serialised.
-4. Calls `validate_lineage(conn, source_claim_id)` — if the new edge
-   creates a structural conflict (multiple parents / cycle), it
-   raises `LineageError` and the row is deleted.
-
-### 5.2 Dual-write inside `add_claim`
-
-When `add_claim(claim)` is called and the `Claim` instance carries
-the legacy `parent_claim_id` attribute, `add_claim` automatically
-writes the corresponding structural-parent edge:
-
-```python
-# Inside add_claim, after the row INSERT:
-legacy_pid = (getattr(claim, "parent_claim_id", "") or "").strip()
-if legacy_pid and legacy_pid != claim.claim_id:
-    rtype = _legacy_refinement_to_relation_type(
-        getattr(claim, "refinement_type", "") or ""
-    )
-    edge_props = _properties_blob({
-        "splits_on_dimension":   getattr(claim, "splits_on_dimension", "") or "",
-        "target_mechanism_ids":  json.dumps(...),
-        "inherited_evidence_ids":json.dumps(...),
-    })
-    self.conn.execute(
-        "INSERT OR IGNORE INTO claim_relations (...) VALUES (...)",
-        (..., edge_props),
-    )
-```
-
-Why this matters: existing code that constructs a `Claim` with
-`parent_claim_id="..."` still works — the row no longer carries that
-column, but the dual-write block lifts the value off the dataclass
-field and persists the equivalent edge. Source-compatibility is
-preserved while the schema cuts cleanly.
-
-### 5.3 The "claims become edges" path: graduation → `backbone_edges`
-
-When a leaf claim graduates to `EXTERNALLY_SUPPORTED`, its content
-matches the encoding of `backbone_edges` exactly:
+### 4.1 Parent — `signor:CSNK2A1__ATF1__phos__general`
 
 ```
-LEAF claim (post-graduation):                      promotes to:
-  source_id  = claim.participants[role=SUBJECT]    backbone_edges row:
-  target_id  = claim.participants[role=OBJECT]       source_id, target_id,
-  relation_name + relation_polarity                  edge_type (legacy alias),
-  evidence: gathered into a SupportSet               relation_name,
-                                                     relation_polarity (Phase Q)
+─── claims row ─────────────────────────────────────────────────────
+claim_id                = 'signor:CSNK2A1__ATF1__phos__general'
+claim_type              = 'PhosphorylationClaim'
+status                  = ''
+human_readable          = 'CSNK2A1 phosphorylates ATF1 (mechanism — polarity context-dependent)'
+proof_level             = 7    (published_established)
+p_value                 = NULL
+q_value                 = NULL
+confidence_interval     = NULL
+n_studies               = 59
+n_modalities            = 1
+source_dataset          = 'Signor_v3.1'
+assay_type              = 'curated_literature'
+created_at              = '2026-04-21T14:32:00Z'
+created_by              = 'signor_curated_import'
+description             = ''
+superseded_by           = ''
+full_data               = '{}'
+evidence_status         = 'externally_supported'
+prior_art_status        = 'canonical'
+review_status           = 'clean'
+claim_text              = 'CSNK2A1 phosphorylates ATF1'
+context_set_json        = '{}'
+edge_signature          = '8a7c…' (SHA-256 of HGNC:CSNK2A1|phosphorylates|HGNC:ATF1)
+source_release          = 'Signor_2025_Q1'
+model_name              = ''
+model_version           = ''
+artifact_id             = 'signor_v3.1_2025-01-15.tsv#sha256:…'
+context_operator        = 'AND'
+source                  = 'signor_curated'
+kg_evidence             = '[]'
+relation_name           = 'phosphorylates'
+relation_polarity       = ''                  ← polarity_kind=NOT_APPLICABLE
+                                                (phosphorylation is a PTM event;
+                                                 the +/- consequence on ATF1 activity
+                                                 is the bifurcation, not the PTM itself)
+candidate_gene          = 'HGNC:CSNK2A1'
+candidate_id            = 'signor:CSNK2A1__ATF1__phos__general'
+cell_states_json        = '[]'
+last_wave_completed     = 0
+confidence_summary      = 'established'
+narrative               = ''
+narrative_updated_at    = ''
+n_supporting_results    = 0
+n_refuting_results      = 0
+n_null_results          = 0
+n_inconclusive          = 0
+n_assays                = 0
+n_datasets              = 0
+n_supporting_pmids      = 59
+polarity_consistency    = 0.0
+decisive_coverage       = 0.0
+proxy_coverage          = 0.0
+participant_combinator  = ''
+parent_claim_id         = ''                  ← root of its triplet
+refinement_type         = ''
+refinement_rationale    = ''
+refinement_confidence   = NULL
+splits_on_dimension     = 'polarity'           (the dimension this claim has been split on)
+is_general              = 1                   ← has been split into __positive / __negative
+target_mechanism_ids    = '[]'
+inherited_evidence_ids  = '[]'
+uct2                    = ''
 ```
 
-The leaf-edge invariant (one SUBJECT + one OBJECT) is what makes
-this clean. Phase Q populated `relation_name` + `relation_polarity`
-on every existing `backbone_edges` row using a deterministic 24 → 18
-mapping; new graduated leaves slot into that namespace without
-translation. Composites are NOT promoted — their leaves are.
+### 4.2 Positive bucket — `signor:CSNK2A1__ATF1__phos__positive`
+
+```
+─── claims row ─────────────────────────────────────────────────────
+claim_id                = 'signor:CSNK2A1__ATF1__phos__positive'
+claim_type              = 'PhosphorylationClaim'
+status                  = ''
+human_readable          = 'CSNK2A1 phosphorylates ATF1 → activates ATF1 transcriptional activity'
+proof_level             = 7
+p_value                 = NULL
+q_value                 = NULL
+confidence_interval     = NULL
+n_studies               = 47
+n_modalities            = 1
+source_dataset          = 'Signor_v3.1'
+assay_type              = 'curated_literature'
+created_at              = '2026-04-21T14:32:00Z'
+created_by              = 'signor_curated_import'
+description             = ''
+superseded_by           = ''
+full_data               = '{}'
+evidence_status         = 'externally_supported'
+prior_art_status        = 'canonical'
+review_status           = 'clean'
+claim_text              = 'CSNK2A1 phosphorylation of ATF1 increases its transcriptional activity'
+context_set_json        = '{}'
+edge_signature          = 'b5c9…'
+source_release          = 'Signor_2025_Q1'
+model_name              = ''
+model_version           = ''
+artifact_id             = 'signor_v3.1_2025-01-15.tsv#sha256:…'
+context_operator        = 'AND'
+source                  = 'signor_curated'
+kg_evidence             = '[]'
+relation_name           = 'regulates_activity'
+relation_polarity       = 'positive'
+candidate_gene          = 'HGNC:CSNK2A1'
+candidate_id            = 'signor:CSNK2A1__ATF1__phos__positive'
+cell_states_json        = '[]'
+last_wave_completed     = 0
+confidence_summary      = 'established'
+narrative               = ''
+narrative_updated_at    = ''
+n_supporting_results    = 0
+n_refuting_results      = 0
+n_null_results          = 0
+n_inconclusive          = 0
+n_assays                = 0
+n_datasets              = 0
+n_supporting_pmids      = 47
+polarity_consistency    = 1.0
+decisive_coverage       = 0.0
+proxy_coverage          = 0.0
+participant_combinator  = ''
+parent_claim_id         = 'signor:CSNK2A1__ATF1__phos__general'
+refinement_type         = 'context_split'
+refinement_rationale    = 'positive polarity bucket of bifurcated curated mechanism'
+refinement_confidence   = 1.0
+splits_on_dimension     = 'polarity'
+is_general              = 0
+target_mechanism_ids    = '[]'
+inherited_evidence_ids  = '[]'
+uct2                    = ''
+```
+
+### 4.3 Negative bucket — `signor:CSNK2A1__ATF1__phos__negative`
+
+```
+─── claims row ─────────────────────────────────────────────────────
+(identical shape to the __positive sibling, with these differences:)
+
+claim_id                = 'signor:CSNK2A1__ATF1__phos__negative'
+human_readable          = 'CSNK2A1 phosphorylates ATF1 → inhibits ATF1 / DNA binding'
+n_studies               = 12
+relation_polarity       = 'negative'
+n_supporting_pmids      = 12
+claim_text              = 'CSNK2A1 phosphorylation of ATF1 decreases DNA-binding activity'
+candidate_id            = 'signor:CSNK2A1__ATF1__phos__negative'
+parent_claim_id         = 'signor:CSNK2A1__ATF1__phos__general'
+refinement_type         = 'context_split'
+refinement_rationale    = 'negative polarity bucket of bifurcated curated mechanism'
+```
+
+### 4.4 The participants for all three claims
+
+```
+─── claim_participants ─────────────────────────────────────────────
+claim_id                                  entity_id          role           properties
+signor:CSNK2A1__ATF1__phos__general       HGNC:CSNK2A1       subject        {"principal": true}
+signor:CSNK2A1__ATF1__phos__general       HGNC:ATF1          object         {"principal": true}
+signor:CSNK2A1__ATF1__phos__positive      HGNC:CSNK2A1       subject        {"principal": true}
+signor:CSNK2A1__ATF1__phos__positive      HGNC:ATF1          object         {"principal": true}
+signor:CSNK2A1__ATF1__phos__negative      HGNC:CSNK2A1       subject        {"principal": true}
+signor:CSNK2A1__ATF1__phos__negative      HGNC:ATF1          object         {"principal": true}
+```
+
+### 4.5 The structural edges between them
+
+```
+─── claim_relations ────────────────────────────────────────────────
+relation_id        source_claim_id                              target_claim_id                            relation_type     confidence  rationale            properties
+rel_split_of_…     signor:CSNK2A1__ATF1__phos__positive         signor:CSNK2A1__ATF1__phos__general        context_split_of  1.0         polarity bucket      {"dimension":"polarity","scope_value":"positive"}
+rel_split_of_…     signor:CSNK2A1__ATF1__phos__negative         signor:CSNK2A1__ATF1__phos__general        context_split_of  1.0         polarity bucket      {"dimension":"polarity","scope_value":"negative"}
+rel_competes_…     signor:CSNK2A1__ATF1__phos__positive         signor:CSNK2A1__ATF1__phos__negative       competes_with     0.9         opposite-polarity    {}
+                                                                                                                                          siblings under the
+                                                                                                                                          same general parent
+```
+
+### 4.6 The support sets
+
+```
+─── support_sets ───────────────────────────────────────────────────
+support_set_id              claim_id                                       label                          stance     logic  evidence_ids        confidence  proof_level
+ss-csnk2a1-atf1-pos-1       signor:CSNK2A1__ATF1__phos__positive           Signor curated PMIDs           supports   AND    ['ev-pmid-…',…×47]  0.95        7
+ss-csnk2a1-atf1-neg-1       signor:CSNK2A1__ATF1__phos__negative           Signor curated PMIDs           supports   AND    ['ev-pmid-…',…×12]  0.92        7
+```
+
+### 4.7 No `biological_results` rows
+
+The Signor curated import produces no `biological_results` rows;
+all evidence is literature-grounded and lives in `support_sets`
+(via `evidence_ids` referencing `evidence` table publication rows).
+A typical Signor claim has `n_supporting_results = 0` but
+`n_supporting_pmids` ≥ 1.
+
+### 4.8 The shape of the bifurcation
+
+```
+                   signor:CSNK2A1__ATF1__phos__general
+                   relation_name      = 'phosphorylates'
+                   relation_polarity  = ''  (NOT_APPLICABLE — PTM event)
+                   is_general         = 1
+                   confidence_summary = 'established'
+                   /                              \
+                  / context_split_of              \ context_split_of
+                 /  (dimension=polarity)           \ (dimension=polarity)
+                ▼                                   ▼
+   …__phos__positive                            …__phos__negative
+   relation_name     = 'regulates_activity'     relation_name     = 'regulates_activity'
+   relation_polarity = 'positive'               relation_polarity = 'negative'
+   n_supporting_pmids = 47                      n_supporting_pmids = 12
+                ◄────────  competes_with  ────────►
+```
+
+The general parent encodes "this PTM event happens"; the two
+children encode "and the consequence on ATF1's activity is +" vs
+"and the consequence is −". Curated literature backs both — the
+correct bucket in any given context is determined by the cell
+state / co-factors, which is why both are kept rather than one
+superseding the other.
 
 ---
 
-## 6. Evidence: own vs. subtree
+## 5. Worked example B — parent / chain-link child mechanism pair
 
-A claim's evidence sits in two physically distinct places.
+A composite mechanism claim plus one of the chain-link leaves
+inside its causal chain. This pattern is the typical
+hypothesis-then-decompose flow: the parent asserts a high-level
+phenotype consequence; the chain-link children name each
+mechanistic step that has to hold for the parent to be true.
 
-### 6.1 Own evidence — directly on the claim
+### 5.1 Parent (composite) — `mh:PTEN-loss-AKT-glioma-proliferation`
 
-Every `biological_results` row carries a `claim_id`. **Direct
-evidence for a claim is the set of `biological_results` rows whose
-`claim_id` matches**, gated through the `result_to_claim` table:
+```
+─── claims row ─────────────────────────────────────────────────────
+claim_id                = 'mh:PTEN-loss-AKT-glioma-proliferation'
+claim_type              = 'MechanismHypothesisClaim'
+status                  = ''
+human_readable          = 'PTEN loss drives PI3K/AKT-dependent proliferation in glioblastoma'
+proof_level             = 5     (perturbational_phenotypic)
+p_value                 = NULL
+q_value                 = NULL
+confidence_interval     = NULL
+n_studies               = 4
+n_modalities            = 3
+source_dataset          = ''
+assay_type              = ''
+created_at              = '2026-04-29T10:18:42Z'
+created_by              = 'gbd_agent'
+description             = ''
+superseded_by           = ''
+full_data               = '{...StructuredClaim payload...}'
+evidence_status         = 'replicated'
+prior_art_status        = 'related_prior_art'
+review_status           = 'clean'
+claim_text              = 'PTEN loss in glioblastoma derepresses the PI3K/AKT axis, driving cell-cycle entry and proliferation. The composite asserts the cohort-level outcome; the four chain links assert each mechanistic step.'
+context_set_json        = '{"cancer_type":"MONDO:glioblastoma_multiforme","cell_compartment":"tumor_intrinsic"}'
+edge_signature          = '4f2a…'
+source_release          = ''
+model_name              = ''
+model_version           = ''
+artifact_id             = ''
+context_operator        = 'AND'
+source                  = 'literature_gap'
+kg_evidence             = '["bb-pten-pi3k","bb-akt-mtor","bb-mki67-proliferation"]'
+relation_name           = 'drives_phenotype'
+relation_polarity       = 'positive'
+candidate_gene          = 'HGNC:PTEN'
+candidate_id            = 'mh:PTEN-loss-AKT-glioma-proliferation'
+cell_states_json        = '[]'
+last_wave_completed     = 3
+confidence_summary      = 'moderate'
+narrative               = ''
+narrative_updated_at    = ''
+n_supporting_results    = 5
+n_refuting_results      = 1
+n_null_results          = 0
+n_inconclusive          = 2
+n_assays                = 4
+n_datasets              = 3
+n_supporting_pmids      = 12
+polarity_consistency    = 0.83
+decisive_coverage       = 0.75
+proxy_coverage          = 0.50
+participant_combinator  = ''
+parent_claim_id         = ''                  ← root of its tree
+refinement_type         = ''
+refinement_rationale    = ''
+refinement_confidence   = NULL
+splits_on_dimension     = ''
+is_general              = 0
+target_mechanism_ids    = '[]'
+inherited_evidence_ids  = '[]'
+uct2                    = '0.71'
+```
+
+### 5.2 Child (chain-link leaf) — `mh:PTEN-loss-AKT-glioma-proliferation__link-1-pten-phosphatase`
+
+The first link in the parent's causal chain: PTEN's lipid-phosphatase
+activity dephosphorylates PIP3 to PIP2, terminating PI3K signaling.
+
+```
+─── claims row ─────────────────────────────────────────────────────
+claim_id                = 'mh:PTEN-loss-AKT-glioma-proliferation__link-1-pten-phosphatase'
+claim_type              = 'CausalChainLinkClaim'
+status                  = ''
+human_readable          = 'PTEN dephosphorylates PIP3 to PIP2 (lipid phosphatase activity)'
+proof_level             = 4     (perturbational_molecular)
+p_value                 = NULL
+q_value                 = NULL
+confidence_interval     = NULL
+n_studies               = 2
+n_modalities            = 2
+source_dataset          = ''
+assay_type              = ''
+created_at              = '2026-04-29T10:18:43Z'
+created_by              = 'gbd_agent'
+description             = ''
+superseded_by           = ''
+full_data               = '{...}'
+evidence_status         = 'mechanistic'
+prior_art_status        = 'canonical'
+review_status           = 'clean'
+claim_text              = 'PTEN protein dephosphorylates phosphatidylinositol-3,4,5-trisphosphate (PIP3) at the 3 position to produce PIP2'
+context_set_json        = '{}'
+edge_signature          = 'c91d…'
+source_release          = ''
+model_name              = ''
+model_version           = ''
+artifact_id             = ''
+context_operator        = 'AND'
+source                  = 'kg_traversal'
+kg_evidence             = '["bb-pten-pip3"]'
+relation_name           = 'dephosphorylates'
+relation_polarity       = ''                  ← NOT_APPLICABLE (enzymatic event)
+candidate_gene          = 'HGNC:PTEN'
+candidate_id            = 'mh:PTEN-loss-AKT-glioma-proliferation__link-1-pten-phosphatase'
+cell_states_json        = '[]'
+last_wave_completed     = 3
+confidence_summary      = 'strong'
+narrative               = ''
+narrative_updated_at    = ''
+n_supporting_results    = 3
+n_refuting_results      = 0
+n_null_results          = 0
+n_inconclusive          = 0
+n_assays                = 2
+n_datasets              = 2
+n_supporting_pmids      = 8
+polarity_consistency    = 1.0
+decisive_coverage       = 1.0
+proxy_coverage          = 0.0
+participant_combinator  = ''
+parent_claim_id         = 'mh:PTEN-loss-AKT-glioma-proliferation'
+refinement_type         = 'chain_link'
+refinement_rationale    = 'Step 1 of the parent mechanism: lipid phosphatase activity'
+refinement_confidence   = 0.95
+splits_on_dimension     = ''
+is_general              = 0
+target_mechanism_ids    = '[]'
+inherited_evidence_ids  = '[]'
+uct2                    = '0.62'
+```
+
+### 5.3 Their participants
+
+```
+─── claim_participants ─────────────────────────────────────────────
+claim_id                                                              entity_id            role               properties
+mh:PTEN-loss-AKT-glioma-proliferation                                 HGNC:PTEN            effector_gene      {"principal": true, "alteration":"loss"}
+mh:PTEN-loss-AKT-glioma-proliferation                                 MONDO:GBM            outcome            {"principal": true}
+mh:PTEN-loss-AKT-glioma-proliferation                                 HGNC:AKT1            mediator           {"principal": false, "compartment":"tumor_intrinsic"}
+mh:PTEN-loss-AKT-glioma-proliferation                                 MONDO:glioblastoma   context_cancer_type{"principal": false}
+mh:PTEN-loss-…__link-1-pten-phosphatase                               HGNC:PTEN            subject            {"principal": true}
+mh:PTEN-loss-…__link-1-pten-phosphatase                               CHEBI:PIP3           object             {"principal": true}
+```
+
+### 5.4 The edge between them
+
+```
+─── claim_relations ────────────────────────────────────────────────
+relation_id        source_claim_id                                                         target_claim_id                            relation_type    confidence  rationale                                              properties
+rel_chain_link_…   mh:PTEN-loss-AKT-glioma-proliferation__link-1-pten-phosphatase         mh:PTEN-loss-AKT-glioma-proliferation      chain_link_of    0.95        Step 1: PTEN's lipid-phosphatase activity hydrolyses    {"step":1,"step_role":"perturbation","is_canonical_backbone":true}
+                                                                                                                                                                  PIP3 — without this, the rest of the chain doesn't fire
+```
+
+The parent has its own structural-parent edges to its other three
+chain links (`__link-2-akt-activation`, `__link-3-mtor-engagement`,
+`__link-4-cell-cycle-entry`); each one carries
+`properties.step` = 1, 2, 3, 4 respectively. Together the four
+links AND together to support the parent.
+
+### 5.5 Their evidence
+
+The parent carries cohort-level evidence (TCGA GBM survival, scRNA
+proliferation signatures, IHC); the leaf carries direct enzymatic
+evidence (in-vitro lipid phosphatase assay, NMR of PIP3 conversion).
+
+```
+─── biological_results — PARENT (mh:PTEN-loss-AKT-glioma-proliferation) ─────────
+result_id            claim_id                        result_type   assay                                       provider             outcome      effect_size  p_value     n      statistical_test_performed  evidence_category    timestamp
+br-pten-coxhr-1      mh:PTEN-loss-AKT-…              analysis      Cox proportional hazards (TCGA GBM)         provider:tcga        positive     2.4          1.2e-7      144    1                           statistical_test     2026-04-29T09:50Z
+br-pten-tide-1       mh:PTEN-loss-AKT-…              analysis      TIDE proliferation signature                 provider:tide        positive     0.81         3.4e-5      288    1                           statistical_test     2026-04-29T10:01Z
+br-pten-mki67-1      mh:PTEN-loss-AKT-…              analysis      MKI67 IHC tissue array                       provider:ihc_tcga    positive     1.6          0.004       62     1                           statistical_test     2026-04-29T10:08Z
+br-pten-tcga-meta-1  mh:PTEN-loss-AKT-…              meta_analysis Pearson correlation across CPTAC GBM         provider:cptac       inconclusive 0.18         0.061       19     1                           statistical_test     2026-04-29T10:14Z
+br-pten-depmap-1     mh:PTEN-loss-AKT-…              analysis      DepMap CRISPR co-essentiality (PTEN, MTOR)   provider:depmap      negative     -0.12        0.028       1115   1                           statistical_test     2026-04-29T10:17Z
+                                                                                                                                                                                                                                  ↑ this row contradicts the parent's
+                                                                                                                                                                                                                                    polarity → fed into n_refuting_results
+
+─── biological_results — CHILD (…__link-1-pten-phosphatase) ─────────────────────
+result_id            claim_id                                          result_type   assay                                       provider              outcome   effect_size  p_value     n      statistical_test_performed  evidence_category    timestamp
+br-pten-lipid-1      …__link-1-pten-phosphatase                        analysis      In-vitro lipid phosphatase assay (PIP3→PIP2) provider:in_vitro     positive  0.71         1.4e-9      6      1                           statistical_test     2026-04-29T10:18Z
+br-pten-nmr-1        …__link-1-pten-phosphatase                        analysis      31P-NMR of PIP3 conversion                  provider:nmr_assay    positive  1.0          5e-6        4      1                           statistical_test     2026-04-29T10:19Z
+br-pten-clinvar-1    …__link-1-pten-phosphatase                        lookup        ClinVar PTEN catalytic-domain variants      provider:clinvar      positive  1.0          NULL        47     0                           qualitative_finding  2026-04-29T10:21Z
+                                                                                                                                                                                                                                  ↑ all three results agree — this leaf
+                                                                                                                                                                                                                                    is the most directly-supported piece
+                                                                                                                                                                                                                                    of the parent's mechanism
+```
+
+### 5.6 The two evidence buckets
+
+The parent's `n_supporting_results = 5` counts only the parent's
+own attached results (the 5 rows above); the leaf's `n_supporting_results = 3`
+counts only the leaf's own. Neither claim's row shows the other's
+count.
+
+To answer "what is the total evidence supporting the parent
+mechanism?" — you walk `claim_relations` from the parent down,
+collecting each descendant's `biological_results`. The parent has
+its own 5 rows plus its 4 chain-link descendants' rows (3 from
+the example leaf + however many the other 3 leaves have). Same
+SQL pattern as in §6.2 below.
+
+---
+
+## 6. Edge access patterns
+
+### 6.1 Direct evidence on a claim
 
 ```sql
+-- Every result attached to one specific claim
 SELECT br.*
   FROM biological_results br
   LEFT JOIN result_to_claim rtc
@@ -571,33 +737,9 @@ SELECT br.*
    AND (rtc.result_id IS NULL OR rtc.attached = 1);
 ```
 
-The `result_to_claim` row is the gate: when present with
-`attached=0`, the result is rejected (e.g. quality-verdict failed).
-When absent, the result is included by default. This separation
-lets `biological_results` capture every tool invocation while
-`result_to_claim` records the audit trail of which ones actually
-count toward this claim's belief.
-
-Both **leaves and composites** can carry their own evidence:
-- a leaf's own evidence is typically mechanistic (CLIP-seq peak,
-  mRNA decay assay, IP/MS) — one assay can prove one edge
-- a composite's own evidence is typically cohort-level (Cox HR on
-  TCGA, scRNA differential, IHC tissue array) — one assay reads on
-  the phenotype, not the mechanism
-
-A leaf with no own evidence raises the `unevidenced_leaf` review
-flag. A composite with no own evidence is fine if its decomposition
-children carry the load.
-
-### 6.2 Subtree evidence — via `claim_relations` traversal
-
-A composite's belief also derives from its descendants. The
-"evidence for this composite" question is answered by walking the
-structural-parent edges *downward* from the composite to every
-leaf:
+### 6.2 Subtree evidence — every result attached to any descendant
 
 ```sql
--- All descendants of one composite (recursive CTE), then their evidence
 WITH RECURSIVE tree(claim_id, depth) AS (
     SELECT source_claim_id AS claim_id, 0
       FROM claim_relations
@@ -621,174 +763,20 @@ SELECT br.*
  WHERE rtc.result_id IS NULL OR rtc.attached = 1;
 ```
 
-That gives the **subtree evidence**: every result attached to any
-descendant of the composite.
+### 6.3 Promotion — leaf becomes a `backbone_edges` row
 
-### 6.3 The split
-
-The data model deliberately keeps the two evidence buckets distinct:
-
-| | Lives on | Read via | Counts toward |
-|---|---|---|---|
-| Own evidence | `biological_results.claim_id == cid` | direct JOIN | this claim's count rollups (`n_supporting`, `n_refuting`, `n_assays`, `decisive_coverage`) |
-| Subtree evidence | descendants' `biological_results` | recursive CTE through `claim_relations` | the composite's `*_subtree` derived rollups (Part VI §30.3) |
-
-Neither overrides the other. The composite sees both
-simultaneously. This is what enables the
-`composite_evidence_disagreement` review flag (Part VI §30.1): when
-the own-evidence verdict diverges sharply from the subtree-evidence
-verdict, the claim is flagged for review rather than auto-resolved.
-
----
-
-## 7. Worked example — RBMS1 composite + MH-1 leaf
-
-Live data from prod (`rbms1-cl-fanout-20260427-214931` family,
-`gbd_knowledge_graph.db`, 2026-04-29):
-
-### 7.1 Parent (composite)
+When a leaf claim graduates (`evidence_status = 'externally_supported'`,
+sufficient `n_supporting_results`, no open `contradicts` edges), its
+content already matches the encoding of `backbone_edges` exactly:
 
 ```
-claim_id           = rbms1-cl-fanout-20260427-214931
-claim_type         = PathwayRedundancyHypothesis
-claim_text         = RBMS1 overexpression causes reduced immune signaling
-relation_name      = ''   (Phase R didn't fill — aborted_for_refinement_pivot
-                           isn't in the verb-alias map)
-relation_polarity  = ''
-evidence_status    = aborted_for_refinement_pivot
-proof_level        = 2 (observational_association)
-confidence_summary = unknown   (the §47 catch-all for aborted/anomaly states)
-
-biological_results count: 0    (this composite carries no own evidence —
-                                belief comes from its 12 children)
-inbound structural-parent children: 12
+LEAF claim:                                  backbone_edges row:
+  participants[role=subject].entity_id  ─→     source_id
+  participants[role=object].entity_id   ─→     target_id
+  relation_name + relation_polarity     ─→     relation_name + relation_polarity
+  edge_signature                        ─→     edge_id (or stable hash)
 ```
 
-### 7.2 Child (mechanism-hypothesis leaf MH-1)
-
-```
-claim_id           = rbms1-cl-fanout-20260427-214931-MH-1-eager
-claim_type         = PathwayRedundancyHypothesis
-claim_text         = RBMS1 acts via CXCL9 and CXCL10 mRNAs (destabilises_mrna)
-                     to produce the phenotype asserted in the parent claim ...
-evidence_status    = observed
-proof_level        = 2
-confidence_summary = unknown
-
-claim_participants:
-  effector_gene  → HGNC:RBMS1
-  regulatee      → HGNC:CXCL9
-  regulatee      → FT:cxcl10_mrnas
-
-biological_results: 2 rows
-contradicting siblings: 0
-grandchildren: 8
-```
-
-### 7.3 The edge between them
-
-```
-relation_id    = rel_branches_from_b69d37fbe69c4d6d
-relation_type  = branches_from
-source_claim_id = rbms1-cl-fanout-20260427-214931-MH-1-eager     (the child)
-target_claim_id = rbms1-cl-fanout-20260427-214931                (the parent)
-rationale      = Eager-seeded from generate_mechanism_hypotheses:
-                 RBMS1-destabilizes-CXCL9-10-mRNAs
-                 (layer=post_transcriptional, plausibility=high)
-confidence     = 0.7
-judge_model    = dispatch
-properties     = {}
-created_at     = 2026-04-28T01:51:11.194254+00:00
-```
-
-### 7.4 An edge with populated `properties` JSON
-
-A sibling claim shows the typed-properties shape:
-
-```
-relation_type   = mediator_specific_of
-source_claim_id = rbms1-cl-fanout-20260427-214931__alt-link-2-2
-target_claim_id = rbms1-cl-fanout-20260427-214931
-properties      = {"target_mechanism_ids":
-                     ["rbms1-cl-fanout-20260427-214931__link-2-2"]}
-```
-
-This claim is an alternative mechanism *specifically* for chain link
-2-2 of the parent's causal chain — the property tells future readers
-which link this alt-mechanism is replacing.
-
-### 7.5 Promotion outcome
-
-If MH-1 graduates (its 2 attached results plus children's evidence
-reach `EXTERNALLY_SUPPORTED`), it becomes a `backbone_edges` row:
-
-```
-backbone_edges row:
-  source_id          = HGNC:RBMS1
-  target_id          = HGNC:CXCL9
-  edge_type          = (legacy alias retained for one release)
-  relation_name      = regulates_mrna_stability    (Phase Q: leaf-domain
-                                                    polarised predicate)
-  relation_polarity  = negative                    (Phase R reverse-alias
-                                                    map: "destabilises" →
-                                                    regulates_mrna_stability
-                                                    + NEGATIVE)
-```
-
-Phase Q populated this `relation_name` + `relation_polarity`
-namespace on every existing `backbone_edges` row, so the leaf claim
-slots into the canonical biology layer with no translation step. The
-parent composite is NOT promoted — its leaves are.
-
----
-
-## 8. Schema summary table
-
-After Parts I-IX of `REMOVE_CLAIM_DIRECTION_FIELD_PLAN.md`, the
-`claims` row carries 56 columns. The columns split into a **load-
-bearing core** that the runtime reads on every wave, and a
-**retirement queue** of fields that are persisted today but slated
-to move off the row.
-
-### 8.1 Load-bearing core (kept on the row)
-
-| Axis | Columns |
-|---|---|
-| Identity & type | `claim_id`, `claim_type`, `created_at`, `created_by` |
-| Content (what it asserts) | `claim_text`, `relation_name`, `relation_polarity`, `human_readable`, `description` |
-| Status (3 axes — orthogonal) | `evidence_status`, `prior_art_status`, `review_status`, `superseded_by` |
-| Proof ladder + replication | `proof_level`, `n_studies`, `n_modalities`, `direction_consistency` |
-| Confidence (categorical) | `confidence_summary`, `narrative`, `narrative_updated_at` |
-| Context & dedup | `context_set_json`, `cell_states_json`, `context_operator`, `cancer_type_scope`, `edge_signature` |
-| Live-run state | `kg_evidence`, `tools_to_prioritise`, `embedding_text`, `last_wave_completed`, `full_data` |
-
-### 8.2 Retirement queue
-
-| Group | Columns | Why retire | Where it lives instead |
-|---|---|---|---|
-| Lineage (Phase T — DONE) | `parent_claim_id`, `refinement_type`, `refinement_rationale`, `refinement_confidence`, `splits_on_dimension`, `target_mechanism_ids`, `inherited_evidence_ids`, `is_general` | Mixed structure into content; one parent in 8 columns | `claim_relations.relation_type` + `properties` JSON |
-| DAG-1 ranking (proposed) | `tractability_score`, `kg_connectivity_score`, `priority_score` | Computed once at candidate selection, never re-read after the claim enters DAG-2 | A `dag1_candidates` log table — keep the score for audit, off the persisted claim |
-| Per-row provenance scalars (proposed) | `source`, `source_dataset`, `source_release`, `assay_type`, `model_name`, `model_version`, `artifact_id` | Describe HOW one piece of evidence was produced, not what the claim asserts; one claim can be backed by evidence from multiple datasets each with its own version | `biological_results` (per evidence row) + `support_sets` (per bundle) + `claim_events` (per state transition) |
-| Flat statistics (Part IV — pending) | `effect_size`, `effect_unit`, `p_value`, `q_value`, `confidence_interval` | One claim, many results, each with its own statistics — the row picks an arbitrary winner | `biological_results.effect_size` / `p_value` / etc. per row |
-| Identity aliases (Part III — pending) | `candidate_gene`, `candidate_id` | Duplicate `claim_participants[role=effector_gene]` and `claim_id` respectively | Already in those tables |
-
-Each retirement happens in its own gated drop call (same recipe as
-Phase T's `drop_legacy_lineage_columns`): write the audit gate, run
-the rebuild, fix any reader/writer that touches the dropped column.
-
----
-
-## 9. References
-
-- `REMOVE_CLAIM_DIRECTION_FIELD_PLAN.md` — the master plan (Parts I-IX)
-- `gbd/knowledge_graph/claim_digest.py` — L0–L5 layered API +
-  categorical `confidence_summary` (§47)
-- `gbd/knowledge_graph/lineage_phase_t.py` — structural-parent
-  helpers, validate_lineage gate, gated column-drop
-- `gbd/knowledge_graph/relation_backfill.py` — Phase Q backbone
-  re-typing + Phase R reverse-alias map
-- `gbd/knowledge_graph/graph.py` — KnowledgeGraph class with the
-  schema migrations and `kg.structural_parent` / `is_general_claim`
-  read methods
-- `claim_examples/` — seven concrete walkthroughs of real prod claims
-  (one per ConfidenceSummary level + a Phase T multi-edge example)
+This is why every leaf's structure is locked to "exactly one
+SUBJECT participant + exactly one OBJECT participant" — that's
+what makes a leaf isomorphic to a typed graph edge.
