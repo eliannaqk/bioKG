@@ -135,6 +135,117 @@ context saying when that child helps make the parent true.
 
 ---
 
+## 1.2 Claim participant rows
+
+`claim_participants` is the table that makes a claim sit on actual KG
+entities. The row shape is intentionally small:
+
+| Field | Meaning |
+|---|---|
+| `claim_id` | The claim this participant belongs to. |
+| `entity_id` | Canonical KG entity id after alias resolution, e.g. `HGNC:SETDB1`, `MONDO:melanoma`, `CHEBI:PIP3`. |
+| `role` | Biological role inside the claim, not a generic graph edge label. |
+| `properties` | JSON qualifiers for role semantics, principal anchoring, context, and composition. |
+
+Recommended `properties` keys:
+
+| Key | Meaning |
+|---|---|
+| `principal` | `true` when this participant is one of the primary edge anchors. Binary promotable claims need one principal subject-side and one principal object-side participant. |
+| `side` | `subject`, `object`, `mediator`, or `context`; useful when role names are domain-specific. |
+| `role_group` | Groups participants that combine together, e.g. `effector_complex`, `therapy_context`, `alternative_targets`. |
+| `required` | Whether the participant is required for the claim to be true. |
+| `operator` | How participants within a role group compose: `AND`, `OR`, or `K_OF_N`. |
+| `min_required` | Number required when `operator=K_OF_N`. |
+| `alteration` | Perturbation or state such as `overexpression`, `loss`, `phosphorylated`, `mutant`. |
+| `qualifier` | Extra biological qualifier such as residue, isoform, compartment, time point, dose, or assay context. |
+| `context_dimension` | For context participants: cancer type, cell type, therapy, mutation, cell state, species, dataset, etc. |
+| `evidence_binding` | Optional hint for which participant a result measures, e.g. `measured_outcome`, `perturbed_entity`, `stratification_variable`. |
+
+Example:
+
+```json
+[
+  {
+    "claim_id": "claim:setdb1-oe-pd1-resistance",
+    "entity_id": "HGNC:SETDB1",
+    "role": "effector_gene",
+    "properties": {"principal": true, "side": "subject", "alteration": "overexpression", "required": true}
+  },
+  {
+    "claim_id": "claim:setdb1-oe-pd1-resistance",
+    "entity_id": "therapy:anti-PD1_resistance",
+    "role": "therapy_response",
+    "properties": {"principal": true, "side": "object", "required": true}
+  },
+  {
+    "claim_id": "claim:setdb1-oe-pd1-resistance",
+    "entity_id": "MONDO:melanoma",
+    "role": "context_cancer_type",
+    "properties": {"principal": false, "side": "context", "context_dimension": "cancer_type"}
+  }
+]
+```
+
+---
+
+## 1.3 Evidence and analysis flow
+
+Evidence does not live "inside" a claim. The final model separates the
+unit of work, the result produced by that work, and the claim-specific
+interpretation of that result:
+
+```
+analysis_runs
+  └── biological_results
+        └── result_to_claim
+              └── claims
+                    └── claim_relations parent DAG rollup
+```
+
+| Object | Owns | Does not own |
+|---|---|---|
+| `analysis_runs` | One reusable computational or lookup unit: dataset/cohort, tool, parameters, code version, artifacts, status. | Claim-specific support/refutation. |
+| `biological_results` | One result row from an analysis: assay, outcome, effect size, p-value, n, statistics, measured context. | The reason this result supports a particular claim. |
+| `result_to_claim` | The interpretation of one result for one claim: stance, relevance, rationale, context fit, proof node, attached flag. | Raw statistics or reusable artifacts. |
+| `claims` | The biological assertion, participants, context, lifecycle status, rollups, and generated narrative. | Raw analysis work. |
+| `claim_relations` | How child claims compose into parent claims, including relation-scoped context and DAG contribution state. | Raw result rows. |
+
+`result_to_claim` fields:
+
+| Field | Meaning |
+|---|---|
+| `interpretation_id` | Stable id for this result-claim interpretation. If the physical table uses `(result_id, claim_id)` as primary key, this id can be deterministic or stored in properties. |
+| `result_id` | FK-like pointer to `biological_results.result_id`. |
+| `claim_id` | Claim being supported, refuted, or qualified. This is often a child claim in the parent claim DAG. |
+| `stance` | `supports`, `refutes`, `null`, `inconclusive`, `contextual`, or `misleading`. |
+| `relevance` | `decisive`, `supportive`, `proxy`, `irrelevant`, or `misleading`. |
+| `rationale_text` | Required text explaining why this result has this stance for this claim. |
+| `context_fit` | `exact`, `partial`, `mismatch`, or `unknown` relative to the claim and edge-scoped context. |
+| `polarity_alignment` | Whether the measured direction matches the claim polarity. |
+| `proof_node_id` | Optional pointer to a proof/planner node or evidence gap that requested the work. |
+| `attached` | Whether this interpretation counts toward rollups and narratives. |
+| `properties` | Extra audit or evaluator metadata. |
+
+How an analysis is linked to a child claim:
+
+1. A planner decides that a child claim needs evidence, e.g. `SETDB1
+   regulates ERV expression`.
+2. The system runs or reuses an `analysis_run`, e.g. RNA-seq differential
+   expression in SETDB1-high vs SETDB1-low tumors.
+3. The analysis emits one or more `biological_results`.
+4. Each relevant result gets a `result_to_claim` row pointing at the child
+   claim, with `stance`, `relevance`, `context_fit`, and `rationale_text`.
+5. The parent claim reads that child state through `claim_relations`.
+   Parent rollups and `claims.narrative` are therefore grounded in child
+   claim interpretations, not duplicated result rows.
+
+The same `analysis_run` and `biological_result` can attach to many claims.
+Each attachment has its own rationale because the same result can support
+one child claim, refute another, and be only proxy evidence for a parent.
+
+---
+
 ## 2. The claim row — every field
 
 Claim-owned fields, listed in storage order. Proof-search state such as
@@ -282,6 +393,33 @@ NON-STRUCTURAL EDGES:
 
 `chain_dag_of` is the legacy name for `claim_dag_of`. Readers should
 accept both during migration; writers should emit `claim_dag_of`.
+
+Complete relation vocabulary:
+
+| `relation_type` | Category | Direction | Structural DAG edge? | Meaning |
+|---|---|---|---|---|
+| `claim_dag_of` | Parent DAG composition | child -> parent | yes | Canonical edge saying the child claim is a biological fact that may make the parent true under the edge's support operator and context. |
+| `chain_dag_of` | Legacy parent DAG composition | child -> parent | yes, legacy | Old name for `claim_dag_of`; readers accept it, new writers avoid it. |
+| `branches_from` | Parent DAG alternative | child -> parent | yes | Child is one possible mechanism branch or pathway for the parent. |
+| `context_split_of` | Parent DAG context split | child -> parent | yes | Child is the parent claim narrowed to one context value, e.g. melanoma-specific slice of a pan-cancer claim. |
+| `mediator_specific_of` | Parent DAG mediator alternative | child -> parent | yes | Child is a mediator-specific version of a parent mechanism step. |
+| `polarity_inverse_of` | Parent DAG inverse/disproof | inverse child -> parent | yes | Auto-created opposite-polarity child used to track evidence against the parent. |
+| `split_of` | Legacy context split | child -> parent | yes, legacy | Earlier child-to-parent split relation; migrate to `context_split_of` when the split is contextual. |
+| `splits_into` | Legacy context split | parent -> child | legacy/read-compatible | Earlier parent-to-child split relation; normalize to child -> parent when building the final DAG. |
+| `refines` | Versioning/lineage | refined claim -> earlier or broader claim | no | More precise claim supersedes or narrows a previous claim without acting as a support child. |
+| `same_as` | Dedup/equivalence | source -> target | no | Two claim rows assert the same biological statement and should be merged or read as aliases. |
+| `subsumes` | Logical containment | broader claim -> narrower claim | no, unless promoted | Broader claim contains the target claim logically; do not use as a parent support edge unless converted to `claim_dag_of`. |
+| `implies` | Logical implication | parent/source claim -> child/target claim | no, unless promoted | If the source is accepted, the target should follow logically; separate from biological DAG support unless explicitly promoted. |
+| `competes_with` | Alternative/conflict tracking | source -> target, usually symmetric in meaning | no | Claims are competing explanations under the same investigation context. |
+| `contradicts` | Conflict tracking | source -> target | no | Source and target conflict by polarity, evidence, or interpretation. |
+| `corroborates` | Cross-support tracking | source -> target | no | Source provides convergent support but is not a required child in the parent DAG. |
+| `enables` | Mechanistic enablement | enabling event -> consequence claim | no by default | One event enables another; can be promoted into a DAG child edge if it becomes load-bearing for a parent claim. |
+
+Only structural DAG edges are used to evaluate whether a parent claim is
+biologically supported. Non-structural edges are still important for
+deduplication, conflict handling, and search, but they do not count as
+parent support until converted into an active structural edge with a
+support operator, contribution state, and relation-scoped context.
 
 `properties` JSON shape per relation_type:
 
@@ -438,6 +576,19 @@ splits, change support operators, or attach new parent edges to an
 existing child claim. These changes are not proof-search state; they are
 changes to the current biological explanation graph for the parent claim.
 
+Dynamic DAG write rules:
+
+- New parent claims initialize a proposed child DAG immediately or enqueue
+  dynamic planner work to create it.
+- New evidence does not mutate claim text. It creates or updates
+  `result_to_claim` interpretations for the relevant child claim.
+- Child claim status changes flow upward through active structural DAG
+  edges to refresh parent contribution states.
+- Planner updates may add, retire, supersede, or reactivate DAG edges,
+  but each edge keeps its own context and rationale.
+- The same child claim can sit under multiple parents; each parent edge
+  gets its own support operator, relation context, and contribution state.
+
 ### 3.3 Dynamic DAG state and evidence-state summary
 
 Each parent claim should have a generated evidence-state summary in
@@ -451,6 +602,29 @@ not a loose abstract. It must be grounded in:
 - child claim states: supported, refuted, mixed, unproven, or not tested;
 - attached `result_to_claim` interpretations and their rationales;
 - the resulting `confidence_summary`.
+
+Automatic refresh contract:
+
+Every write path that changes the interpreted state of a claim must call
+the narrative evaluator for that claim and recursively for structural
+parents reached through active `claim_relations` edges. This includes:
+
+- claim content, participant, context, relation, polarity, evidence
+  status, prior-art status, or review-status edits;
+- new, changed, attached, detached, or retired `result_to_claim`
+  interpretations;
+- new or changed `biological_results` that are linked to claims through
+  interpretations;
+- new, changed, retired, superseded, or reactivated structural
+  `claim_relations` edges;
+- contradiction-case and prior-art adjudication updates that change
+  review or evidence state.
+
+The refresh writes `claims.narrative`, `claims.narrative_updated_at`, and
+the active DAG edge rollups such as
+`claim_relations.properties.contribution_state`,
+`evidence_rollup`, and `last_evaluated_at`. The narrative is therefore a
+cached explanation of the current KG state, not hand-authored evidence.
 
 The summary should explain how the DAG currently evaluates in language:
 
@@ -1249,19 +1423,32 @@ planner/UCT code that reads and writes this KG.
 
 ### 7.4 Evidence-state summaries
 
-1. Implement a summary generator for `claims.narrative`.
-2. Regenerate the summary whenever:
-   - active child DAG edges change.
-   - child claim evidence status changes.
-   - new `result_to_claim` interpretations attach to the parent or child.
-   - a child edge's contribution state changes.
-3. The generator should output grounded language, not a free-form essay:
+1. Implement a deterministic summary generator for `claims.narrative`.
+2. Wire every claim-state write path through the generator:
+   - claim create/update;
+   - claim text, participant, context, relation, or polarity edit;
+   - evidence/prior-art/review status transition;
+   - `result_to_claim` attach, detach, stance change, rationale change, or
+     retirement;
+   - `biological_results` insert/update when linked interpretations exist;
+   - `claim_relations` insert/update/retire/reactivate for structural DAG
+     edges;
+   - contradiction and prior-art adjudication updates.
+3. Refresh the directly edited claim, then recursively refresh every
+   structural parent reached through active `claim_relations` edges.
+4. Recompute active edge rollups while refreshing:
+   - `contribution_state`: `satisfied`, `partially_satisfied`,
+     `unproven`, `refuted`, or `mixed`;
+   - `evidence_rollup`: supporting/refuting/null/inconclusive
+     interpretation ids and a short summary;
+   - `last_evaluated_at`.
+5. The generator should output grounded language, not a free-form essay:
    - parent claim and context;
    - which active child claims are supported, refuted, mixed, or unproven;
    - which support operator is currently decisive;
    - decisive supporting/refuting result ids and short rationales;
    - why the current `confidence_summary` follows.
-4. Store the output in `claims.narrative` and update
+6. Store the output in `claims.narrative` and update
    `claims.narrative_updated_at`.
 
 ### 7.5 Dynamic proving compatibility
