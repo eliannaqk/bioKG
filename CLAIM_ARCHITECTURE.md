@@ -269,6 +269,58 @@ UCT2 belongs to the dynamic proving architecture, not to the claim object.
 | 22 | `relation_name` | TEXT | `''` | Typed predicate from the relation registry (e.g. `regulates_mrna_stability`, `phosphorylates`, `binds`, `drives_phenotype`). |
 | 23 | `relation_polarity` | TEXT | `''` | `positive` / `negative` / `bidirectional` / `null` / `unknown` / `''` (= NOT_APPLICABLE — the predicate carries no sign, e.g. `binds`). |
 
+Claim participants are also content. They are not columns on the
+`claims` row because one claim can have many participants, multiple role
+groups, optional qualifiers, and context participants. They live in the
+companion `claim_participants` table described in Section 1.2.
+
+The complete claim content object is:
+
+```json
+{
+  "claim_text": "SETDB1 overexpression causes anti-PD1 resistance in melanoma",
+  "relation_name": "causes",
+  "relation_polarity": "positive",
+  "participants": [
+    {
+      "entity_id": "HGNC:SETDB1",
+      "role": "effector_gene",
+      "properties": {
+        "principal": true,
+        "side": "subject",
+        "alteration": "overexpression",
+        "required": true
+      }
+    },
+    {
+      "entity_id": "therapy:anti-PD1_resistance",
+      "role": "therapy_response",
+      "properties": {
+        "principal": true,
+        "side": "object",
+        "required": true
+      }
+    },
+    {
+      "entity_id": "MONDO:melanoma",
+      "role": "context_cancer_type",
+      "properties": {
+        "principal": false,
+        "side": "context",
+        "context_dimension": "cancer_type"
+      }
+    }
+  ],
+  "context_set_json": {
+    "cancer_type": "melanoma"
+  }
+}
+```
+
+So a claim is not fully specified by `claim_text` alone. The load-bearing
+assertion is the relation plus participants plus context; `claim_text`
+and `human_readable` are projections for people and logs.
+
 ### Status — three orthogonal axes
 
 | # | Column | Type | Default | Meaning |
