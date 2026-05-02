@@ -147,6 +147,66 @@ entities. The row shape is intentionally small:
 | `role` | Biological role inside the claim, not a generic graph edge label. |
 | `properties` | JSON qualifiers for role semantics, principal anchoring, context, and composition. |
 
+Serialized on a claim object, participants are a JSON array named
+`participants`. Each element corresponds to one `claim_participants` row:
+
+```json
+{
+  "participants": [
+    {
+      "claim_id": "claim:<stable-claim-id>",
+      "entity_id": "KG_ENTITY_ID",
+      "role": "biological_role_name",
+      "properties": {
+        "principal": true,
+        "side": "subject",
+        "required": true,
+        "role_group": "primary_edge",
+        "operator": "AND",
+        "min_required": null,
+        "alteration": null,
+        "qualifier": {},
+        "context_dimension": null,
+        "evidence_binding": null
+      }
+    }
+  ]
+}
+```
+
+Field-level shape:
+
+| JSON path | Type | Required? | Meaning |
+|---|---|---|---|
+| `participants` | array | yes | All entities that participate in the claim. More biological participants means more array elements, not more columns. |
+| `participants[].claim_id` | string | yes | Claim id; may be omitted only in nested API payloads where the parent object already supplies it. |
+| `participants[].entity_id` | string | yes | Canonical KG entity id. |
+| `participants[].role` | string | yes | Role this entity plays in the claim. |
+| `participants[].properties` | object | yes | Role semantics and composition metadata. Empty object is allowed only for legacy imports. |
+| `properties.principal` | boolean | yes | Whether this participant is a primary edge anchor. |
+| `properties.side` | string enum | yes | `subject`, `object`, `mediator`, or `context`. |
+| `properties.required` | boolean | yes | Whether this participant must be present for this claim to hold. |
+| `properties.role_group` | string or null | optional | Group id for participants that compose together, e.g. `effector_complex`, `therapy_context`, `alternative_targets`. |
+| `properties.operator` | string enum or null | optional | Composition within `role_group`: `AND`, `OR`, or `K_OF_N`. Defaults to `AND` when omitted. |
+| `properties.min_required` | integer or null | conditional | Required when `operator = K_OF_N`. |
+| `properties.alteration` | string, object, or null | optional | Perturbation/state on this participant, e.g. `"overexpression"` or `{"kind": "mutation", "value": "V600E"}`. |
+| `properties.qualifier` | object or string | optional | Residue, isoform, compartment, time point, dose, assay condition, or other local qualifier. |
+| `properties.context_dimension` | string or null | conditional | Required for `side = context`; e.g. `cancer_type`, `cell_type`, `therapy`, `species`, `dataset`. |
+| `properties.evidence_binding` | string or null | optional | How evidence maps to this participant, e.g. `measured_outcome`, `perturbed_entity`, `stratification_variable`. |
+
+Invariants:
+
+- Binary edge-promotable claims should have exactly one principal
+  `subject` participant and one principal `object` participant.
+- N-ary claims use additional participants plus `role_group`, `operator`,
+  and `min_required` to state whether participants are conjunctive,
+  alternative, or k-of-n.
+- Context belongs either in context participants
+  (`properties.side = context`) or in `claims.context_set_json`; both
+  should agree when the same context dimension appears in both places.
+- Load-bearing mechanism steps should become child claims in the claim
+  DAG, not extra flat participants on the parent claim.
+
 Recommended `properties` keys:
 
 | Key | Meaning |
