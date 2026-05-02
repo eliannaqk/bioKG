@@ -207,6 +207,32 @@ Invariants:
 - Load-bearing mechanism steps should become child claims in the claim
   DAG, not extra flat participants on the parent claim.
 
+Better participant modeling conventions:
+
+- Keep the stored row normalized: `claim_id`, `entity_id`, `role`,
+  `properties`. Do not copy entity names, synonyms, or ontology metadata
+  into the participant row; those belong on the KG entity.
+- Keep participant payloads evidence-free. Evidence binds through
+  `result_to_claim`, not through participant properties.
+- Prefer typed objects over free text for state changes. For example,
+  use `{"kind": "expression", "direction": "overexpression"}` instead
+  of only `"overexpression"` when the parser can provide that structure.
+- Use stable role names from a role registry. New role names are allowed,
+  but they should map into one of the role families below so validation
+  and edge projection work.
+- Use child claims for causal mechanism steps. Participants say who is in
+  the assertion; child claims say what biological facts must hold.
+
+Role families:
+
+| Family | Typical `role` values | Expected `side` |
+|---|---|---|
+| Subject-side anchors | `subject`, `effector_gene`, `source_gene`, `perturbed_gene`, `enzyme`, `ligand` | `subject` |
+| Object-side anchors | `object`, `target_gene`, `regulatee`, `outcome`, `phenotype`, `therapy_response`, `substrate` | `object` |
+| Mediators/cofactors | `mediator`, `complex_member`, `cofactor`, `adaptor`, `pathway_member` | `mediator` |
+| Context | `context_cancer_type`, `context_cell_type`, `context_cell_state`, `context_therapy`, `context_mutation`, `context_species`, `context_dataset` | `context` |
+| Confounders/stratifiers | `confounder`, `stratification_variable`, `covariate` | `context` |
+
 Recommended `properties` keys:
 
 | Key | Meaning |
@@ -270,6 +296,104 @@ analysis_runs
 | `result_to_claim` | The interpretation of one result for one claim: stance, relevance, rationale, context fit, proof node, attached flag. | Raw statistics or reusable artifacts. |
 | `claims` | The biological assertion, participants, context, lifecycle status, rollups, and generated narrative. | Raw analysis work. |
 | `claim_relations` | How child claims compose into parent claims, including relation-scoped context and DAG contribution state. | Raw result rows. |
+
+`analysis_runs` fields:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `analysis_id` | string | Stable id for one reusable unit of work. |
+| `analysis_type` | string | Kind of work, e.g. `differential_expression`, `survival_model`, `pathway_enrichment`, `drug_response_association`, `literature_lookup`. |
+| `tool_id` | string | Tool, model, script, or agent that produced the work. |
+| `provider` | string | Execution/provider namespace, e.g. `gbd_agent`, `scanpy`, `r_script`, `pubmed`, `manual_review`. |
+| `dataset_ids` | array | Dataset/cohort ids used by the analysis. |
+| `sample_filters` | object | Inclusion/exclusion filters, contrasts, tissue filters, therapy filters, batch filters. |
+| `parameters` | object | Full parameter set needed to rerun the work. |
+| `params_hash` | string | Deterministic hash of normalized parameters. |
+| `code_version` | string | Git SHA, notebook version, image digest, or script version. |
+| `artifact_uris` | array | Paths/URIs for tables, figures, notebooks, logs, and model outputs. |
+| `status` | string | `planned`, `running`, `succeeded`, `failed`, `superseded`, or `invalidated`. |
+| `started_at` / `completed_at` | string | ISO timestamps. |
+| `created_by` | string | Agent, user, or import pipeline. |
+| `properties` | object | Extra provenance, runtime, or audit metadata. |
+
+`biological_results` fields:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `result_id` | string | Stable id for one reusable biological result. |
+| `analysis_id` | string | Parent `analysis_runs.analysis_id`. |
+| `result_type` | string | Result family, e.g. `differential_expression_result`, `association_result`, `enrichment_result`, `perturbation_effect`, `literature_fact`. |
+| `assay` | string | Assay/modality, e.g. `RNA-seq`, `ATAC-seq`, `CRISPR_screen`, `flow_cytometry`, `IHC`, `literature`. |
+| `measured_entity_id` | string or null | Entity directly measured, e.g. gene, protein, pathway, phenotype. |
+| `perturbation_entity_id` | string or null | Perturbed or stratifying entity, if any. |
+| `comparison` | object | Contrast definition: cases vs controls, high vs low, treated vs untreated, knockout vs wild type. |
+| `outcome` | object | Biological outcome measured, including name, entity id when available, and units. |
+| `direction` | string | `positive`, `negative`, `bidirectional`, `no_change`, or `unknown`; this is the measured direction, not claim support. |
+| `effect_size` | number or null | Numeric effect estimate. |
+| `effect_size_type` | string or null | `log2_fold_change`, `hazard_ratio`, `odds_ratio`, `correlation`, `auroc`, etc. |
+| `p_value` / `q_value` | number or null | Statistical significance fields. |
+| `confidence_interval` | array or string or null | Confidence interval for the effect estimate. |
+| `n_samples` | integer or null | Total samples/cells/subjects used. |
+| `n_cases` / `n_controls` | integer or null | Contrast-specific counts when applicable. |
+| `statistics` | object | Full statistics payload, model coefficients, covariates, and diagnostics. |
+| `context` | object | Biological and dataset context measured by the result: cancer type, cell type, therapy, species, tissue, time point, etc. |
+| `artifact_refs` | array | Specific result table rows, plots, notebooks, or external accession pointers. |
+| `quality` | object | QC flags, batch notes, limitations, missingness, or reliability score. |
+| `created_at` | string | ISO timestamp. |
+| `properties` | object | Extra result metadata. |
+
+Example `biological_results` object:
+
+```json
+{
+  "result_id": "BR:setdb1_high_vs_low_erv_expression",
+  "analysis_id": "AR:tcga_melanoma_setdb1_erv_de",
+  "result_type": "differential_expression_result",
+  "assay": "RNA-seq",
+  "measured_entity_id": "ERV:family_expression_signature",
+  "perturbation_entity_id": "HGNC:SETDB1",
+  "comparison": {
+    "case": "SETDB1-high tumors",
+    "control": "SETDB1-low tumors",
+    "stratification": "upper_vs_lower_quartile"
+  },
+  "outcome": {
+    "name": "ERV expression",
+    "units": "normalized_expression"
+  },
+  "direction": "positive",
+  "effect_size": 1.42,
+  "effect_size_type": "log2_fold_change",
+  "p_value": 0.0008,
+  "q_value": 0.014,
+  "confidence_interval": [0.72, 2.11],
+  "n_samples": 430,
+  "n_cases": 108,
+  "n_controls": 108,
+  "statistics": {
+    "model": "limma",
+    "covariates": ["tumor_purity", "batch"]
+  },
+  "context": {
+    "cancer_type": "melanoma",
+    "species": "human",
+    "dataset": "TCGA-SKCM"
+  },
+  "artifact_refs": ["s3://.../setdb1_erv_de.tsv"],
+  "quality": {
+    "batch_adjusted": true,
+    "limitations": ["observational association"]
+  },
+  "created_at": "2026-05-02T12:00:00Z",
+  "properties": {}
+}
+```
+
+Important: `biological_results` does not decide whether a claim is
+supported or refuted. It stores what the analysis found. The claim
+interpretation lives in `result_to_claim`, where the same result can
+support one child claim, refute another, or be marked as proxy evidence
+for a parent.
 
 `result_to_claim` fields:
 
@@ -658,7 +782,106 @@ parent only under the DAG edge context. This lets the same child claim be
 reused under a different parent with a different rationale, or not reused
 when the parent context makes the mechanism irrelevant.
 
-### 3.2 How the claim DAG is created
+### 3.2 What a DAG child claim is
+
+A DAG child claim is a normal `claims` row. It is not nested inside the
+parent claim and it is not proof-search state. The child has its own:
+
+- `claim_id`;
+- `claim_text`, `relation_name`, `relation_polarity`;
+- `claim_participants`;
+- intrinsic `context_set_json`;
+- evidence/review/prior-art state;
+- direct `result_to_claim` interpretations;
+- generated `claims.narrative`.
+
+The child becomes part of the parent only through a structural
+`claim_relations` row:
+
+```json
+{
+  "relation_id": "rel:child-erv-parent-pd1",
+  "source_claim_id": "claim:setdb1-regulates-erv-expression",
+  "target_claim_id": "claim:setdb1-oe-causes-pd1-resistance",
+  "relation_type": "claim_dag_of",
+  "confidence": 0.82,
+  "properties": {
+    "path_ids": ["p1_erv_ifn_path"],
+    "step_in_path": {"p1_erv_ifn_path": 1},
+    "predecessor_claim_ids": [],
+    "step_role": "molecular_consequence",
+    "support_group_id": "mechanism_path_p1",
+    "parent_support_operator": "ALL_OF",
+    "path_support_operator": "ALL_OF",
+    "sufficiency": "required_component",
+    "dag_edge_status": "active",
+    "contribution_state": "unproven",
+    "relation_context_set_json": {
+      "cancer_type": "melanoma",
+      "therapy": "anti-PD1",
+      "parent_perturbation": "SETDB1 overexpression"
+    },
+    "supports_parent_under_context": true,
+    "context_rationale": "ERV expression is relevant here as one proposed route from SETDB1 overexpression to interferon-state changes under anti-PD1 therapy.",
+    "evidence_rollup": {
+      "supporting_interpretation_ids": [],
+      "refuting_interpretation_ids": [],
+      "null_interpretation_ids": [],
+      "summary": "No attached evidence has evaluated this child in the parent context yet."
+    }
+  }
+}
+```
+
+The direction is always child -> parent for canonical DAG evaluation.
+The parent claim asks: "Given my active child edges and support
+operators, which child biological facts are currently satisfied,
+refuted, mixed, or unproven?"
+
+Child-claim lifecycle:
+
+1. A parent claim is created or updated.
+2. The dynamic claim-DAG planner proposes child biological facts that
+   would make the parent true, false, or context-specific.
+3. Each child is upserted as a normal claim row.
+4. A structural `claim_relations` edge connects child -> parent and
+   stores support logic plus parent-scoped context.
+5. Analyses produce `biological_results`.
+6. `result_to_claim` interpretations attach those results to the child
+   claim with claim-specific stance and rationale.
+7. The DAG evaluator maps the child claim's evidence state onto the
+   parent edge's `contribution_state`.
+8. The parent DAG is re-evaluated using `ALL_OF`, `ANY_OF`, `K_OF_N`,
+   `INDEPENDENT_CAUSES`, or `MUTUALLY_EXCLUSIVE_ALTERNATIVES`.
+9. `claims.narrative` is regenerated for the child and recursively for
+   all structural parents.
+
+Example:
+
+```
+Parent:
+  SETDB1 overexpression causes anti-PD1 resistance in melanoma
+
+Child A:
+  SETDB1 positively regulates ERV expression
+
+Child B:
+  ERV expression increases interferon signaling
+
+Child C:
+  Interferon signaling changes anti-PD1 response state
+
+DAG:
+  Child A --claim_dag_of--> Parent  (path p1, step 1, ALL_OF)
+  Child B --claim_dag_of--> Parent  (path p1, step 2, ALL_OF)
+  Child C --claim_dag_of--> Parent  (path p1, step 3, ALL_OF)
+```
+
+If Child A is supported but Child B is unproven, the parent is not yet
+mechanistically satisfied under `ALL_OF`. If the parent has a second
+independent path with `ANY_OF`, one fully satisfied path can be enough.
+
+### 3.3 How the claim DAG is created
 
 When a parent claim is created, the system should create or update a
 claim DAG as part of claim initialization:
@@ -701,7 +924,7 @@ Dynamic DAG write rules:
 - The same child claim can sit under multiple parents; each parent edge
   gets its own support operator, relation context, and contribution state.
 
-### 3.3 Dynamic DAG state and evidence-state summary
+### 3.4 Dynamic DAG state and evidence-state summary
 
 Each parent claim should have a generated evidence-state summary in
 `claims.narrative`. This text is regenerated whenever the parent claim's
