@@ -135,6 +135,63 @@ context saying when that child helps make the parent true.
 
 ---
 
+### 1.1.1 Dynamic biological relation registry
+
+`relation_name` comes from an open biological relation registry, not a
+closed enum. The registry starts with curated canonical predicates, but
+the system may propose a new relation when the current vocabulary does
+not capture a real biological meaning. New relations must declare:
+
+| Field | Meaning |
+|---|---|
+| `name` | Snake-case relation id, e.g. `regulates_localization`, `self_renews`, `consumes_substrate`. |
+| `parent` | Nearest existing relation family, e.g. `regulates`, `modifies`, `depends_on`, `associates_with`, `is_structural`. |
+| `description` | One-sentence biological meaning. |
+| `polarity_kind` | Whether the relation needs `relation_polarity` or has no sign. |
+| `typical_subject_types` | Entity scales/types that usually appear on the subject side. |
+| `typical_object_types` | Entity scales/types that usually appear on the object side. |
+| `scale_level` | Molecular, cellular, tissue, organismal, ecological, or cross-scale. |
+| `canonicalization_rationale` | Why this is not just a synonym of an existing relation. |
+
+The useful abstraction is not just "gene regulates gene." Biology has
+repeated relation patterns across scales. The registry should recognize
+those analogies so a planner can reuse reasoning paths while preserving
+the correct entity scale.
+
+| Scale/entity | Common relation families | Examples |
+|---|---|---|
+| Protein | Chemical modification, enzymatic reaction, binding, substrate action, localization, compartment transition | `phosphorylates`, `dephosphorylates`, `methylates`, `binds`, `acts_on_substrate`, `localizes_to`, `relocates_to`, `is_secreted`, `imports_to_nucleus` |
+| Gene/DNA | Replication/copying, transcription template, mutation, recombination, inheritance, chromatin/epigenetic state | `is_transcribed_to`, `is_replicated`, `recombines_with`, `has_variant`, `is_inherited`, `is_methylated`, `changes_copy_number` |
+| RNA | RNA production, RNA-RNA/DNA/protein binding, catalysis, splicing/processing, localization, degradation | `is_translated_to`, `binds_rna`, `binds_dna`, `binds_protein`, `catalyzes`, `is_spliced`, `localizes_to`, `is_degraded` |
+| Cell | Metabolism, consumption/production, secretion, uptake, division, death, state transition, migration, cell-cell interaction | `consumes`, `produces`, `secretes`, `takes_up`, `proliferates`, `undergoes_apoptosis`, `transitions_to_state`, `migrates_to`, `interacts_with_cell` |
+| Tissue | Self-organization, embryologic patterning, homeostasis, repair, regeneration, specialized function, metabolism, production/consumption | `self_organizes`, `patterns_during_development`, `maintains_homeostasis`, `heals`, `regenerates`, `performs_function`, `consumes`, `produces` |
+| Organism | Reproduction, organism-organism interaction, relocation, consumption, death, development, host-pathogen interaction | `reproduces`, `interacts_with_organism`, `relocates_to`, `consumes`, `dies`, `develops_into`, `hosts`, `infects` |
+
+Cross-scale alignment matters. A protein can relocate between
+compartments, a cell can migrate between tissues, and an organism can
+relocate between environments. Those are not identical relations, but
+they share a path-like schema: source entity, origin context, destination
+context, transport/localization mechanism, and consequence. The planner
+can use this analogy to propose child claims at the right scale without
+collapsing protein movement, cell migration, and organism movement into
+one vague predicate.
+
+Dynamic relation rule:
+
+- Prefer an existing canonical relation when it captures the meaning.
+- If the claim expresses a new biological action, propose a child
+  relation under the nearest parent relation family.
+- Do not create a new relation for a synonym, polarity variant, or
+  narrower context; those belong in aliases, `relation_polarity`, or
+  context.
+- Proposed relations are usable immediately but should carry provenance
+  and remain reviewable.
+- Query expansion walks parent/child relation ancestry, so searching for
+  `relocates` can include protein localization, cell migration, and
+  organism relocation when the caller asks for a cross-scale view.
+
+---
+
 ## 1.2 Claim participant rows
 
 `claim_participants` is the table that makes a claim sit on actual KG
@@ -708,6 +765,15 @@ support operator, contribution state, and relation-scoped context.
         "perturbation": "SETDB1 overexpression",
         "immune_context": "IFNg-exposed tumor microenvironment"
     },
+    "context_compatibility": "parent_context_subset_of_child_context",
+    "parent_context_projection": {
+        "cancer_type": "melanoma",
+        "therapy": "anti-PD1"
+    },
+    "child_context_projection": {
+        "cancer_type": "melanoma"
+    },
+    "missing_context_dimensions": [],
     "context_inheritance": "narrow_parent",
     "supports_parent_under_context": True,
     "context_rationale": "ERV regulation is relevant to PD1 resistance only in the anti-PD1 melanoma context."
@@ -782,6 +848,40 @@ parent only under the DAG edge context. This lets the same child claim be
 reused under a different parent with a different rationale, or not reused
 when the parent context makes the mechanism irrelevant.
 
+Context compatibility rule:
+
+Context objects denote sets of biological situations. More context
+constraints mean a narrower set. For a child claim to support a parent,
+the parent context should usually be a subset of the child claim's valid
+context, or the edge must explain why the overlap is still biologically
+meaningful.
+
+Examples:
+
+- Valid narrowing: child says `SETDB1 regulates ERV expression in tumor
+  cells`; parent says `SETDB1 overexpression causes anti-PD1 resistance
+  in melanoma`. The parent context is narrower, so the child could be
+  true in the parent context.
+- Exact match: child and parent both specify melanoma anti-PD1 context.
+- Too narrow without justification: child only holds in `IFNg-exposed
+  melanoma`, but parent is all melanoma. The edge can still exist as
+  proposed, but it should not be counted as satisfied until the missing
+  context dimension is resolved.
+- Mismatch: child holds in T cells, but parent mechanism requires a tumor
+  cell-intrinsic SETDB1 effect. The edge should be inactive, refuting, or
+  assigned to a different parent context.
+
+Each structural DAG edge should therefore store:
+
+| Property | Meaning |
+|---|---|
+| `relation_context_set_json` | Parent-scoped context where this child is relevant. |
+| `context_compatibility` | `parent_context_subset_of_child_context`, `exact_match`, `overlap_with_unresolved_dimensions`, `child_context_subset_of_parent_context`, or `context_mismatch`. |
+| `parent_context_projection` | Parent context dimensions used for the compatibility check. |
+| `child_context_projection` | Child intrinsic context dimensions used for the compatibility check. |
+| `missing_context_dimensions` | Context dimensions required before the child can decisively support the parent. |
+| `context_rationale` | Text explanation of why the child can or cannot make the parent true in this context. |
+
 ### 3.2 What a DAG child claim is
 
 A DAG child claim is a normal `claims` row. It is not nested inside the
@@ -821,6 +921,17 @@ The child becomes part of the parent only through a structural
       "therapy": "anti-PD1",
       "parent_perturbation": "SETDB1 overexpression"
     },
+    "context_compatibility": "parent_context_subset_of_child_context",
+    "parent_context_projection": {
+      "cancer_type": "melanoma",
+      "therapy": "anti-PD1"
+    },
+    "child_context_projection": {
+      "cell_type": "tumor_cell",
+      "cancer_type": "*",
+      "therapy": "*"
+    },
+    "missing_context_dimensions": [],
     "supports_parent_under_context": true,
     "context_rationale": "ERV expression is relevant here as one proposed route from SETDB1 overexpression to interferon-state changes under anti-PD1 therapy.",
     "evidence_rollup": {
@@ -1734,6 +1845,14 @@ planner/UCT code that reads and writes this KG.
      not unstructured participant decorations.
 4. Update `edge_signature` generation to use principal anchors,
    `relation_name`, normalized context, and the documented polarity policy.
+5. Make the relation registry open-world but governed:
+   - seed cross-scale biological relation families for proteins, genes,
+     RNA, cells, tissues, and organisms.
+   - allow proposed relations only when they declare a canonical parent,
+     entity scale, subject/object type expectations, polarity policy, and
+     a non-synonym rationale.
+   - preserve cross-scale analogies such as localization, migration, and
+     relocation without collapsing them into one vague predicate.
 
 ### 7.3 Claim DAG creation
 
@@ -1750,10 +1869,17 @@ planner/UCT code that reads and writes this KG.
    - contribution state: satisfied, partially satisfied, unproven,
      refuted, or mixed.
    - relation-scoped context and rationale.
-5. Enforce acyclicity and allow multi-parent child claims.
-6. Add a DAG evaluator that recomputes parent satisfaction from active
+5. Add a context-compatibility evaluator for structural edges:
+   - compare parent context, child intrinsic context, and edge-scoped
+     context.
+   - prefer `parent_context_subset_of_child_context` or `exact_match`.
+   - mark edges with missing or mismatched context as proposed,
+     unresolved, inactive, or non-decisive until the context gap is
+     handled.
+6. Enforce acyclicity and allow multi-parent child claims.
+7. Add a DAG evaluator that recomputes parent satisfaction from active
    child claims, support operators, and child evidence states.
-7. Backfill existing `chain_dag_of` rows to `claim_dag_of` or support both
+8. Backfill existing `chain_dag_of` rows to `claim_dag_of` or support both
    behind one helper API.
 
 ### 7.4 Evidence-state summaries
