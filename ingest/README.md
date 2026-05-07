@@ -61,6 +61,8 @@ loader is safe.
 
 | File | Sources covered |
 |---|---|
+| `CLAIM_OBJECT_SIMPLE.md` | Simple parent-claim / child-claim / claim-DAG examples. |
+| `CLAIM_OBJECT_MECHANISM_DAG_EXAMPLES.md` | Organized claim object guide with SETDB1 and ADAR1 mechanism DAG examples. |
 | `populate_knowledge_graph.py` | Driver. Phases: genes, interactions, lincs, diseases. |
 | `populate_kg_worker.py` | Sharded workers for `populate_genes` and `populate_interactions`. |
 | `populate_kg_full.py` | ChEMBL indications, InterPro, EFO/Disease hierarchy, Cell Ontology, OncoTree, KEGG, ClinVar, miRBase, IPD-IMGT/HLA. |
@@ -78,4 +80,3 @@ loader is safe.
 | `populate_kg_reference_edges.py` | Reactome pathway membership, CollecTRI, STRING (reference graph). |
 | `merge_kg_shards.py` | Batch-insert all `kg_shards/*.json` into SQLite. |
 | `populate_kg.sh` | SLURM wrapper for `populate_knowledge_graph.py --phase all`. |
-
