@@ -10,6 +10,10 @@ This is the minimal mental model for the current proof-DAG fork.
 | Child claim | A mechanism step that helps prove the parent | `claims` |
 | Claim DAG edge | The statement that a child belongs to the parent mechanism | `claim_relations` |
 
+The child claim does not need a special legacy type. It should be a normal
+claim row, with a property such as `node_kind = atomic_mechanism_claim` if the
+caller needs to distinguish mechanism leaves from parent/module claims.
+
 Evidence does not live directly on the claim. It is interpreted through:
 
 ```text
@@ -78,10 +82,13 @@ Child claim row:
 ```json
 {
   "claim_id": "claim:setdb1-pd1-resistance:step1",
-  "claim_type": "CausalChainLinkClaim",
+  "claim_type": "<domain-specific claim type>",
   "claim_text": "SETDB1 increases H3K9me3 at ERV loci.",
-  "relation_name": "mechanism_subclaim_of",
-  "relation_polarity": "positive"
+  "relation_name": "modulates_epigenetic_state",
+  "relation_polarity": "positive",
+  "properties": {
+    "node_kind": "atomic_mechanism_claim"
+  }
 }
 ```
 
@@ -126,6 +133,10 @@ Child 4: lower immune activation reduces PD-1 response.
 
 Each child can then get its own evidence and its own UCT2 proof DAG.
 
+If the same anchor fact supports two downstream mechanisms, store it once and
+connect that one child claim to both mechanism modules. That shared outgoing
+edge pattern is what makes this a DAG rather than a tree.
+
 ## Quick Queries
 
 Show the mechanism children for a parent:
@@ -153,4 +164,3 @@ SELECT claim_id, uct2
 FROM claims
 WHERE claim_id = '<child_claim_id>';
 ```
-
