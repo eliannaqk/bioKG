@@ -497,7 +497,7 @@ UCT2 belongs to the dynamic proving architecture, not to the claim object.
 | # | Column | Type | Default | Meaning |
 |---|---|---|---|---|
 | 0 | `claim_id` | TEXT | — | Unique stable id (PRIMARY KEY). |
-| 1 | `claim_type` | TEXT | — | Enum value from `ClaimType` (e.g. `GeneGeneCorrelationClaim`, `MechanismHypothesisClaim`, `CausalChainLinkClaim`, `PhosphorylationClaim`, …). |
+| 1 | `claim_type` | TEXT | — | Enum value from `ClaimType` (e.g. `GeneGeneCorrelationClaim`, `MechanismHypothesisClaim`, `SupersetClaim`, `PhosphorylationClaim`, …). |
 | 2 | `status` | TEXT | `''` | Free-text legacy status; superseded by `evidence_status` / `review_status`. |
 
 ### Content — what the claim asserts
@@ -1416,7 +1416,7 @@ activity dephosphorylates PIP3 to PIP2, terminating PI3K signaling.
 ```
 ─── claims row ─────────────────────────────────────────────────────
 claim_id                = 'mh:PTEN-loss-AKT-glioma-proliferation__link-1-pten-phosphatase'
-claim_type              = 'CausalChainLinkClaim'
+claim_type              = 'MechanismHypothesisClaim'
 status                  = ''
 human_readable          = 'PTEN dephosphorylates PIP3 to PIP2 (lipid phosphatase activity)'
 proof_level             = 4     (perturbational_molecular)

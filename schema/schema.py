@@ -80,8 +80,12 @@ class ClaimType(str, Enum):
     CONTRADICTION = "ContradictionClaim"
     NOVELTY_ASSESSMENT = "NoveltyAssessmentClaim"
 
-    # Composite-claim decomposition: each step is its own first-class claim
-    # with parent_claim_id pointing at the composite.
+    # Composite / mechanism DAG nodes. Parent/module nodes are usually
+    # SupersetClaim; generated mechanism leaves use MechanismHypothesisClaim
+    # plus node_kind metadata instead of a special chain-link type.
+    MECHANISM_HYPOTHESIS = "MechanismHypothesisClaim"
+    SUPERSET_CLAIM = "SupersetClaim"
+    # Deprecated read-compatible legacy value. Do not use for new writes.
     CAUSAL_CHAIN_LINK = "CausalChainLinkClaim"
 
 
