@@ -1,31 +1,5 @@
 # Claim Object
 
-Status: legacy architecture note. The claim-object fields are still useful,
-but the claim-DAG storage described below has been superseded by
-`CLAIM_DECOMPOSITION_DAG_ARCHITECTURE.md`.
-
-Current direction:
-
-```text
-claims                    = durable biological assertions
-claim_relations           = semantic relations between claims only
-claim_decomposition_edges = proof/decomposition DAG consumed by the agent
-```
-
-`claim_type` should not drive agent proof logic. If present during migration,
-it is compatibility or derived metadata.
-
----
-
-Final schema for `claims` and its satellites. The claim object is the
-reified edge in the biological KG: it connects participant entities
-through a typed relation, carries context and status, and can itself be
-connected into a claim DAG of mechanistic child claims. Analysis work is
-stored once and linked to any number of claims through claim-specific
-interpretations.
-
----
-
 ## 1. Where the data lives
 
 A claim's persistence is split across **nine logical stores**. Each
