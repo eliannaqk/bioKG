@@ -232,6 +232,11 @@ F_SREBP2_ACTIVATED enables F_LDLR_UPREGULATED
 F_LDLR_UPREGULATED enables F_SERUM_LDL_CLEARED
 ```
 
+This is a context-free biochemical chain example. The parent does not require
+a genotype/state anchor such as "MMR-deficient genome" or "del(5q) clone"
+before the substrate exists. Section 11 uses WRN/MSI to show the contrasting
+pattern: a required context module plus a linear mechanism chain.
+
 ## 6. ANY_OF Mechanism: Ferroptosis Suppression
 
 Parent:
@@ -269,6 +274,9 @@ flowchart TD
 
 The two modules are sufficient alternatives. Both may be true in the same cell,
 but either one can satisfy this parent claim.
+
+Section 12 expands this into the FSP1/GPX4 Nature example and explains why
+there is no clean shared upstream anchor.
 
 ## 7. K_OF_N Mechanism: Senescence Call
 
@@ -379,7 +387,241 @@ flowchart TD
 More than one cause may be true. The search policy should prefer the cause
 most plausible in the current `context_set_json`.
 
-## 10. Minimal SQL
+## 10. Statins As The Context-Free ALL_OF Reference
+
+The statin example in Section 5 is the reference pattern for a required
+mechanism chain without a separate context anchor:
+
+```text
+P_STATINS_LDL = M_HEPATIC_UPTAKE AND M_SREBP2_LDLR_AXIS
+```
+
+The decomposition is still modular, but all modules are mechanism modules. The
+claim does not first need a disease-genotype context such as MSI, BRCA1/2
+deficiency, or del(5q). That is why the statin example is structurally closer
+to the BRCA/PARP chain than to WRN/MSI or lenalidomide/del(5q) MDS.
+
+## 11. WRN / MSI Synthetic Lethality
+
+Parent:
+
+```text
+P_WRN_MSI_SL:
+WRN loss or inhibition selectively kills microsatellite-unstable cancer cells.
+```
+
+This is the clean required-context-anchor pattern. The parent needs both a
+context module and a mechanism module:
+
+```text
+P_WRN_MSI_SL = M_MSI_CONTEXT AND M_WRN_LOSS_DAMAGE_CHAIN
+M_MSI_CONTEXT = F_MMR_DEFICIENT AND F_TA_REPEAT_EXPANDED
+M_WRN_LOSS_DAMAGE_CHAIN =
+  F_CRUCIFORM_SUBSTRATE AND
+  F_REPLICATION_FORK_STALLING AND
+  F_MUS81_CLEAVAGE AND
+  F_DSB_CHROMOSOME_SHATTERING AND
+  F_MSI_SELECTIVE_DEATH
+```
+
+Atomic claims:
+
+| Claim | Meaning |
+|---|---|
+| `F_MMR_DEFICIENT` | The cancer context is mismatch-repair deficient / microsatellite unstable. |
+| `F_TA_REPEAT_EXPANDED` | TA-dinucleotide repeat expansions are present in the MSI genome. |
+| `F_CRUCIFORM_SUBSTRATE` | Expanded TA repeats form non-B DNA structures such as cruciform-like substrates. |
+| `F_REPLICATION_FORK_STALLING` | Those structures stall replication forks and require WRN-dependent resolution. |
+| `F_MUS81_CLEAVAGE` | Without WRN, structure-specific nucleases such as MUS81 cleave the stalled substrate. |
+| `F_DSB_CHROMOSOME_SHATTERING` | Cleavage produces DNA double-strand breaks and chromosome shattering. |
+| `F_MSI_SELECTIVE_DEATH` | The damage response produces MSI-selective growth arrest or death. |
+
+```mermaid
+flowchart TD
+  P["P_WRN_MSI_SL"]
+  CTX["M_MSI_CONTEXT"]
+  MECH["M_WRN_LOSS_DAMAGE_CHAIN"]
+  C1["F_MMR_DEFICIENT"]
+  C2["F_TA_REPEAT_EXPANDED"]
+  A["F_CRUCIFORM_SUBSTRATE"]
+  B["F_REPLICATION_FORK_STALLING"]
+  C["F_MUS81_CLEAVAGE"]
+  D["F_DSB_CHROMOSOME_SHATTERING"]
+  E["F_MSI_SELECTIVE_DEATH"]
+
+  CTX -- "ALL_OF at P; source_role=context_bridge" --> P
+  MECH -- "ALL_OF at P; source_role=required_step" --> P
+
+  C1 -- "ALL_OF at M_MSI_CONTEXT" --> CTX
+  C2 -- "ALL_OF at M_MSI_CONTEXT" --> CTX
+
+  A -- "ALL_OF at M_WRN_LOSS_DAMAGE_CHAIN" --> MECH
+  B -- "ALL_OF at M_WRN_LOSS_DAMAGE_CHAIN" --> MECH
+  C -- "ALL_OF at M_WRN_LOSS_DAMAGE_CHAIN" --> MECH
+  D -- "ALL_OF at M_WRN_LOSS_DAMAGE_CHAIN" --> MECH
+  E -- "ALL_OF at M_WRN_LOSS_DAMAGE_CHAIN" --> MECH
+```
+
+Why this is not just a chain: without the upstream MMR-deficient/MSI state,
+the expanded-repeat substrate does not exist at the right scale, and the WRN
+dependency vanishes. That context is therefore an `ALL_OF` sibling of the
+mechanism module, not background prose.
+
+Mechanistic order still belongs in semantic relations:
+
+```text
+F_MMR_DEFICIENT enables F_TA_REPEAT_EXPANDED
+F_TA_REPEAT_EXPANDED enables F_CRUCIFORM_SUBSTRATE
+F_CRUCIFORM_SUBSTRATE enables F_REPLICATION_FORK_STALLING
+F_REPLICATION_FORK_STALLING enables F_MUS81_CLEAVAGE
+F_MUS81_CLEAVAGE enables F_DSB_CHROMOSOME_SHATTERING
+F_DSB_CHROMOSOME_SHATTERING enables F_MSI_SELECTIVE_DEATH
+```
+
+Source anchors:
+
+- Chan et al., "WRN helicase is a synthetic lethal target in microsatellite unstable cancers", Nature 2019, https://www.nature.com/articles/s41586-019-1102-x
+- van Wietmarschen et al., "Repeat expansions confer WRN dependence in microsatellite-unstable cancers", Nature 2020, https://www.nature.com/articles/s41586-020-2769-8
+
+## 12. FSP1 / GPX4 Ferroptosis Suppression
+
+Parent:
+
+```text
+P_FERROPTOSIS_SUPPRESSED:
+Cells suppress ferroptosis by detoxifying lipid peroxides or lipid radicals.
+```
+
+This is the pure `ANY_OF` pattern with no clean shared anchor:
+
+```text
+P_FERROPTOSIS_SUPPRESSED = M_GPX4_AXIS OR M_FSP1_AXIS
+M_GPX4_AXIS = F_GSH_AVAILABLE AND F_GPX4_REDUCES_LIPID_PEROXIDES
+M_FSP1_AXIS = F_COQ10_AVAILABLE AND F_NADPH_AVAILABLE AND F_FSP1_REGENERATES_COQ10
+```
+
+The two systems have different cofactors, localization, and chemistry. They
+converge only at the phenotype level: lipid-peroxide/radical detoxification
+and ferroptosis suppression. Do not force a shared upstream anchor just to make
+the graph look symmetric.
+
+```mermaid
+flowchart TD
+  P["P_FERROPTOSIS_SUPPRESSED"]
+  G["M_GPX4_AXIS"]
+  F["M_FSP1_AXIS"]
+  G1["F_GSH_AVAILABLE"]
+  G2["F_GPX4_REDUCES_LIPID_PEROXIDES"]
+  F1["F_COQ10_AVAILABLE"]
+  F2["F_NADPH_AVAILABLE"]
+  F3["F_FSP1_REGENERATES_COQ10"]
+
+  G -- "ANY_OF at P; source_role=sufficient_module" --> P
+  F -- "ANY_OF at P; source_role=sufficient_module" --> P
+
+  G1 -- "ALL_OF at M_GPX4_AXIS" --> G
+  G2 -- "ALL_OF at M_GPX4_AXIS" --> G
+
+  F1 -- "ALL_OF at M_FSP1_AXIS" --> F
+  F2 -- "ALL_OF at M_FSP1_AXIS" --> F
+  F3 -- "ALL_OF at M_FSP1_AXIS" --> F
+```
+
+Contrast with SETDB1: SETDB1 has a real shared upstream chromatin anchor.
+FSP1/GPX4 does not. The correct parent operator is `ANY_OF`, not `ALL_OF`.
+
+Source anchor: Bersuker et al., "The CoQ oxidoreductase FSP1 acts parallel to
+GPX4 to inhibit ferroptosis", Nature 2019,
+https://www.nature.com/articles/s41586-019-1705-2.
+
+Related Nature anchor: Doll et al., "FSP1 is a glutathione-independent
+ferroptosis suppressor", Nature 2019,
+https://www.nature.com/articles/s41586-019-1707-0.
+
+## 13. Lenalidomide / CK1alpha In del(5q) MDS
+
+Parent:
+
+```text
+P_LEN_DEL5Q_MDS:
+Lenalidomide creates a therapeutic window in del(5q) MDS by degrading CK1alpha.
+```
+
+This is "therapeutic window from AND": a required genetic context anchor plus a
+drug-mechanism chain.
+
+```text
+P_LEN_DEL5Q_MDS = M_DEL5Q_CONTEXT AND M_CK1A_DRUG_CHAIN
+M_DEL5Q_CONTEXT = F_DEL5Q_PRESENT AND F_CSNK1A1_IN_CDR AND F_CK1A_HAPLOINSUFFICIENT
+M_CK1A_DRUG_CHAIN =
+  F_LENALIDOMIDE_BINDS_CRBN AND
+  F_CRBN_RECRUITS_CK1A AND
+  F_CK1A_UBIQUITINATED AND
+  F_CK1A_DEGRADED AND
+  F_DEL5Q_SELECTIVE_DEATH
+```
+
+```mermaid
+flowchart TD
+  P["P_LEN_DEL5Q_MDS"]
+  CTX["M_DEL5Q_CONTEXT"]
+  DRUG["M_CK1A_DRUG_CHAIN"]
+  C1["F_DEL5Q_PRESENT"]
+  C2["F_CSNK1A1_IN_CDR"]
+  C3["F_CK1A_HAPLOINSUFFICIENT"]
+  D1["F_LENALIDOMIDE_BINDS_CRBN"]
+  D2["F_CRBN_RECRUITS_CK1A"]
+  D3["F_CK1A_UBIQUITINATED"]
+  D4["F_CK1A_DEGRADED"]
+  D5["F_DEL5Q_SELECTIVE_DEATH"]
+
+  CTX -- "ALL_OF at P; source_role=context_bridge" --> P
+  DRUG -- "ALL_OF at P; source_role=required_step" --> P
+
+  C1 -- "ALL_OF at M_DEL5Q_CONTEXT" --> CTX
+  C2 -- "ALL_OF at M_DEL5Q_CONTEXT" --> CTX
+  C3 -- "ALL_OF at M_DEL5Q_CONTEXT" --> CTX
+
+  D1 -- "ALL_OF at M_CK1A_DRUG_CHAIN" --> DRUG
+  D2 -- "ALL_OF at M_CK1A_DRUG_CHAIN" --> DRUG
+  D3 -- "ALL_OF at M_CK1A_DRUG_CHAIN" --> DRUG
+  D4 -- "ALL_OF at M_CK1A_DRUG_CHAIN" --> DRUG
+  D5 -- "ALL_OF at M_CK1A_DRUG_CHAIN" --> DRUG
+```
+
+This is structurally distinct from synthetic lethality. The del(5q) context
+creates reduced CK1alpha reserve; lenalidomide then creates drug-induced
+degradation through CRBN. Both are required for the therapeutic-window parent.
+
+Cross-parent join example:
+
+```text
+F_LENALIDOMIDE_BINDS_CRBN
+```
+
+is one atomic claim. It can feed many drug-mechanism modules:
+
+```mermaid
+flowchart TD
+  D1["F_LENALIDOMIDE_BINDS_CRBN"]
+  CK["M_CK1A_DRUG_CHAIN\ndel(5q) MDS parent"]
+  MM["M_IKZF1_3_MYELOMA_CHAIN\nmultiple myeloma parent"]
+  TC["M_IKZF1_3_TCELL_CHAIN\nT-cell / immune-modulation parent"]
+
+  D1 -- "ALL_OF; source_role=shared_anchor" --> CK
+  D1 -- "ALL_OF; source_role=shared_anchor" --> MM
+  D1 -- "ALL_OF; source_role=shared_anchor" --> TC
+```
+
+The shared claim is not duplicated as `D1_for_MDS`, `D1_for_myeloma`, and
+`D1_for_T_cells`. It has many decomposition parents.
+
+Source anchors:
+
+- Kronke et al., "Lenalidomide induces ubiquitination and degradation of CK1alpha in del(5q) MDS", Nature 2015, https://www.nature.com/articles/nature14610
+- Petzold et al., "Structural basis of lenalidomide-induced CK1alpha degradation by the CRL4-CRBN ubiquitin ligase", Nature 2016, https://www.nature.com/articles/nature16979
+
+## 14. Minimal SQL
 
 Find active decomposition children:
 
