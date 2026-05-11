@@ -1,5 +1,22 @@
 # Claim Object
 
+Status: legacy architecture note. The claim-object fields are still useful,
+but the claim-DAG storage described below has been superseded by
+`CLAIM_DECOMPOSITION_DAG_ARCHITECTURE.md`.
+
+Current direction:
+
+```text
+claims                    = durable biological assertions
+claim_relations           = semantic relations between claims only
+claim_decomposition_edges = proof/decomposition DAG consumed by the agent
+```
+
+`claim_type` should not drive agent proof logic. If present during migration,
+it is compatibility or derived metadata.
+
+---
+
 Final schema for `claims` and its satellites. The claim object is the
 reified edge in the biological KG: it connects participant entities
 through a typed relation, carries context and status, and can itself be
@@ -497,7 +514,7 @@ UCT2 belongs to the dynamic proving architecture, not to the claim object.
 | # | Column | Type | Default | Meaning |
 |---|---|---|---|---|
 | 0 | `claim_id` | TEXT | — | Unique stable id (PRIMARY KEY). |
-| 1 | `claim_type` | TEXT | — | Enum value from `ClaimType` (e.g. `GeneGeneCorrelationClaim`, `MechanismHypothesisClaim`, `SupersetClaim`, `PhosphorylationClaim`, …). |
+| 1 | `claim_type` | TEXT | — | Legacy/derived classifier. Do not use for proof logic; target schema removes this from core claim identity. |
 | 2 | `status` | TEXT | `''` | Free-text legacy status; superseded by `evidence_status` / `review_status`. |
 
 ### Content — what the claim asserts

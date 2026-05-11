@@ -1,18 +1,27 @@
 # Claim Object, Simple Version
 
-This is the minimal mental model for the current proof-DAG fork.
+This is the minimal mental model for the claim object and the proof
+decomposition DAG.
 
-## The Three Objects
+## The Three Stores
 
-| Thing | What it is | Where it lives |
+| Store | Job | Used for Boolean proof rollup? |
 |---|---|---|
-| Parent claim | The main hypothesis we care about | `claims` |
-| Child claim | A mechanism step that helps prove the parent | `claims` |
-| Claim DAG edge | The statement that a child belongs to the parent mechanism | `claim_relations` |
+| `claims` | Durable biological assertions. | No, not by itself. |
+| `claim_relations` | Semantic relationships between claims, such as `same_as`, `refines`, `contradicts`, `enables`, and `corroborates`. | No. |
+| `claim_decomposition_edges` | Proof/decomposition DAG edges consumed by the agent. | Yes. |
 
-The child claim does not need a special legacy type. It should be a normal
-claim row, with a property such as `node_kind = atomic_mechanism_claim` if the
-caller needs to distinguish mechanism leaves from parent/module claims.
+The important separation is:
+
+```text
+claim_relations says how claims relate biologically or semantically.
+claim_decomposition_edges says how child claims compose to prove a parent.
+```
+
+`claim_type` is not part of the core claim object. A claim is defined by its
+text, relation, participants, context, status, evidence rollups, and stable
+identity. If `claim_type` exists during migration, treat it as legacy or
+derived metadata, not something the agent depends on.
 
 Evidence does not live directly on the claim. It is interpreted through:
 
@@ -31,32 +40,33 @@ SETDB1 overexpression causes anti-PD-1 resistance.
 Mechanism child claims:
 
 ```text
-C1: SETDB1 increases H3K9me3 at ERV loci.
-C2: H3K9me3 represses ERV transcription.
-C3: ERV repression lowers tumour immune activation.
+F1: SETDB1 increases H3K9me3 at ERV loci.
+F2: H3K9me3 represses ERV transcription.
+F3: ERV repression lowers tumour immune activation.
 ```
 
-The claim DAG:
+The proof/decomposition DAG:
 
 ```mermaid
 flowchart TD
-  C1["C1: SETDB1 increases H3K9me3 at ERV loci"]
-  C2["C2: H3K9me3 represses ERV transcription"]
-  C3["C3: ERV repression lowers tumour immune activation"]
-  P["Parent: SETDB1 overexpression causes anti-PD-1 resistance"]
+  F1["F1: SETDB1 increases H3K9me3 at ERV loci"]
+  F2["F2: H3K9me3 represses ERV transcription"]
+  F3["F3: ERV repression lowers tumour immune activation"]
+  P["P: SETDB1 overexpression causes anti-PD-1 resistance"]
 
-  C1 -- "claim_dag_of; ALL_OF" --> P
-  C2 -- "claim_dag_of; ALL_OF" --> P
-  C3 -- "claim_dag_of; ALL_OF" --> P
+  F1 -- "claim_decomposition_edges; ALL_OF" --> P
+  F2 -- "claim_decomposition_edges; ALL_OF" --> P
+  F3 -- "claim_decomposition_edges; ALL_OF" --> P
 
-  C1 -. "enables" .-> C2
-  C2 -. "enables" .-> C3
+  F1 -. "claim_relations: enables" .-> F2
+  F2 -. "claim_relations: enables" .-> F3
 ```
 
 Read this as:
 
 ```text
-The parent claim is not satisfied until C1, C2, and C3 are all supported.
+The parent claim is not satisfied until F1, F2, and F3 are all supported.
+The enables edges are narrative/temporal ordering only.
 ```
 
 ## What Gets Stored
@@ -66,14 +76,18 @@ Parent claim row:
 ```json
 {
   "claim_id": "claim:setdb1-pd1-resistance",
-  "claim_type": "SupersetClaim",
   "claim_text": "SETDB1 overexpression causes anti-PD-1 resistance.",
   "relation_name": "causes_resistance_to",
   "relation_polarity": "positive",
   "context_set_json": {
     "therapy": "anti-PD1",
     "cell_type": "tumor_cell"
-  }
+  },
+  "evidence_status": "unchecked",
+  "prior_art_status": "new",
+  "review_status": "draft",
+  "edge_signature": "<canonical hash>",
+  "full_data": {}
 }
 ```
 
@@ -81,37 +95,53 @@ Child claim row:
 
 ```json
 {
-  "claim_id": "claim:setdb1-pd1-resistance:step1",
-  "claim_type": "<domain-specific claim type>",
+  "claim_id": "claim:setdb1-h3k9me3-erv",
   "claim_text": "SETDB1 increases H3K9me3 at ERV loci.",
-  "relation_name": "modulates_epigenetic_state",
+  "relation_name": "increases",
   "relation_polarity": "positive",
-  "properties": {
-    "node_kind": "atomic_mechanism_claim"
-  }
+  "context_set_json": {
+    "cell_type": "tumor_cell",
+    "locus_class": "ERV"
+  },
+  "evidence_status": "unchecked",
+  "prior_art_status": "new",
+  "review_status": "draft",
+  "edge_signature": "<canonical hash>",
+  "full_data": {}
 }
 ```
 
-Claim DAG edge:
+Proof/decomposition edge:
 
 ```json
 {
-  "source_claim_id": "claim:setdb1-pd1-resistance:step1",
+  "edge_id": "decomp:setdb1-pd1:F1",
+  "source_claim_id": "claim:setdb1-h3k9me3-erv",
   "target_claim_id": "claim:setdb1-pd1-resistance",
-  "relation_type": "claim_dag_of",
-  "properties": {
-    "parent_support_operator": "ALL_OF",
-    "claim_dag_node_kind": "mechanism_step",
-    "step_index": 1,
-    "dag_edge_status": "active"
-  }
+  "support_operator": "ALL_OF",
+  "support_operator_params": {},
+  "source_role": "required_step",
+  "target_role": "parent_claim",
+  "group_id": "setdb1_required_mechanism",
+  "edge_status": "active"
+}
+```
+
+Semantic ordering relation:
+
+```json
+{
+  "relation_id": "rel:setdb1-h3k9me3-enables-erv-repression",
+  "source_claim_id": "claim:setdb1-h3k9me3-erv",
+  "target_claim_id": "claim:h3k9me3-represses-erv",
+  "relation_kind": "enables",
+  "relation_status": "active"
 }
 ```
 
 ## The Most Important Rule
 
-Use child claims for mechanism steps. Do not hide a mechanism inside one giant
-parent claim.
+Do not hide a mechanism inside one giant parent claim.
 
 Bad:
 
@@ -131,21 +161,32 @@ Child 3: ERV repression lowers immune activation.
 Child 4: lower immune activation reduces PD-1 response.
 ```
 
-Each child can then get its own evidence and its own UCT2 proof DAG.
+Each child can then get its own evidence and its own UCT2 proof state.
 
-If the same anchor fact supports two downstream mechanisms, store it once and
-connect that one child claim to both mechanism modules. That shared outgoing
-edge pattern is what makes this a DAG rather than a tree.
+If the same anchor fact supports two downstream mechanisms, store the anchor
+claim once and connect it to both mechanism modules through
+`claim_decomposition_edges`. The shared fan-out pattern is what makes this a
+DAG rather than a tree.
 
 ## Quick Queries
 
-Show the mechanism children for a parent:
+Show proof children for a parent:
 
 ```sql
-SELECT source_claim_id AS child, target_claim_id AS parent, relation_type, properties
-FROM claim_relations
+SELECT source_claim_id AS child, target_claim_id AS parent,
+       support_operator, source_role, group_id, edge_status
+FROM claim_decomposition_edges
 WHERE target_claim_id = '<parent_claim_id>'
-  AND relation_type = 'claim_dag_of';
+  AND edge_status = 'active';
+```
+
+Show semantic relations around one claim:
+
+```sql
+SELECT source_claim_id, target_claim_id, relation_kind, relation_status, notes
+FROM claim_relations
+WHERE source_claim_id = '<claim_id>'
+   OR target_claim_id = '<claim_id>';
 ```
 
 Show evidence interpreted for one child:
@@ -155,12 +196,4 @@ SELECT rtc.claim_id, rtc.result_id, rtc.stance, rtc.rationale_text
 FROM result_to_claim rtc
 WHERE rtc.claim_id = '<child_claim_id>'
   AND rtc.attached = 1;
-```
-
-Show the proof DAG for one child:
-
-```sql
-SELECT claim_id, uct2
-FROM claims
-WHERE claim_id = '<child_claim_id>';
 ```

@@ -1,299 +1,74 @@
 # Claim Object Mechanism DAG Examples
 
-This document corrects the core logic of the claim DAG.
+This document gives examples for the architecture in
+`CLAIM_DECOMPOSITION_DAG_ARCHITECTURE.md`.
 
-A mechanism DAG is not a flat list of child facts below a parent claim. It is a
-Boolean structure over biological assertions:
+The key rule is:
 
 ```text
-Parent holds if:
-  required anchor facts are true
-  AND at least one sufficient mechanism module is true
+claims are biological assertions
+claim_relations are semantic relations
+claim_decomposition_edges are proof/decomposition DAG edges
 ```
 
-The same atomic child claim can support more than one mechanism module. That is
-why the structure is a DAG rather than a tree.
+`claim_type` is not used to decide what to prove. The agent reads the claim
+object and the decomposition edges.
 
-## 1. Two DAGs, Different Jobs
+## 1. Edge Shape
 
-| DAG | Question | Storage |
-|---|---|---|
-| Claim DAG / truth DAG | Which biological claims, modules, alternatives, and context splits make another claim true? | `claims` + `claim_relations` |
-| UCT2 proof DAG | For one selected focal claim, which evidence route should be tried next? | `claims.uct2` JSON |
+Example decomposition edge from a shared anchor fact into a mechanism module:
 
-The claim DAG is durable biology. UCT2 is local proof-search state.
-
-```mermaid
-flowchart TD
-  A["Atomic claim\nstable biological assertion"]
-  M["Mechanism module claim\nBoolean group"]
-  P["Parent claim\nhypothesis"]
-  U["UCT2 proof DAG\nfor whichever claim is selected next"]
-
-  A -- "claim_dag_of" --> M
-  M -- "claim_dag_of" --> P
-  U -. "proof state for selected claim" .-> A
+```json
+{
+  "edge_id": "decomp:setdb1:A1-to-te-dsrna",
+  "source_claim_id": "F_SETDB1_H3K9me3",
+  "target_claim_id": "M_TE_DSRNA",
+  "support_operator": "ALL_OF",
+  "support_operator_params": {},
+  "source_role": "shared_anchor",
+  "target_role": "mechanism_module",
+  "group_id": "setdb1_te_dsrna",
+  "edge_status": "active",
+  "notes": "Shared chromatin anchor required by the TE/dsRNA arm."
+}
 ```
 
-## 2. Claim Types To Use
+Example semantic ordering relation:
 
-The recommended model has three semantic levels:
+```json
+{
+  "relation_id": "rel:setdb1-h3k9me3-enables-te-repression",
+  "source_claim_id": "F_SETDB1_H3K9me3",
+  "target_claim_id": "F_TE_REPRESSION",
+  "relation_kind": "enables",
+  "relation_status": "active",
+  "notes": "Mechanistic order only; not Boolean parent rollup."
+}
+```
 
-| Semantic level | What it means | Suggested storage |
-|---|---|---|
-| Parent hypothesis | Main claim being evaluated | `claims.claim_type = SupersetClaim` or a domain-specific claim type |
-| Mechanism module | A grouped sub-hypothesis, usually one sufficient path or one required anchor bundle | `claims.claim_type = SupersetClaim` |
-| Atomic mechanism claim | A testable biological assertion, such as "ADAR1 loss reduces A-to-I RNA editing" | Any normal claim row with `properties.node_kind = atomic_mechanism_claim` or equivalent |
+## 2. Local Boolean Semantics
 
-Do not make the doc depend on `CausalChainLinkClaim` as the conceptual model.
-That name exists in some code paths as an implementation/backward-compatibility
-label, but the current architecture should describe atomic claims generically:
-they are just `claims` rows connected by `claim_relations`.
-
-## 3. Boolean Logic Encoding
-
-### 3.1 Incoming Edges Are Interpreted Per Target
-
-For a target claim `T`, all active child edges into `T` form the local Boolean
-rule for `T`.
+All active decomposition edges into one `target_claim_id` form that target's
+local Boolean rule.
 
 ```text
 source_claim_id -> target_claim_id
-child claim     -> parent/module claim
+child claim     -> parent or mechanism-module claim
 ```
 
-The edge property `parent_support_operator` says how sibling children compose
-for the same target.
-
-| Operator | Meaning for one target claim |
-|---|---|
-| `ALL_OF` | All active children are required. |
-| `ANY_OF` | Any one active child is sufficient. |
-| `K_OF_N` | At least `min_required` active children are sufficient. |
-| `INDEPENDENT_CAUSES` | One supported child can support the target, and more than one may be true. |
-| `MUTUALLY_EXCLUSIVE_ALTERNATIVES` | One child should win for a context; multiple supported children trigger disambiguation. |
-
-### 3.2 Use Module Claims For Mixed Logic
-
-Do not encode this directly as a flat set of children:
+No mixed operators at a target:
 
 ```text
-P = A1 AND ((A2 AND A3) OR (B2 AND B3))
+valid:   all active children into M_A use ALL_OF
+valid:   all active children into P use ANY_OF
+invalid: one child into P uses ALL_OF and another child into P uses ANY_OF
 ```
 
-Instead create module nodes:
+For mixed expressions, introduce mechanism modules.
 
-```text
-P = AnchorModule AND (MechanismA OR MechanismB)
-MechanismA = A1 AND A2 AND A3
-MechanismB = A1 AND B2 AND B3
-```
+## 3. Shared Anchor: SETDB1 Immunogenicity Arms
 
-The shared claim `A1` points to both modules.
-
-```mermaid
-flowchart TD
-  P["P: parent claim"]
-  MA["M_A: mechanism A module"]
-  MB["M_B: mechanism B module"]
-  A1["A1: shared anchor fact"]
-  A2["A2: A-specific step"]
-  A3["A3: A-specific consequence"]
-  B2["B2: B-specific step"]
-  B3["B3: B-specific consequence"]
-
-  MA -- "claim_dag_of; ANY_OF at P" --> P
-  MB -- "claim_dag_of; ANY_OF at P" --> P
-
-  A1 -- "claim_dag_of; ALL_OF at M_A" --> MA
-  A2 -- "claim_dag_of; ALL_OF at M_A" --> MA
-  A3 -- "claim_dag_of; ALL_OF at M_A" --> MA
-
-  A1 -- "claim_dag_of; ALL_OF at M_B" --> MB
-  B2 -- "claim_dag_of; ALL_OF at M_B" --> MB
-  B3 -- "claim_dag_of; ALL_OF at M_B" --> MB
-```
-
-This is the central pattern. A shared biological fact is one claim row with two
-outgoing `claim_dag_of` edges. It is not duplicated as `A1_for_A` and
-`A1_for_B`.
-
-## 4. Edge Shape
-
-Example edge from atomic claim `A1` into module `M_A`:
-
-```json
-{
-  "source_claim_id": "claim:A1",
-  "target_claim_id": "claim:M_A",
-  "relation_type": "claim_dag_of",
-  "properties": {
-    "parent_support_operator": "ALL_OF",
-    "dag_edge_status": "active",
-    "edge_role": "shared_anchor",
-    "node_kind": "atomic_mechanism_claim"
-  }
-}
-```
-
-Example edge from a mechanism module into parent `P`:
-
-```json
-{
-  "source_claim_id": "claim:M_A",
-  "target_claim_id": "claim:P",
-  "relation_type": "claim_dag_of",
-  "properties": {
-    "parent_support_operator": "ANY_OF",
-    "dag_edge_status": "active",
-    "edge_role": "sufficient_mechanism_module",
-    "node_kind": "mechanism_module"
-  }
-}
-```
-
-## 5. Example Structures
-
-### 5.1 Linear Required Mechanism
-
-Use when every step is required and there are no alternatives.
-
-```text
-P = C1 AND C2 AND C3
-```
-
-```mermaid
-flowchart TD
-  P["P: parent claim"]
-  C1["C1: required step"]
-  C2["C2: required step"]
-  C3["C3: required step"]
-
-  C1 -- "claim_dag_of; ALL_OF" --> P
-  C2 -- "claim_dag_of; ALL_OF" --> P
-  C3 -- "claim_dag_of; ALL_OF" --> P
-  C1 -. "enables; order only" .-> C2
-  C2 -. "enables; order only" .-> C3
-```
-
-`enables` is optional ordering metadata. The truth logic is in
-`claim_dag_of`.
-
-### 5.2 Alternative Sufficient Mechanisms
-
-Use when either pathway can make the parent true.
-
-```text
-P = MechanismA OR MechanismB
-MechanismA = A1 AND A2
-MechanismB = B1 AND B2
-```
-
-```mermaid
-flowchart TD
-  P["P: parent claim"]
-  MA["M_A: sufficient mechanism A"]
-  MB["M_B: sufficient mechanism B"]
-  A1["A1"]
-  A2["A2"]
-  B1["B1"]
-  B2["B2"]
-
-  MA -- "claim_dag_of; ANY_OF at P" --> P
-  MB -- "claim_dag_of; ANY_OF at P" --> P
-  A1 -- "claim_dag_of; ALL_OF at M_A" --> MA
-  A2 -- "claim_dag_of; ALL_OF at M_A" --> MA
-  B1 -- "claim_dag_of; ALL_OF at M_B" --> MB
-  B2 -- "claim_dag_of; ALL_OF at M_B" --> MB
-```
-
-### 5.3 Shared Anchor Plus Split Pathways
-
-Use when two mechanisms rely on a common upstream fact but diverge downstream.
-
-```text
-P = MechanismA OR MechanismB
-MechanismA = Anchor1 AND A2
-MechanismB = Anchor1 AND B2
-```
-
-```mermaid
-flowchart TD
-  P["P: parent claim"]
-  MA["M_A: mechanism A"]
-  MB["M_B: mechanism B"]
-  Anchor["Anchor1: shared upstream fact"]
-  A2["A2: A-specific downstream step"]
-  B2["B2: B-specific downstream step"]
-
-  MA -- "claim_dag_of; ANY_OF at P" --> P
-  MB -- "claim_dag_of; ANY_OF at P" --> P
-
-  Anchor -- "claim_dag_of; ALL_OF at M_A" --> MA
-  A2 -- "claim_dag_of; ALL_OF at M_A" --> MA
-
-  Anchor -- "claim_dag_of; ALL_OF at M_B" --> MB
-  B2 -- "claim_dag_of; ALL_OF at M_B" --> MB
-```
-
-This is the actual DAG case: `Anchor1` has two parents.
-
-### 5.4 Required Anchor Bundle Plus Alternative Mechanisms
-
-Use when every successful mechanism needs one required biological state first.
-
-```text
-P = AnchorModule AND (MechanismA OR MechanismB)
-AnchorModule = X1 AND X2
-MechanismA = A1 AND A2
-MechanismB = B1 AND B2
-```
-
-```mermaid
-flowchart TD
-  P["P: parent claim"]
-  X["M_X: required anchor module"]
-  MA["M_A: sufficient downstream mechanism A"]
-  MB["M_B: sufficient downstream mechanism B"]
-  X1["X1: entity/state exists in context"]
-  X2["X2: context is correct"]
-  A1["A1"]
-  A2["A2"]
-  B1["B1"]
-  B2["B2"]
-
-  CHOICE["M_CHOICE: downstream mechanism choice"]
-
-  X -- "claim_dag_of; ALL_OF at P" --> P
-  CHOICE -- "claim_dag_of; ALL_OF at P" --> P
-  MA -- "claim_dag_of; ANY_OF at M_CHOICE" --> CHOICE
-  MB -- "claim_dag_of; ANY_OF at M_CHOICE" --> CHOICE
-
-  X1 -- "claim_dag_of; ALL_OF at M_X" --> X
-  X2 -- "claim_dag_of; ALL_OF at M_X" --> X
-  A1 -- "claim_dag_of; ALL_OF at M_A" --> MA
-  A2 -- "claim_dag_of; ALL_OF at M_A" --> MA
-  B1 -- "claim_dag_of; ALL_OF at M_B" --> MB
-  B2 -- "claim_dag_of; ALL_OF at M_B" --> MB
-```
-
-This is also the recommended implementation shape when the evaluator supports
-one operator per target:
-
-```text
-P = RequiredAnchor AND DownstreamMechanismChoice
-DownstreamMechanismChoice = MechanismA OR MechanismB
-```
-
-The extra `DownstreamMechanismChoice` module avoids mixed `ALL_OF` and
-`ANY_OF` siblings at the same target.
-
-## 6. Corrected SETDB1 Example
-
-The earlier SETDB1 example was misleading because it made three broad claims
-look like a linear chain. A better SETDB1 DAG depends on the parent wording.
-
-### 6.1 Broad Parent
+Broad parent:
 
 ```text
 P_SETDB1:
@@ -301,258 +76,355 @@ SETDB1 overactivity suppresses tumour-intrinsic immunogenicity and can
 contribute to immune-checkpoint-blockade resistance.
 ```
 
-This broad parent needs two things: a tumour-intrinsic immunogenicity mechanism
-and a therapy/context bridge. The mechanism module can be satisfied by
-alternative downstream paths that share an upstream chromatin anchor.
+Boolean structure:
 
 ```text
 P_SETDB1 = M_IMMUNOGENICITY AND M_THERAPY_CONTEXT
 M_IMMUNOGENICITY = M_TE_DSRNA OR M_ANTIGEN_PRESENTATION
-M_TE_DSRNA = A1 AND A2 AND A3
-M_ANTIGEN_PRESENTATION = A1 AND B2 AND B3
-M_THERAPY_CONTEXT = H1 AND H2
+M_TE_DSRNA = F_SETDB1_H3K9me3 AND F_TE_DEREPRESSION AND F_DSRNA_SIGNALING
+M_ANTIGEN_PRESENTATION = F_SETDB1_H3K9me3 AND F_AP_REPRESSION AND F_TCELL_RECOGNITION
+M_THERAPY_CONTEXT = F_HUMAN_SETDB1_AMP AND F_ICB_ASSOCIATION
 ```
 
 Atomic claims:
 
 | Claim | Meaning |
 |---|---|
-| A1 | SETDB1 imposes repressive H3K9me3/heterochromatin at immune-relevant repetitive or open-genome regions. |
-| A2 | Loss of SETDB1 derepresses transposable-element-derived RNAs or regulatory elements. |
-| A3 | TE derepression increases dsRNA/viral-mimicry or tumour-intrinsic inflammatory signaling. |
-| B2 | SETDB1 activity represses antigen-presentation-related loci or MHC-I pathway output in the relevant context. |
-| B3 | Reduced antigen presentation lowers tumour recognition by cytotoxic T cells. |
-| H1 | SETDB1 amplification/overactivity occurs in human tumours in the claimed context. |
-| H2 | SETDB1 amplification/overactivity is associated with immune exclusion or checkpoint-blockade resistance in human tumours. |
+| `F_SETDB1_H3K9me3` | SETDB1 imposes repressive H3K9me3/heterochromatin at immune-relevant repetitive or open-genome regions. |
+| `F_TE_DEREPRESSION` | Loss of SETDB1 derepresses transposable-element-derived RNAs or regulatory elements. |
+| `F_DSRNA_SIGNALING` | TE derepression increases dsRNA/viral-mimicry or tumour-intrinsic inflammatory signaling. |
+| `F_AP_REPRESSION` | SETDB1 activity represses antigen-presentation-related loci or MHC-I pathway output. |
+| `F_TCELL_RECOGNITION` | Reduced antigen presentation lowers tumour recognition by cytotoxic T cells. |
+| `F_HUMAN_SETDB1_AMP` | SETDB1 amplification/overactivity occurs in human tumours in the claimed context. |
+| `F_ICB_ASSOCIATION` | SETDB1 amplification/overactivity is associated with immune exclusion or checkpoint-blockade resistance. |
 
 ```mermaid
 flowchart TD
-  P["P_SETDB1\nSETDB1 overactivity suppresses tumour-intrinsic immunogenicity\nand can contribute to ICB resistance"]
-  IMM["M_IMMUNOGENICITY\ntumour-intrinsic immunogenicity module"]
-  M1["M_TE_DSRNA\nTE/dsRNA viral-mimicry module"]
-  M2["M_AP\nantigen-presentation module"]
-  M3["M_THERAPY_CONTEXT\ntherapy/context bridge"]
-  A1["A1 shared anchor\nSETDB1 creates repressive H3K9me3/heterochromatin\nat immune-relevant regions"]
-  A2["A2\nSETDB1 loss derepresses TE-derived RNAs/elements"]
-  A3["A3\nTE derepression increases dsRNA/viral-mimicry\nor inflammatory signaling"]
-  B2["B2\nSETDB1 represses antigen-presentation pathway output"]
-  B3["B3\nreduced antigen presentation lowers T-cell recognition"]
-  H1["H1\nSETDB1 amplification/overactivity occurs in human tumours"]
-  H2["H2\nSETDB1 status associates with immune exclusion or ICB resistance"]
+  P["P_SETDB1"]
+  IMM["M_IMMUNOGENICITY"]
+  TE["M_TE_DSRNA"]
+  AP["M_ANTIGEN_PRESENTATION"]
+  TX["M_THERAPY_CONTEXT"]
+  A1["F_SETDB1_H3K9me3\nshared anchor"]
+  A2["F_TE_DEREPRESSION"]
+  A3["F_DSRNA_SIGNALING"]
+  B2["F_AP_REPRESSION"]
+  B3["F_TCELL_RECOGNITION"]
+  H1["F_HUMAN_SETDB1_AMP"]
+  H2["F_ICB_ASSOCIATION"]
 
-  IMM -- "claim_dag_of; ALL_OF at P" --> P
-  M3 -- "claim_dag_of; ALL_OF at P" --> P
-  M1 -- "claim_dag_of; ANY_OF at M_IMMUNOGENICITY" --> IMM
-  M2 -- "claim_dag_of; ANY_OF at M_IMMUNOGENICITY" --> IMM
+  IMM -- "ALL_OF at P" --> P
+  TX -- "ALL_OF at P" --> P
+  TE -- "ANY_OF at M_IMMUNOGENICITY" --> IMM
+  AP -- "ANY_OF at M_IMMUNOGENICITY" --> IMM
 
-  A1 -- "claim_dag_of; ALL_OF at M_TE_DSRNA" --> M1
-  A2 -- "claim_dag_of; ALL_OF at M_TE_DSRNA" --> M1
-  A3 -- "claim_dag_of; ALL_OF at M_TE_DSRNA" --> M1
+  A1 -- "ALL_OF; source_role=shared_anchor" --> TE
+  A2 -- "ALL_OF" --> TE
+  A3 -- "ALL_OF" --> TE
 
-  A1 -- "claim_dag_of; ALL_OF at M_AP" --> M2
-  B2 -- "claim_dag_of; ALL_OF at M_AP" --> M2
-  B3 -- "claim_dag_of; ALL_OF at M_AP" --> M2
+  A1 -- "ALL_OF; source_role=shared_anchor" --> AP
+  B2 -- "ALL_OF" --> AP
+  B3 -- "ALL_OF" --> AP
 
-  H1 -- "claim_dag_of; ALL_OF at M_THERAPY_CONTEXT" --> M3
-  H2 -- "claim_dag_of; ALL_OF at M_THERAPY_CONTEXT" --> M3
+  H1 -- "ALL_OF" --> TX
+  H2 -- "ALL_OF" --> TX
 ```
 
-The shared anchor `A1` is not duplicated. It is one claim row feeding both
-`M_TE_DSRNA` and `M_AP`.
+`F_SETDB1_H3K9me3` is one claim row with two active decomposition edges. That
+fan-out is the DAG join point.
 
-### 6.2 Narrow Parent
-
-If the parent says "SETDB1 causes ICB resistance through TE/dsRNA
-viral-mimicry suppression", then the antigen-presentation module should not be
-a direct child. It is either a competing/parallel mechanism or a separate
-parent claim.
+Semantic order can still be stored separately:
 
 ```text
-P_NARROW = A1 AND A2 AND A3 AND H2
+F_SETDB1_H3K9me3 enables F_TE_DEREPRESSION
+F_TE_DEREPRESSION enables F_DSRNA_SIGNALING
+F_SETDB1_H3K9me3 enables F_AP_REPRESSION
+F_AP_REPRESSION enables F_TCELL_RECOGNITION
 ```
 
-The DAG should match the claim wording. If the parent contains two mechanisms,
-make two modules. If the parent names one mechanism, do not smuggle another
-mechanism into the proof requirement.
+Those `enables` rows live in `claim_relations`; they do not roll up
+`P_SETDB1`.
 
 Source anchor: Griffin et al., Nature 2021,
 https://www.nature.com/articles/s41586-021-03520-4.
 
-## 7. ADAR1 Example: Shared Upstream Anchor With Branching Arms
+## 4. Mixed Logic Reified As Modules
+
+Target expression:
+
+```text
+P = (A AND B) OR (C AND D)
+```
+
+Correct storage:
+
+```text
+M_AB = A AND B
+M_CD = C AND D
+P = M_AB OR M_CD
+```
+
+```mermaid
+flowchart TD
+  P["P"]
+  MAB["M_AB"]
+  MCD["M_CD"]
+  A["F_A"]
+  B["F_B"]
+  C["F_C"]
+  D["F_D"]
+
+  MAB -- "ANY_OF at P" --> P
+  MCD -- "ANY_OF at P" --> P
+  A -- "ALL_OF at M_AB" --> MAB
+  B -- "ALL_OF at M_AB" --> MAB
+  C -- "ALL_OF at M_CD" --> MCD
+  D -- "ALL_OF at M_CD" --> MCD
+```
+
+This satisfies the no-mixed-operators rule because each target has exactly one
+operator across active incoming edges.
+
+## 5. ALL_OF Mechanism: Statins Lower LDL
 
 Parent:
 
 ```text
-P_ADAR1:
-Loss of tumour-cell ADAR1 sensitizes tumours to immune-checkpoint blockade and
-can overcome PD-1 resistance caused by antigen-presentation loss.
+P_STATINS_LDL:
+Statins lower serum LDL cholesterol through hepatic cholesterol synthesis
+inhibition and LDL receptor upregulation.
 ```
 
-Better structure:
+Decomposition:
 
 ```text
-P_ADAR1 = M_DSRNA_SENSING AND M_THERAPY_CONTEXT
-M_DSRNA_SENSING = A1 AND A2 AND (M_PKR OR M_MDA5)
-M_PKR = A3a
-M_MDA5 = A3b
-M_THERAPY_CONTEXT = T1 AND T2
+P_STATINS_LDL = M_HEPATIC_UPTAKE AND M_SREBP2_LDLR_AXIS
+M_HEPATIC_UPTAKE = F_HMGCR_INHIBITION AND F_INTRACELLULAR_CHOL_FALLS
+M_SREBP2_LDLR_AXIS = F_SREBP2_ACTIVATED AND F_LDLR_UPREGULATED AND F_SERUM_LDL_CLEARED
 ```
-
-Atomic claims:
-
-| Claim | Meaning |
-|---|---|
-| A1 | ADAR1 loss reduces A-to-I editing of interferon-inducible RNAs. |
-| A2 | Reduced editing exposes endogenous dsRNA ligands to innate sensors. |
-| A3a | PKR activation contributes to tumour-cell growth inhibition. |
-| A3b | MDA5 activation contributes to tumour inflammation. |
-| T1 | ADAR1 loss sensitizes tumours to checkpoint blockade in vivo. |
-| T2 | ADAR1 loss can overcome resistance caused by impaired antigen presentation. |
 
 ```mermaid
 flowchart TD
-  P["P_ADAR1\nADAR1 loss sensitizes tumours to ICB\nand can overcome antigen-presentation-loss resistance"]
-  DS["M_DSRNA_SENSING\ndsRNA sensing module"]
-  CHOICE["M_SENSOR_CHOICE\nPKR or MDA5 arm"]
-  PKR["M_PKR\nPKR arm"]
-  MDA5["M_MDA5\nMDA5 arm"]
-  TX["M_THERAPY_CONTEXT\ntherapy/resistance context"]
-  A1["A1\nADAR1 loss reduces A-to-I RNA editing"]
-  A2["A2\nunedited dsRNA becomes sensor ligand"]
-  A3a["A3a\nPKR activation causes growth inhibition"]
-  A3b["A3b\nMDA5 activation causes tumour inflammation"]
-  T1["T1\nADAR1 loss sensitizes tumours to ICB"]
-  T2["T2\nADAR1 loss overcomes antigen-presentation-loss resistance"]
+  P["P_STATINS_LDL"]
+  M1["M_HEPATIC_UPTAKE"]
+  M2["M_SREBP2_LDLR_AXIS"]
+  F1["F_HMGCR_INHIBITION"]
+  F2["F_INTRACELLULAR_CHOL_FALLS"]
+  F3["F_SREBP2_ACTIVATED"]
+  F4["F_LDLR_UPREGULATED"]
+  F5["F_SERUM_LDL_CLEARED"]
 
-  DS -- "claim_dag_of; ALL_OF at P" --> P
-  TX -- "claim_dag_of; ALL_OF at P" --> P
-
-  A1 -- "claim_dag_of; ALL_OF at M_DSRNA_SENSING" --> DS
-  A2 -- "claim_dag_of; ALL_OF at M_DSRNA_SENSING" --> DS
-  CHOICE -- "claim_dag_of; ALL_OF at M_DSRNA_SENSING" --> DS
-
-  PKR -- "claim_dag_of; ANY_OF at M_SENSOR_CHOICE" --> CHOICE
-  MDA5 -- "claim_dag_of; ANY_OF at M_SENSOR_CHOICE" --> CHOICE
-  A3a -- "claim_dag_of; ALL_OF at M_PKR" --> PKR
-  A3b -- "claim_dag_of; ALL_OF at M_MDA5" --> MDA5
-
-  T1 -- "claim_dag_of; ALL_OF at M_THERAPY_CONTEXT" --> TX
-  T2 -- "claim_dag_of; ALL_OF at M_THERAPY_CONTEXT" --> TX
+  M1 -- "ALL_OF at P" --> P
+  M2 -- "ALL_OF at P" --> P
+  F1 -- "ALL_OF at M_HEPATIC_UPTAKE" --> M1
+  F2 -- "ALL_OF at M_HEPATIC_UPTAKE" --> M1
+  F3 -- "ALL_OF at M_SREBP2_LDLR_AXIS" --> M2
+  F4 -- "ALL_OF at M_SREBP2_LDLR_AXIS" --> M2
+  F5 -- "ALL_OF at M_SREBP2_LDLR_AXIS" --> M2
 ```
 
-This is a DAG because `A1` and `A2` are upstream anchors for either downstream
-sensor arm. It is also not a strict chain: PKR and MDA5 are branch modules, not
-ordered steps.
+Temporal order belongs in `claim_relations`:
 
-Source anchor: Ishizuka et al., Nature 2019,
-https://www.nature.com/articles/s41586-018-0768-9.
+```text
+F_HMGCR_INHIBITION enables F_INTRACELLULAR_CHOL_FALLS
+F_INTRACELLULAR_CHOL_FALLS enables F_SREBP2_ACTIVATED
+F_SREBP2_ACTIVATED enables F_LDLR_UPREGULATED
+F_LDLR_UPREGULATED enables F_SERUM_LDL_CLEARED
+```
 
-## 8. BRCA/PARP Example: Clean ALL_OF Chain
+## 6. ANY_OF Mechanism: Ferroptosis Suppression
 
 Parent:
 
 ```text
-P_BRCA_PARP:
-BRCA1/2-deficient tumour cells are selectively sensitive to PARP inhibition.
+P_FERROPTOSIS_SUPPRESSED:
+Cells suppress ferroptosis by maintaining lipid-peroxide detoxification.
 ```
 
-This is closer to a true required mechanism chain:
+Decomposition:
 
 ```text
-P_BRCA_PARP = C1 AND C2 AND C3 AND C4
+P_FERROPTOSIS_SUPPRESSED = M_GPX4_AXIS OR M_FSP1_AXIS
+M_GPX4_AXIS = F_GSH_AVAILABLE AND F_GPX4_REDUCES_LIPID_PEROXIDES
+M_FSP1_AXIS = F_COQ10_REGENERATED AND F_FSP1_TRAPS_LIPID_RADICALS
 ```
-
-Atomic claims:
-
-| Claim | Meaning |
-|---|---|
-| C1 | BRCA1/2 deficiency impairs homologous recombination repair. |
-| C2 | PARP inhibition increases unrepaired single-strand break / replication-associated DNA damage pressure. |
-| C3 | HR-deficient cells cannot compensate for PARP-inhibition-induced damage. |
-| C4 | This produces selective loss of viability in BRCA1/2-deficient cells relative to HR-proficient cells. |
 
 ```mermaid
 flowchart TD
-  P["P_BRCA_PARP\nBRCA1/2-deficient tumour cells are selectively sensitive\nto PARP inhibition"]
-  C1["C1\nBRCA1/2 deficiency impairs HR repair"]
-  C2["C2\nPARP inhibition increases unrepaired DNA damage pressure"]
-  C3["C3\nHR-deficient cells cannot compensate"]
-  C4["C4\nselective viability loss in BRCA-deficient cells"]
+  P["P_FERROPTOSIS_SUPPRESSED"]
+  G["M_GPX4_AXIS"]
+  F["M_FSP1_AXIS"]
+  G1["F_GSH_AVAILABLE"]
+  G2["F_GPX4_REDUCES_LIPID_PEROXIDES"]
+  F1["F_COQ10_REGENERATED"]
+  F2["F_FSP1_TRAPS_LIPID_RADICALS"]
 
-  C1 -- "claim_dag_of; ALL_OF" --> P
-  C2 -- "claim_dag_of; ALL_OF" --> P
-  C3 -- "claim_dag_of; ALL_OF" --> P
-  C4 -- "claim_dag_of; ALL_OF" --> P
-  C1 -. "enables" .-> C3
-  C2 -. "enables" .-> C3
-  C3 -. "enables" .-> C4
+  G -- "ANY_OF at P" --> P
+  F -- "ANY_OF at P" --> P
+  G1 -- "ALL_OF at M_GPX4_AXIS" --> G
+  G2 -- "ALL_OF at M_GPX4_AXIS" --> G
+  F1 -- "ALL_OF at M_FSP1_AXIS" --> F
+  F2 -- "ALL_OF at M_FSP1_AXIS" --> F
 ```
 
-This example is a good contrast to SETDB1 and ADAR1: it is mostly an `ALL_OF`
-claim DAG with two converging upstream requirements.
+The two modules are sufficient alternatives. Both may be true in the same cell,
+but either one can satisfy this parent claim.
 
-Source anchor: Bryant et al., Nature 2005,
-https://www.nature.com/articles/nature03443.
+## 7. K_OF_N Mechanism: Senescence Call
 
-## 9. Practical Rules
+Parent:
 
-1. First write the parent claim exactly. The DAG logic depends on the wording.
-2. Split the mechanism into modules before splitting into atomic facts.
-3. Create a module claim for each sufficient pathway, required anchor bundle,
-   or context bridge.
-4. Reuse shared atomic claims. Shared children are the point of a DAG.
-5. Avoid mixed operators at one target. If you need `A AND (B OR C)`, add a
-   module node for `(B OR C)`.
-6. Use `enables` only for mechanistic ordering, not truth satisfaction.
-7. Attach evidence to the most specific atomic claim that the evidence tests.
-8. Let parent/module confidence roll up through `claim_relations`.
-9. Treat `CausalChainLinkClaim` as an implementation/backward-compatibility
-   label, not as the conceptual model.
+```text
+P_SENESCENCE:
+The cell population is senescent.
+```
+
+Decomposition:
+
+```text
+P_SENESCENCE = K_OF_N(3, F_SA_BETAGAL, F_P16_HIGH, F_SASP, F_IRREVERSIBLE_ARREST)
+```
+
+```mermaid
+flowchart TD
+  P["P_SENESCENCE\nK_OF_N min_required=3"]
+  A["F_SA_BETAGAL"]
+  B["F_P16_HIGH"]
+  C["F_SASP"]
+  D["F_IRREVERSIBLE_ARREST"]
+
+  A -- "K_OF_N at P" --> P
+  B -- "K_OF_N at P" --> P
+  C -- "K_OF_N at P" --> P
+  D -- "K_OF_N at P" --> P
+```
+
+Each edge into `P_SENESCENCE` uses:
+
+```json
+{
+  "support_operator": "K_OF_N",
+  "support_operator_params": {
+    "min_required": 3
+  }
+}
+```
+
+## 8. Mutually Exclusive Alternatives: T Helper Fate
+
+Parent:
+
+```text
+P_T_HELPER_FATE:
+A CD4 T cell is committed to one helper-cell fate in this context.
+```
+
+Decomposition:
+
+```text
+P_T_HELPER_FATE = exactly_one(M_TH1, M_TH2, M_TH17, M_TREG, M_TFH)
+```
+
+```mermaid
+flowchart TD
+  P["P_T_HELPER_FATE"]
+  A["M_TH1"]
+  B["M_TH2"]
+  C["M_TH17"]
+  D["M_TREG"]
+  E["M_TFH"]
+
+  A -- "MUTUALLY_EXCLUSIVE_ALTERNATIVES at P" --> P
+  B -- "MUTUALLY_EXCLUSIVE_ALTERNATIVES at P" --> P
+  C -- "MUTUALLY_EXCLUSIVE_ALTERNATIVES at P" --> P
+  D -- "MUTUALLY_EXCLUSIVE_ALTERNATIVES at P" --> P
+  E -- "MUTUALLY_EXCLUSIVE_ALTERNATIVES at P" --> P
+```
+
+If evidence supports both `M_TH1` and `M_TREG` in the same cell/context, that
+is not redundant support. It flags either a mixed population, ambiguous
+context, or a bad decomposition.
+
+## 9. Independent Causes: Diabetes Etiology
+
+Parent:
+
+```text
+P_DIABETES_ETIOLOGY:
+This patient's diabetes can be explained by a supported etiology.
+```
+
+Decomposition:
+
+```text
+P_DIABETES_ETIOLOGY = independent_causes(M_T1D, M_T2D, M_MODY, M_GESTATIONAL, M_DRUG_INDUCED)
+```
+
+```mermaid
+flowchart TD
+  P["P_DIABETES_ETIOLOGY"]
+  A["M_T1D"]
+  B["M_T2D"]
+  C["M_MODY"]
+  D["M_GESTATIONAL"]
+  E["M_DRUG_INDUCED"]
+
+  A -- "INDEPENDENT_CAUSES at P" --> P
+  B -- "INDEPENDENT_CAUSES at P" --> P
+  C -- "INDEPENDENT_CAUSES at P" --> P
+  D -- "INDEPENDENT_CAUSES at P" --> P
+  E -- "INDEPENDENT_CAUSES at P" --> P
+```
+
+More than one cause may be true. The search policy should prefer the cause
+most plausible in the current `context_set_json`.
 
 ## 10. Minimal SQL
 
-Find mechanism children of a target:
+Find active decomposition children:
 
 ```sql
 SELECT
-  cr.source_claim_id AS child_claim_id,
-  child.claim_text AS child_text,
-  cr.target_claim_id AS target_claim_id,
-  target.claim_text AS target_text,
-  cr.relation_type,
-  cr.properties
-FROM claim_relations cr
-LEFT JOIN claims child ON child.claim_id = cr.source_claim_id
-LEFT JOIN claims target ON target.claim_id = cr.target_claim_id
-WHERE cr.target_claim_id = '<claim_id>'
-  AND cr.relation_type = 'claim_dag_of'
-ORDER BY cr.created_at, cr.source_claim_id;
+  source_claim_id AS child_claim_id,
+  target_claim_id AS target_claim_id,
+  support_operator,
+  support_operator_params,
+  source_role,
+  target_role,
+  group_id
+FROM claim_decomposition_edges
+WHERE target_claim_id = '<claim_id>'
+  AND edge_status = 'active'
+ORDER BY group_id, source_claim_id;
 ```
 
-Find shared children, which are DAG join points:
+Find shared anchors:
 
 ```sql
 SELECT
   source_claim_id AS shared_child_claim_id,
-  COUNT(DISTINCT target_claim_id) AS n_parent_modules
-FROM claim_relations
-WHERE relation_type = 'claim_dag_of'
+  COUNT(DISTINCT target_claim_id) AS n_targets
+FROM claim_decomposition_edges
+WHERE edge_status = 'active'
 GROUP BY source_claim_id
 HAVING COUNT(DISTINCT target_claim_id) > 1;
 ```
 
-Find evidence interpreted for an atomic claim:
+Check the no-mixed-operators invariant:
 
 ```sql
-SELECT
-  rtc.claim_id,
-  rtc.result_id,
-  rtc.stance,
-  rtc.relevance,
-  rtc.context_fit,
-  rtc.proof_node_id,
-  rtc.rationale_text
-FROM result_to_claim rtc
-WHERE rtc.claim_id = '<atomic_claim_id>'
-  AND rtc.attached = 1;
+SELECT target_claim_id, COUNT(DISTINCT support_operator) AS n_ops
+FROM claim_decomposition_edges
+WHERE edge_status = 'active'
+GROUP BY target_claim_id
+HAVING COUNT(DISTINCT support_operator) > 1;
+```
+
+Find semantic ordering relations:
+
+```sql
+SELECT source_claim_id, target_claim_id, relation_kind, notes
+FROM claim_relations
+WHERE relation_kind = 'enables'
+  AND relation_status = 'active';
 ```

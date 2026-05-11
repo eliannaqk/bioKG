@@ -17,9 +17,14 @@ schema/
   resources.tsv         one row per source database — derived_from upstream, what
                         entities and edges it contributed
   table_schemas.sql     CREATE TABLE / CREATE INDEX statements from the live SQLite DB
-  schema.py             DAG-2 entry-layer dataclasses — ClaimType, the three
-                        orthogonal claim axes, ResearchQuestionContract,
+  schema.py             DAG-2 entry-layer dataclasses — legacy ClaimType,
+                        the three orthogonal claim axes, ResearchQuestionContract,
                         CandidateNode
+CLAIM_DECOMPOSITION_DAG_ARCHITECTURE.md
+                        Target three-table claim/decomposition-DAG architecture.
+CLAIM_OBJECT_SIMPLE.md  Minimal claim-object example.
+CLAIM_OBJECT_MECHANISM_DAG_EXAMPLES.md
+                        Mechanism DAG examples using claim_decomposition_edges.
   KG_PROVENANCE.md      curated provenance map: license, API, proof-level per source
 ingest/                 redacted ingestion scripts (one per source) + SLURM wrapper
 INGEST.md               per-source recipe: endpoint, query, version, what it produces

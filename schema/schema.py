@@ -10,7 +10,12 @@ from enum import Enum
 # ═══════════════════════════════════════════════════════════════════════════
 
 class ClaimType(str, Enum):
-    """All claim types DAG 2 can be asked to prove."""
+    """Legacy optional claim classifier.
+
+    Target claim/decomposition architecture does not use claim_type for proof
+    logic. Agents should reason from claim content, participants, context, and
+    claim_decomposition_edges.
+    """
     # Essentiality
     OBSERVED_ESSENTIALITY = "ObservedEssentialityClaim"
     PREDICTED_ESSENTIALITY = "PredictedEssentialityClaim"
@@ -80,9 +85,8 @@ class ClaimType(str, Enum):
     CONTRADICTION = "ContradictionClaim"
     NOVELTY_ASSESSMENT = "NoveltyAssessmentClaim"
 
-    # Composite / mechanism DAG nodes. Parent/module nodes are usually
-    # SupersetClaim; generated mechanism leaves use MechanismHypothesisClaim
-    # plus node_kind metadata instead of a special chain-link type.
+    # Legacy compatibility values. Mechanism role now belongs on
+    # claim_decomposition_edges, not on claim_type.
     MECHANISM_HYPOTHESIS = "MechanismHypothesisClaim"
     SUPERSET_CLAIM = "SupersetClaim"
     # Deprecated read-compatible legacy value. Do not use for new writes.
