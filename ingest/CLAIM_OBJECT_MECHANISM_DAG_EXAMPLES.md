@@ -20,10 +20,13 @@ Each example lists the claim rows first.
 |---|---|
 | `ID` | Stable claim id used in diagrams. |
 | `claim_text` | Full assertion text. |
-| `participants` | Free-text participants: subject, object, context, phenotype. |
+| `participants` | Role-labeled KG node ids from `entities`; no prose-only participants. |
 | `relation_name` | Predicate on the claim. |
-| `polarity` | `positive`, `negative`, `null_hypothesis`, or `unknown`. |
+| `polarity` | `positive`, `negative`, `bidirectional`, `null`, `unknown`, or SQL `NULL` when sign is not applicable. |
 | `context/properties` | Context and non-proof metadata. DAG role does not live here. |
+
+If an example uses a node id that is not already present, the writer must
+insert the proposed entity before accepting the claim row.
 
 ### Edge Fields
 
@@ -83,22 +86,40 @@ M_TE_ANTIGEN_TCELL_ARM =
 M_HUMAN_ICB_CONTEXT = F_SETDB1_AMPLIFIED_HUMAN_TUMORS AND F_SETDB1_ASSOCIATES_WITH_ICB_RESISTANCE
 ```
 
+Participant node key:
+
+| node_id | type | meaning |
+|---|---|---|
+| `SETDB1` | `Gene` | SET domain bifurcated histone lysine methyltransferase 1. |
+| `PHENO-ICB_RESISTANCE` | `Phenotype` | Poor response or resistance to immune-checkpoint blockade. |
+| `PHENO-TUMOR_IMMUNOGENICITY_SUPPRESSION` | `Phenotype` | Reduced tumor-intrinsic immunogenicity. |
+| `PHENO-TE_SPECIFIC_CD8_RESPONSE` | `Phenotype` | TE-specific CD8 cytotoxic T-cell response. |
+| `THR-immune_checkpoint_blockade` | `TherapyRegimen` | ICB regimen. Use `THR-anti_PD1` plus therapy_target:`PDCD1` only for anti-PD-1-specific claims. |
+| `TME-tumor_intrinsic` | `TMECompartment` | Tumor-cell-intrinsic compartment. |
+| `CANCER-human_tumor` | `Disease` | Human tumor context. |
+| `EPI-H3K9me3` | `EpigeneticMark` | Histone H3 lysine 9 trimethylation. |
+| `GENOME-TE_IMMUNE_DOMAINS` | `BiologicalProcess` | TE-rich or immune-associated genomic domains. |
+| `GENOME-TE_REGULATORY_ELEMENTS` | `BiologicalProcess` | Latent TE-derived regulatory elements. |
+| `GENOME-TE_RETROVIRAL_ANTIGENS` | `Neoantigen` | TE-encoded retroviral antigen set. |
+| `BP-IMMUNOSTIMULATORY_GENE_EXPRESSION` | `BiologicalProcess` | Tumor-intrinsic immune gene expression. |
+| `CT-CD8_TCELL` | `CellType` | CD8 cytotoxic T cell. |
+
 Claims:
 
 | ID | claim_text | participants | relation_name | relation_polarity | context/properties |
 |---|---|---|---|---|---|
-| `P_SETDB1_ICB_RESISTANCE` | SETDB1 amplification/overactivity contributes to immune-checkpoint-blockade resistance by suppressing tumor-intrinsic immunogenicity. | SETDB1 amplification/overactivity; tumor-intrinsic immunogenicity; immune-checkpoint-blockade resistance | `contributes_to` | `positive` | tumor_intrinsic=true; therapy=ICB |
-| `M_SETDB1_SUPPRESSES_IMMUNOGENICITY` | SETDB1-dependent epigenetic silencing suppresses tumor-intrinsic immunogenicity through TE regulatory or TE antigen mechanisms. | SETDB1-dependent epigenetic silencing; tumor-intrinsic immunogenicity; TE regulatory elements; TE antigens | `suppresses` | `negative` | module=true |
-| `M_TE_REGULATORY_ELEMENT_ARM` | SETDB1 loss derepresses latent TE-derived regulatory elements and increases immunostimulatory gene expression. | SETDB1 loss; latent TE-derived regulatory elements; immunostimulatory genes | `increases_expression_via_derepression` | `positive` | module=true |
-| `M_TE_ANTIGEN_TCELL_ARM` | SETDB1 loss derepresses TE-encoded retroviral antigens and elicits TE-specific CD8 T-cell responses. | SETDB1 loss; TE-encoded retroviral antigens; CD8 T cells | `elicits` | `positive` | module=true |
-| `M_HUMAN_ICB_CONTEXT` | SETDB1 amplification/overactivity in human tumors associates with immune exclusion or ICB resistance. | SETDB1 amplification/overactivity; human tumors; immune exclusion; ICB resistance | `associates_with` | `positive` | module=true |
-| `F_SETDB1_H3K9ME3_TE_IMMUNE_DOMAINS` | SETDB1-dependent H3K9me3 domains are enriched for transposable elements and immune-related gene clusters. | SETDB1-dependent H3K9me3 domains; transposable elements; immune-related gene clusters; tumor cell | `is_enriched_for` | `positive` | shared anchor |
-| `F_SETDB1_LOSS_DEREPRESSES_TE_REGULATORY_ELEMENTS` | SETDB1 loss derepresses latent TE-derived regulatory elements. | SETDB1 loss; latent TE-derived regulatory elements; tumor cell | `derepresses` | `positive` | TE regulatory arm |
-| `F_TE_REGULATORY_ELEMENTS_INCREASE_IMMUNE_GENES` | Derepressed TE-derived regulatory elements increase immunostimulatory gene expression. | TE-derived regulatory elements; immunostimulatory genes; tumor cell | `increases` | `positive` | TE regulatory arm |
-| `F_SETDB1_LOSS_DEREPRESSES_TE_RETROVIRAL_ANTIGENS` | SETDB1 loss derepresses TE-encoded retroviral antigens. | SETDB1 loss; TE-encoded retroviral antigens; tumor cell | `derepresses` | `positive` | TE antigen arm |
-| `F_TE_ANTIGENS_ELICIT_CD8_TCELL_RESPONSES` | TE-encoded retroviral antigens elicit TE-specific CD8 cytotoxic T-cell responses. | TE-encoded retroviral antigens; TE-specific CD8 cytotoxic T cells; tumor cell | `elicits` | `positive` | TE antigen arm |
-| `F_SETDB1_AMPLIFIED_HUMAN_TUMORS` | SETDB1 amplification or overactivity occurs in a subset of human tumors. | SETDB1 amplification/overactivity; human tumors | `occurs_in` | `positive` | human context |
-| `F_SETDB1_ASSOCIATES_WITH_ICB_RESISTANCE` | SETDB1 amplification or overactivity associates with immune exclusion or ICB resistance. | SETDB1 amplification/overactivity; immune exclusion; ICB resistance | `associates_with` | `positive` | human context |
+| `P_SETDB1_ICB_RESISTANCE` | SETDB1 overactivity drives immune-checkpoint-blockade resistance in tumor cells. | effector:`SETDB1`; phenotype:`PHENO-ICB_RESISTANCE`; therapy_context:`THR-immune_checkpoint_blockade`; cell_context:`TME-tumor_intrinsic` | `drives_phenotype` | `positive` | SETDB1 alteration=overactivity |
+| `M_SETDB1_SUPPRESSES_IMMUNOGENICITY` | SETDB1 overactivity drives tumor-intrinsic immunogenicity suppression through TE regulatory or TE antigen mechanisms. | effector:`SETDB1`; phenotype:`PHENO-TUMOR_IMMUNOGENICITY_SUPPRESSION`; cell_context:`TME-tumor_intrinsic` | `drives_phenotype` | `positive` | module=true; SETDB1 alteration=overactivity |
+| `M_TE_REGULATORY_ELEMENT_ARM` | SETDB1 loss derepresses latent TE-derived regulatory elements and increases immunostimulatory gene expression. | effector:`SETDB1`; target:`GENOME-TE_REGULATORY_ELEMENTS`; phenotype:`BP-IMMUNOSTIMULATORY_GENE_EXPRESSION`; cell_context:`TME-tumor_intrinsic` | `perturbation_changes_phenotype` | `positive` | module=true; SETDB1 alteration=loss |
+| `M_TE_ANTIGEN_TCELL_ARM` | SETDB1 loss derepresses TE-encoded retroviral antigens and elicits TE-specific CD8 T-cell responses. | effector:`SETDB1`; target:`GENOME-TE_RETROVIRAL_ANTIGENS`; phenotype:`PHENO-TE_SPECIFIC_CD8_RESPONSE`; cell_context:`TME-tumor_intrinsic` | `perturbation_changes_phenotype` | `positive` | module=true; SETDB1 alteration=loss |
+| `M_HUMAN_ICB_CONTEXT` | SETDB1 overactivity in human tumors associates with ICB resistance. | effector:`SETDB1`; phenotype:`PHENO-ICB_RESISTANCE`; therapy_context:`THR-immune_checkpoint_blockade`; disease_context:`CANCER-human_tumor` | `is_associated_with_outcome` | `positive` | module=true; SETDB1 alteration=overactivity |
+| `F_SETDB1_H3K9ME3_TE_IMMUNE_DOMAINS` | SETDB1-dependent H3K9me3 domains are enriched for TE-rich and immune-associated genomic domains. | effector:`SETDB1`; mark:`EPI-H3K9me3`; region_class:`GENOME-TE_IMMUNE_DOMAINS`; cell_context:`TME-tumor_intrinsic` | `has_observed_property` | SQL `NULL` | shared anchor |
+| `F_SETDB1_LOSS_DEREPRESSES_TE_REGULATORY_ELEMENTS` | SETDB1 loss derepresses latent TE-derived regulatory elements. | effector:`SETDB1`; target:`GENOME-TE_REGULATORY_ELEMENTS`; cell_context:`TME-tumor_intrinsic` | `perturbation_changes_phenotype` | `positive` | TE regulatory arm; SETDB1 alteration=loss |
+| `F_TE_REGULATORY_ELEMENTS_INCREASE_IMMUNE_GENES` | Derepressed TE-derived regulatory elements increase immunostimulatory gene expression. | effector:`GENOME-TE_REGULATORY_ELEMENTS`; phenotype:`BP-IMMUNOSTIMULATORY_GENE_EXPRESSION`; cell_context:`TME-tumor_intrinsic` | `drives_phenotype` | `positive` | TE regulatory arm |
+| `F_SETDB1_LOSS_DEREPRESSES_TE_RETROVIRAL_ANTIGENS` | SETDB1 loss derepresses TE-encoded retroviral antigens. | effector:`SETDB1`; target:`GENOME-TE_RETROVIRAL_ANTIGENS`; cell_context:`TME-tumor_intrinsic` | `perturbation_changes_phenotype` | `positive` | TE antigen arm; SETDB1 alteration=loss |
+| `F_TE_ANTIGENS_ELICIT_CD8_TCELL_RESPONSES` | TE-encoded retroviral antigens elicit TE-specific CD8 cytotoxic T-cell responses. | effector:`GENOME-TE_RETROVIRAL_ANTIGENS`; phenotype:`PHENO-TE_SPECIFIC_CD8_RESPONSE`; immune_cell:`CT-CD8_TCELL`; cell_context:`TME-tumor_intrinsic` | `drives_phenotype` | `positive` | TE antigen arm |
+| `F_SETDB1_AMPLIFIED_HUMAN_TUMORS` | SETDB1 amplification or overactivity occurs in a subset of human tumors. | effector:`SETDB1`; disease_context:`CANCER-human_tumor` | `has_observed_property` | SQL `NULL` | human context; SETDB1 alteration=amplification_or_overactivity |
+| `F_SETDB1_ASSOCIATES_WITH_ICB_RESISTANCE` | SETDB1 overactivity associates with ICB resistance in human tumors. | effector:`SETDB1`; phenotype:`PHENO-ICB_RESISTANCE`; therapy_context:`THR-immune_checkpoint_blockade`; disease_context:`CANCER-human_tumor` | `is_associated_with_outcome` | `positive` | human context; SETDB1 alteration=overactivity |
 
 Decomposition edges:
 
@@ -167,14 +188,14 @@ Claims:
 
 | ID | claim_text | participants | relation_name | relation_polarity | context/properties |
 |---|---|---|---|---|---|
-| `P_STATINS_LDL` | Statins lower serum LDL cholesterol through hepatic cholesterol synthesis inhibition and LDL receptor upregulation. | statins; hepatocytes; serum LDL cholesterol | `lowers` | `negative` | drug class=statin |
-| `M_HEPATIC_UPTAKE` | Statins reduce intracellular hepatic cholesterol synthesis. | statins; HMGCR; hepatocyte cholesterol | `reduces` | `negative` | module=true |
-| `M_SREBP2_LDLR_AXIS` | Reduced hepatic cholesterol activates SREBP2 and increases LDLR-mediated LDL clearance. | cholesterol; SREBP2; LDLR; serum LDL | `increases_clearance_of` | `positive` | module=true |
-| `F_HMGCR_INHIBITION` | Statins inhibit HMG-CoA reductase. | statins; HMGCR enzyme | `inhibits` | `negative` | hepatic context |
-| `F_INTRACELLULAR_CHOL_FALLS` | HMGCR inhibition lowers intracellular hepatic cholesterol. | HMGCR inhibition; intracellular hepatic cholesterol | `lowers` | `negative` | hepatic context |
-| `F_SREBP2_ACTIVATED` | Low intracellular cholesterol activates SREBP2 processing. | intracellular cholesterol; SREBP2 | `activates` | `positive` | hepatic context |
-| `F_LDLR_UPREGULATED` | Activated SREBP2 upregulates LDL receptor expression. | SREBP2; LDLR expression | `upregulates` | `positive` | hepatic context |
-| `F_SERUM_LDL_CLEARED` | Increased LDLR clears LDL particles from serum. | LDLR; serum LDL particles | `clears` | `positive` | hepatic context |
+| `P_STATINS_LDL` | Statins lower serum LDL cholesterol through hepatic cholesterol synthesis inhibition and LDL receptor upregulation. | drug_class:`CMPD-statin_class`; cell_context:`CT-hepatocyte`; phenotype:`PHENO-serum_LDL_cholesterol` | `lowers` | `negative` | drug class=statin |
+| `M_HEPATIC_UPTAKE` | Statins reduce intracellular hepatic cholesterol synthesis. | drug_class:`CMPD-statin_class`; target:`HMGCR`; phenotype:`BP-hepatic_cholesterol_synthesis`; cell_context:`CT-hepatocyte` | `reduces` | `negative` | module=true |
+| `M_SREBP2_LDLR_AXIS` | Reduced hepatic cholesterol activates SREBP2 and increases LDLR-mediated LDL clearance. | metabolite:`CHEBI-cholesterol`; effector:`SREBF2`; target:`LDLR`; phenotype:`PHENO-serum_LDL_clearance` | `increases_clearance_of` | `positive` | module=true |
+| `F_HMGCR_INHIBITION` | Statins inhibit HMG-CoA reductase. | drug_class:`CMPD-statin_class`; target:`HMGCR`; cell_context:`CT-hepatocyte` | `inhibits` | `negative` | hepatic context |
+| `F_INTRACELLULAR_CHOL_FALLS` | HMGCR inhibition lowers intracellular hepatic cholesterol. | target:`HMGCR`; metabolite:`CHEBI-cholesterol`; cell_context:`CT-hepatocyte` | `lowers` | `negative` | hepatic context |
+| `F_SREBP2_ACTIVATED` | Low intracellular cholesterol activates SREBP2 processing. | metabolite:`CHEBI-cholesterol`; target:`SREBF2`; cell_context:`CT-hepatocyte` | `activates` | `positive` | hepatic context |
+| `F_LDLR_UPREGULATED` | Activated SREBP2 upregulates LDL receptor expression. | effector:`SREBF2`; target:`LDLR`; cell_context:`CT-hepatocyte` | `upregulates` | `positive` | hepatic context |
+| `F_SERUM_LDL_CLEARED` | Increased LDLR clears LDL particles from serum. | effector:`LDLR`; phenotype:`PHENO-serum_LDL_cholesterol`; compartment:`ANAT-serum` | `clears` | `positive` | hepatic context |
 
 Decomposition: every listed edge uses `ALL_OF`.
 
@@ -230,16 +251,16 @@ Claims:
 
 | ID | claim_text | participants | relation_name | relation_polarity | context/properties |
 |---|---|---|---|---|---|
-| `P_WRN_MSI_SL` | WRN loss or inhibition selectively kills microsatellite-unstable cancer cells. | WRN; MSI cancer cells; viability | `selectively_kills` | `positive` | context=MSI |
-| `M_MSI_CONTEXT` | MMR deficiency creates an MSI repeat-expansion context. | mismatch repair; microsatellite instability; TA repeats | `creates_context_for` | `positive` | context_bridge |
-| `M_WRN_LOSS_DAMAGE_CHAIN` | WRN loss converts expanded repeat structures into lethal DNA damage. | WRN loss; repeat structures; DNA damage; cell death | `causes` | `positive` | module=true |
-| `F_MMR_DEFICIENT` | The cancer context is mismatch-repair deficient. | mismatch-repair pathway; cancer cell | `is_deficient_in` | `negative` | context anchor |
-| `F_TA_REPEAT_EXPANDED` | TA-dinucleotide repeat expansions are present in the MSI genome. | TA repeats; MSI genome | `contains_expansions_of` | `positive` | context anchor |
-| `F_CRUCIFORM_SUBSTRATE` | Expanded TA repeats form cruciform-like non-B DNA structures. | expanded TA repeats; cruciform DNA | `forms` | `positive` | substrate |
-| `F_REPLICATION_FORK_STALLING` | Repeat-derived structures stall replication forks and require WRN-dependent resolution. | cruciform DNA; replication fork; WRN | `stalls` | `positive` | damage chain |
-| `F_MUS81_CLEAVAGE` | Without WRN, MUS81 cleaves stalled repeat-derived substrates. | WRN loss; MUS81; stalled substrate | `cleaves` | `positive` | damage chain |
-| `F_DSB_CHROMOSOME_SHATTERING` | MUS81 cleavage produces DSBs and chromosome shattering. | MUS81 cleavage; DSBs; chromosomes | `causes` | `positive` | damage chain |
-| `F_MSI_SELECTIVE_DEATH` | The DNA damage response produces MSI-selective growth arrest or death. | DNA damage; MSI cells; cell death | `causes` | `positive` | phenotype |
+| `P_WRN_MSI_SL` | WRN loss or inhibition selectively kills microsatellite-unstable cancer cells. | effector:`WRN`; phenotype:`PHENO-MSI_SELECTIVE_CELL_DEATH`; cell_context:`CANCER-MSI` | `selectively_kills` | `positive` | context=MSI |
+| `M_MSI_CONTEXT` | MMR deficiency creates an MSI repeat-expansion context. | pathway:`PATHWAY-mismatch_repair`; phenotype:`PHENO-microsatellite_instability`; genomic_feature:`GENOME-TA_REPEAT_EXPANSION` | `creates_context_for` | `positive` | context_bridge |
+| `M_WRN_LOSS_DAMAGE_CHAIN` | WRN loss converts expanded repeat structures into lethal DNA damage. | effector:`WRN`; genomic_feature:`GENOME-TA_REPEAT_EXPANSION`; phenotype:`PHENO-DNA_DAMAGE_CELL_DEATH` | `causes` | `positive` | module=true; WRN alteration=loss_or_inhibition |
+| `F_MMR_DEFICIENT` | The cancer context is mismatch-repair deficient. | pathway:`PATHWAY-mismatch_repair`; cell_context:`CANCER-MSI` | `is_deficient_in` | `negative` | context anchor |
+| `F_TA_REPEAT_EXPANDED` | TA-dinucleotide repeat expansions are present in the MSI genome. | genomic_feature:`GENOME-TA_REPEATS`; genome_context:`GENOME-MSI` | `contains_expansions_of` | `positive` | context anchor |
+| `F_CRUCIFORM_SUBSTRATE` | Expanded TA repeats form cruciform-like non-B DNA structures. | genomic_feature:`GENOME-TA_REPEAT_EXPANSION`; structure:`DNA-cruciform` | `forms` | `positive` | substrate |
+| `F_REPLICATION_FORK_STALLING` | Repeat-derived structures stall replication forks and require WRN-dependent resolution. | structure:`DNA-cruciform`; process:`BP-replication_fork_stalling`; effector:`WRN` | `stalls` | `positive` | damage chain |
+| `F_MUS81_CLEAVAGE` | Without WRN, MUS81 cleaves stalled repeat-derived substrates. | effector:`MUS81`; target:`BP-replication_fork_stalling`; context_gene:`WRN` | `cleaves` | `positive` | damage chain; WRN alteration=loss |
+| `F_DSB_CHROMOSOME_SHATTERING` | MUS81 cleavage produces DSBs and chromosome shattering. | effector:`MUS81`; phenotype:`PHENO-double_strand_breaks`; phenotype:`PHENO-chromosome_shattering` | `causes` | `positive` | damage chain |
+| `F_MSI_SELECTIVE_DEATH` | The DNA damage response produces MSI-selective growth arrest or death. | effector:`PHENO-DNA_DAMAGE`; cell_context:`CANCER-MSI`; phenotype:`PHENO-MSI_SELECTIVE_CELL_DEATH` | `causes` | `positive` | phenotype |
 
 Decomposition:
 
@@ -311,14 +332,14 @@ Claims:
 
 | ID | claim_text | participants | relation_name | relation_polarity | context/properties |
 |---|---|---|---|---|---|
-| `P_FERROPTOSIS_SUPPRESSED` | Cells suppress ferroptosis by detoxifying lipid peroxides or lipid radicals. | cell; lipid peroxides/radicals; ferroptosis | `suppresses` | `negative` | parent |
-| `M_GPX4_AXIS` | The GSH-GPX4 axis detoxifies lipid peroxides. | glutathione; GPX4; lipid peroxides | `detoxifies` | `negative` | sufficient module |
-| `M_FSP1_AXIS` | The FSP1-CoQ-NAD(P)H axis suppresses ferroptosis independently of GPX4. | FSP1; CoQ10; NAD(P)H; lipid radicals | `suppresses` | `negative` | sufficient module |
-| `F_GSH_AVAILABLE` | Glutathione is available as a GPX4 reducing cofactor. | glutathione; GPX4 | `provides_cofactor_for` | `positive` | GPX4 axis |
-| `F_GPX4_REDUCES_LIPID_PEROXIDES` | GPX4 reduces phospholipid hydroperoxides. | GPX4; phospholipid hydroperoxides | `reduces` | `negative` | GPX4 axis |
-| `F_COQ10_AVAILABLE` | CoQ10 is available at the membrane for FSP1-dependent redox cycling. | CoQ10; membrane; FSP1 | `is_available_to` | `positive` | FSP1 axis |
-| `F_NADPH_AVAILABLE` | NAD(P)H is available as the reducing equivalent for FSP1. | NAD(P)H; FSP1 | `provides_reducing_equivalents_for` | `positive` | FSP1 axis |
-| `F_FSP1_REGENERATES_COQ10` | FSP1 regenerates reduced CoQ10 to trap lipid radicals. | FSP1; CoQ10; lipid radicals | `regenerates` | `positive` | FSP1 axis |
+| `P_FERROPTOSIS_SUPPRESSED` | Cells suppress ferroptosis by detoxifying lipid peroxides or lipid radicals. | cell_context:`CELL-generic`; phenotype:`PHENO-ferroptosis_suppression`; target:`CHEBI-lipid_peroxide` | `suppresses` | `negative` | parent |
+| `M_GPX4_AXIS` | The GSH-GPX4 axis detoxifies lipid peroxides. | cofactor:`CHEBI-glutathione`; effector:`GPX4`; target:`CHEBI-phospholipid_hydroperoxide` | `detoxifies` | `negative` | sufficient module |
+| `M_FSP1_AXIS` | The FSP1-CoQ-NAD(P)H axis suppresses ferroptosis independently of GPX4. | effector:`AIFM2`; cofactor:`CHEBI-coenzyme_Q10`; cofactor:`CHEBI-NADPH`; target:`CHEBI-lipid_radical` | `suppresses` | `negative` | sufficient module |
+| `F_GSH_AVAILABLE` | Glutathione is available as a GPX4 reducing cofactor. | cofactor:`CHEBI-glutathione`; effector:`GPX4` | `provides_cofactor_for` | `positive` | GPX4 axis |
+| `F_GPX4_REDUCES_LIPID_PEROXIDES` | GPX4 reduces phospholipid hydroperoxides. | effector:`GPX4`; target:`CHEBI-phospholipid_hydroperoxide` | `reduces` | `negative` | GPX4 axis |
+| `F_COQ10_AVAILABLE` | CoQ10 is available at the membrane for FSP1-dependent redox cycling. | cofactor:`CHEBI-coenzyme_Q10`; compartment:`GO-plasma_membrane`; effector:`AIFM2` | `is_available_to` | `positive` | FSP1 axis |
+| `F_NADPH_AVAILABLE` | NAD(P)H is available as the reducing equivalent for FSP1. | cofactor:`CHEBI-NADPH`; effector:`AIFM2` | `provides_reducing_equivalents_for` | `positive` | FSP1 axis |
+| `F_FSP1_REGENERATES_COQ10` | FSP1 regenerates reduced CoQ10 to trap lipid radicals. | effector:`AIFM2`; cofactor:`CHEBI-coenzyme_Q10`; target:`CHEBI-lipid_radical` | `regenerates` | `positive` | FSP1 axis |
 
 Decomposition:
 
@@ -387,17 +408,17 @@ Claims:
 
 | ID | claim_text | participants | relation_name | relation_polarity | context/properties |
 |---|---|---|---|---|---|
-| `P_LEN_DEL5Q_MDS` | Lenalidomide creates a therapeutic window in del(5q) MDS by degrading CK1alpha. | lenalidomide; del(5q) MDS; CK1alpha; therapeutic window | `creates_therapeutic_window_by` | `positive` | disease=del(5q) MDS |
-| `M_DEL5Q_CONTEXT` | del(5q) places CSNK1A1 in the commonly deleted region and creates CK1alpha haploinsufficiency. | del(5q); CSNK1A1; CK1alpha dosage | `creates_context_for` | `positive` | context_bridge |
-| `M_CK1A_DRUG_CHAIN` | Lenalidomide redirects CRBN to ubiquitinate and degrade CK1alpha. | lenalidomide; CRBN; CK1alpha; ubiquitination | `induces_degradation_of` | `negative` | drug mechanism |
-| `F_DEL5Q_PRESENT` | The malignant clone carries deletion 5q. | del(5q); MDS clone | `has_genomic_lesion` | `positive` | genetic context |
-| `F_CSNK1A1_IN_CDR` | CSNK1A1 lies in the del(5q) commonly deleted region. | CSNK1A1; del(5q) CDR | `is_within` | `positive` | genetic context |
-| `F_CK1A_HAPLOINSUFFICIENT` | del(5q) reduces CK1alpha gene dosage. | del(5q); CSNK1A1/CK1alpha dosage | `reduces` | `negative` | genetic context |
-| `F_LENALIDOMIDE_BINDS_CRBN` | Lenalidomide binds CRBN. | lenalidomide; CRBN | `binds` | `positive` | shared drug anchor |
-| `F_CRBN_RECRUITS_CK1A` | Lenalidomide-bound CRBN recruits CK1alpha as a neo-substrate. | lenalidomide-bound CRBN; CK1alpha | `recruits` | `positive` | drug chain |
-| `F_CK1A_UBIQUITINATED` | CRL4-CRBN ubiquitinates CK1alpha. | CRL4-CRBN; CK1alpha; ubiquitin | `ubiquitinates` | `positive` | drug chain |
-| `F_CK1A_DEGRADED` | Ubiquitinated CK1alpha is degraded. | ubiquitinated CK1alpha; proteasome | `degrades` | `negative` | drug chain |
-| `F_DEL5Q_SELECTIVE_DEATH` | Additional CK1alpha loss selectively impairs del(5q) MDS cells. | CK1alpha loss; del(5q) MDS cells; viability | `selectively_impairs` | `negative` | phenotype |
+| `P_LEN_DEL5Q_MDS` | Lenalidomide creates a therapeutic window in del(5q) MDS by degrading CK1alpha. | drug:`CHEMBL848`; disease_context:`DISEASE-del5q_MDS`; target:`CSNK1A1`; phenotype:`PHENO-therapeutic_window` | `creates_therapeutic_window_by` | `positive` | disease=del(5q) MDS |
+| `M_DEL5Q_CONTEXT` | del(5q) places CSNK1A1 in the commonly deleted region and creates CK1alpha haploinsufficiency. | genomic_lesion:`VAR-del5q`; target:`CSNK1A1`; phenotype:`PHENO-CK1A_haploinsufficiency` | `creates_context_for` | `positive` | context_bridge |
+| `M_CK1A_DRUG_CHAIN` | Lenalidomide redirects CRBN to ubiquitinate and degrade CK1alpha. | drug:`CHEMBL848`; effector:`CRBN`; target:`CSNK1A1`; process:`PTM-ubiquitination` | `induces_degradation_of` | `negative` | drug mechanism |
+| `F_DEL5Q_PRESENT` | The malignant clone carries deletion 5q. | genomic_lesion:`VAR-del5q`; disease_context:`DISEASE-MDS_clone` | `has_genomic_lesion` | `positive` | genetic context |
+| `F_CSNK1A1_IN_CDR` | CSNK1A1 lies in the del(5q) commonly deleted region. | target:`CSNK1A1`; genomic_region:`GENOME-del5q_CDR` | `is_within` | `positive` | genetic context |
+| `F_CK1A_HAPLOINSUFFICIENT` | del(5q) reduces CK1alpha gene dosage. | genomic_lesion:`VAR-del5q`; target:`CSNK1A1`; phenotype:`PHENO-CK1A_haploinsufficiency` | `reduces` | `negative` | genetic context |
+| `F_LENALIDOMIDE_BINDS_CRBN` | Lenalidomide binds CRBN. | drug:`CHEMBL848`; target:`CRBN` | `binds` | `positive` | shared drug anchor |
+| `F_CRBN_RECRUITS_CK1A` | Lenalidomide-bound CRBN recruits CK1alpha as a neo-substrate. | effector:`COMPLEX-lenalidomide_CRBN`; target:`CSNK1A1` | `recruits` | `positive` | drug chain |
+| `F_CK1A_UBIQUITINATED` | CRL4-CRBN ubiquitinates CK1alpha. | effector:`COMPLEX-CRL4_CRBN`; target:`CSNK1A1`; process:`PTM-ubiquitination` | `ubiquitinates` | `positive` | drug chain |
+| `F_CK1A_DEGRADED` | Ubiquitinated CK1alpha is degraded. | target:`CSNK1A1`; process:`BP-proteasomal_degradation` | `degrades` | `negative` | drug chain |
+| `F_DEL5Q_SELECTIVE_DEATH` | Additional CK1alpha loss selectively impairs del(5q) MDS cells. | target:`CSNK1A1`; disease_context:`DISEASE-del5q_MDS`; phenotype:`PHENO-cell_viability` | `selectively_impairs` | `negative` | phenotype |
 
 Decomposition:
 
@@ -479,11 +500,11 @@ Claims:
 
 | ID | claim_text | participants | relation_name | relation_polarity | context/properties |
 |---|---|---|---|---|---|
-| `P_SENESCENCE` | The cell population is senescent. | cell population; senescence state | `has_cell_state` | `positive` | min_required=3 |
-| `F_SA_BETAGAL` | The population is positive for SA-beta-gal activity. | cell population; SA-beta-gal | `has_marker` | `positive` | senescence marker |
-| `F_P16_HIGH` | The population has high p16/CDKN2A expression. | cell population; p16/CDKN2A | `has_high_expression_of` | `positive` | senescence marker |
-| `F_SASP` | The population secretes a SASP-like inflammatory program. | cell population; SASP cytokines | `secretes` | `positive` | senescence marker |
-| `F_IRREVERSIBLE_ARREST` | The population shows durable cell-cycle arrest. | cell population; cell-cycle arrest | `has_state` | `positive` | senescence marker |
+| `P_SENESCENCE` | The cell population is senescent. | cell_population:`CELL-population`; phenotype:`PHENO-senescence` | `has_cell_state` | `positive` | min_required=3 |
+| `F_SA_BETAGAL` | The population is positive for SA-beta-gal activity. | cell_population:`CELL-population`; marker:`PHENO-SA_beta_gal_activity` | `has_marker` | `positive` | senescence marker |
+| `F_P16_HIGH` | The population has high p16/CDKN2A expression. | cell_population:`CELL-population`; marker_gene:`CDKN2A` | `has_high_expression_of` | `positive` | senescence marker |
+| `F_SASP` | The population secretes a SASP-like inflammatory program. | cell_population:`CELL-population`; phenotype:`PHENO-SASP_program` | `secretes` | `positive` | senescence marker |
+| `F_IRREVERSIBLE_ARREST` | The population shows durable cell-cycle arrest. | cell_population:`CELL-population`; phenotype:`PHENO-durable_cell_cycle_arrest` | `has_state` | `positive` | senescence marker |
 
 Decomposition: all edges into `P_SENESCENCE` use `K_OF_N` with
 `support_operator_params = {"min_required": 3}`.
@@ -516,12 +537,12 @@ Claims:
 
 | ID | claim_text | participants | relation_name | relation_polarity | context/properties |
 |---|---|---|---|---|---|
-| `P_T_HELPER_FATE` | A CD4 T cell is committed to one helper-cell fate in this context. | CD4 T cell; helper-cell fate | `has_fate` | `positive` | mutually exclusive |
-| `M_TH1` | The cell is committed to a Th1 fate. | CD4 T cell; Th1 program | `has_fate` | `positive` | fate module |
-| `M_TH2` | The cell is committed to a Th2 fate. | CD4 T cell; Th2 program | `has_fate` | `positive` | fate module |
-| `M_TH17` | The cell is committed to a Th17 fate. | CD4 T cell; Th17 program | `has_fate` | `positive` | fate module |
-| `M_TREG` | The cell is committed to a Treg fate. | CD4 T cell; Treg program | `has_fate` | `positive` | fate module |
-| `M_TFH` | The cell is committed to a Tfh fate. | CD4 T cell; Tfh program | `has_fate` | `positive` | fate module |
+| `P_T_HELPER_FATE` | A CD4 T cell is committed to one helper-cell fate in this context. | cell_context:`CT-CD4_TCELL`; phenotype:`PHENO-helper_T_cell_fate` | `has_fate` | `positive` | mutually exclusive |
+| `M_TH1` | The cell is committed to a Th1 fate. | cell_context:`CT-CD4_TCELL`; phenotype:`PHENO-Th1_fate` | `has_fate` | `positive` | fate module |
+| `M_TH2` | The cell is committed to a Th2 fate. | cell_context:`CT-CD4_TCELL`; phenotype:`PHENO-Th2_fate` | `has_fate` | `positive` | fate module |
+| `M_TH17` | The cell is committed to a Th17 fate. | cell_context:`CT-CD4_TCELL`; phenotype:`PHENO-Th17_fate` | `has_fate` | `positive` | fate module |
+| `M_TREG` | The cell is committed to a Treg fate. | cell_context:`CT-CD4_TCELL`; phenotype:`PHENO-Treg_fate` | `has_fate` | `positive` | fate module |
+| `M_TFH` | The cell is committed to a Tfh fate. | cell_context:`CT-CD4_TCELL`; phenotype:`PHENO-Tfh_fate` | `has_fate` | `positive` | fate module |
 
 Decomposition: all edges into `P_T_HELPER_FATE` use
 `MUTUALLY_EXCLUSIVE_ALTERNATIVES`.
@@ -562,12 +583,12 @@ Claims:
 
 | ID | claim_text | participants | relation_name | relation_polarity | context/properties |
 |---|---|---|---|---|---|
-| `P_DIABETES_ETIOLOGY` | This patient's diabetes can be explained by a supported etiology. | patient; diabetes; etiology | `explained_by` | `positive` | patient context |
-| `M_T1D` | Autoimmune beta-cell destruction explains the diabetes. | autoimmune process; beta cells; diabetes | `causes` | `positive` | etiology |
-| `M_T2D` | Insulin resistance with beta-cell dysfunction explains the diabetes. | insulin resistance; beta-cell dysfunction; diabetes | `causes` | `positive` | etiology |
-| `M_MODY` | Monogenic beta-cell dysfunction explains the diabetes. | MODY gene; beta-cell dysfunction; diabetes | `causes` | `positive` | etiology |
-| `M_GESTATIONAL` | Pregnancy-associated metabolic state explains the diabetes. | pregnancy; metabolic state; diabetes | `causes` | `positive` | etiology |
-| `M_DRUG_INDUCED` | Drug exposure explains the diabetes. | drug exposure; glucose dysregulation; diabetes | `causes` | `positive` | etiology |
+| `P_DIABETES_ETIOLOGY` | This patient's diabetes can be explained by a supported etiology. | patient_context:`COHORT-patient`; disease:`MONDO-diabetes`; etiology_set:`BP-diabetes_etiology` | `explained_by` | `positive` | patient context |
+| `M_T1D` | Autoimmune beta-cell destruction explains the diabetes. | process:`BP-autoimmune_beta_cell_destruction`; cell_context:`CT-pancreatic_beta_cell`; disease:`MONDO-diabetes` | `causes` | `positive` | etiology |
+| `M_T2D` | Insulin resistance with beta-cell dysfunction explains the diabetes. | phenotype:`PHENO-insulin_resistance`; phenotype:`PHENO-beta_cell_dysfunction`; disease:`MONDO-diabetes` | `causes` | `positive` | etiology |
+| `M_MODY` | Monogenic beta-cell dysfunction explains the diabetes. | gene_set:`GENESET-MODY`; phenotype:`PHENO-beta_cell_dysfunction`; disease:`MONDO-diabetes` | `causes` | `positive` | etiology |
+| `M_GESTATIONAL` | Pregnancy-associated metabolic state explains the diabetes. | context:`PHENO-pregnancy`; phenotype:`PHENO-pregnancy_metabolic_state`; disease:`MONDO-diabetes` | `causes` | `positive` | etiology |
+| `M_DRUG_INDUCED` | Drug exposure explains the diabetes. | exposure:`CMPD-drug_exposure`; phenotype:`PHENO-glucose_dysregulation`; disease:`MONDO-diabetes` | `causes` | `positive` | etiology |
 
 Decomposition: all edges into `P_DIABETES_ETIOLOGY` use `INDEPENDENT_CAUSES`.
 

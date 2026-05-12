@@ -241,13 +241,21 @@ class NodeTypeInClaim(str, Enum):
     """Type of an entity participating in a CandidateClaim.
 
     Mirrors the Layer-1 entity types but is duplicated here so the DAG-2
-    contract does not import the full core schema. Stay in sync.
+    contract does not import the full core schema. Values must correspond to
+    node types that can exist in the KG.
     """
     GENE = "gene"
     PROTEIN = "protein"
     PROTEIN_COMPLEX = "protein_complex"
     PATHWAY = "pathway"
+    BIOLOGICAL_PROCESS = "biological_process"
     CELL_POPULATION = "cell_population"
+    CELL_TYPE = "cell_type"
+    CANCER_TYPE = "cancer_type"
+    TME_COMPARTMENT = "tme_compartment"
+    THERAPY_REGIMEN = "therapy_regimen"
+    PHENOTYPE = "phenotype"
+    DISEASE = "disease"
     METABOLITE = "metabolite"
     EPIGENETIC_MARK = "epigenetic_mark"
     IMMUNE_STATE = "immune_state"
@@ -256,6 +264,12 @@ class NodeTypeInClaim(str, Enum):
 class NodeRoleInClaim(str, Enum):
     """Role a node plays inside a CandidateClaim."""
     PRIMARY = "primary"                          # the node the claim is fundamentally about
+    EFFECTOR = "effector"                        # causal/regulatory actor, e.g. SETDB1
+    PHENOTYPE = "phenotype"                      # measured or asserted outcome node
+    THERAPY_CONTEXT = "therapy_context"          # treatment/regimen conditioning the claim
+    THERAPY_TARGET = "therapy_target"            # molecular target of a therapy, e.g. PDCD1/PD-1
+    CELL_CONTEXT = "cell_context"                # cell type or compartment where the claim holds
+    DISEASE_CONTEXT = "disease_context"          # cancer or disease node scoping the claim
     MEDIATOR = "mediator"                        # required intermediate
     UPSTREAM_REGULATOR = "upstream_regulator"    # drives the primary node
     DOWNSTREAM_TARGET = "downstream_target"      # read-out of the primary node
@@ -268,15 +282,18 @@ class NodeRoleInClaim(str, Enum):
 class CandidateNode:
     """One entity that participates in a CandidateClaim.
 
-    A claim can name multiple involved entities of mixed types
-    (gene, complex, pathway, cell population, mark, immune state, …).
+    Participants are graph nodes. `node_id` must resolve to an entity in the
+    KG (or to a proposed entity that will be inserted before the claim is
+    accepted). Do not use prose phrases as participants; put alteration,
+    dose, compartment, or assay qualifiers in properties/context.
 
     Constraint: exactly one CandidateNode per claim has role==PRIMARY.
     """
-    node_id: str                                  # HGNC symbol or KG entity_id
+    node_id: str                                  # canonical entities.entity_id
     node_type: NodeTypeInClaim = NodeTypeInClaim.GENE
     role_in_claim: NodeRoleInClaim = NodeRoleInClaim.PRIMARY
     display_name: str = ""
     required: bool = True                          # load-bearing for claim truth?
     compartment: str = ""                          # tumor_intrinsic | immune_effector | myeloid | …
+    properties: dict[str, str] = field(default_factory=dict)
     notes: str = ""

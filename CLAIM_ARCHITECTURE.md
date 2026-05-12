@@ -191,7 +191,7 @@ entities. The row shape is intentionally small:
 | Field | Meaning |
 |---|---|
 | `claim_id` | The claim this participant belongs to. |
-| `entity_id` | Canonical KG entity id after alias resolution, e.g. `HGNC:SETDB1`, `MONDO:melanoma`, `CHEBI:PIP3`. |
+| `entity_id` | Canonical KG entity id after alias resolution, e.g. `SETDB1`, `ONCO-MELANOMA`, `CHEBI:PIP3`. |
 | `role` | Biological role inside the claim, not a generic graph edge label. |
 | `properties` | JSON qualifiers for role semantics, principal anchoring, context, and composition. |
 
@@ -301,21 +301,33 @@ Example:
 ```json
 [
   {
-    "claim_id": "claim:setdb1-oe-pd1-resistance",
-    "entity_id": "HGNC:SETDB1",
-    "role": "effector_gene",
+    "claim_id": "claim:setdb1-icb-resistance",
+    "entity_id": "SETDB1",
+    "role": "effector",
     "properties": {"principal": true, "side": "subject", "alteration": "overexpression", "required": true}
   },
   {
-    "claim_id": "claim:setdb1-oe-pd1-resistance",
-    "entity_id": "therapy:anti-PD1_resistance",
-    "role": "therapy_response",
+    "claim_id": "claim:setdb1-icb-resistance",
+    "entity_id": "PHENO-ICB_RESISTANCE",
+    "role": "phenotype",
     "properties": {"principal": true, "side": "object", "required": true}
   },
   {
-    "claim_id": "claim:setdb1-oe-pd1-resistance",
-    "entity_id": "MONDO:melanoma",
-    "role": "context_cancer_type",
+    "claim_id": "claim:setdb1-icb-resistance",
+    "entity_id": "THR-anti_PD1",
+    "role": "therapy_context",
+    "properties": {"principal": false, "side": "context", "context_dimension": "therapy"}
+  },
+  {
+    "claim_id": "claim:setdb1-icb-resistance",
+    "entity_id": "PDCD1",
+    "role": "therapy_target",
+    "properties": {"principal": false, "side": "context", "required": false}
+  },
+  {
+    "claim_id": "claim:setdb1-icb-resistance",
+    "entity_id": "ONCO-MELANOMA",
+    "role": "disease_context",
     "properties": {"principal": false, "side": "context", "context_dimension": "cancer_type"}
   }
 ]
@@ -510,23 +522,23 @@ The complete claim content object is:
 
 ```json
 {
-  "claim_text": "SETDB1 overexpression causes anti-PD1 resistance in melanoma",
-  "relation_name": "causes",
+  "claim_text": "SETDB1 overactivity drives anti-PD-1 resistance in melanoma",
+  "relation_name": "drives_phenotype",
   "relation_polarity": "positive",
   "participants": [
     {
-      "entity_id": "HGNC:SETDB1",
-      "role": "effector_gene",
+      "entity_id": "SETDB1",
+      "role": "effector",
       "properties": {
         "principal": true,
         "side": "subject",
-        "alteration": "overexpression",
+        "alteration": "overactivity",
         "required": true
       }
     },
     {
-      "entity_id": "therapy:anti-PD1_resistance",
-      "role": "therapy_response",
+      "entity_id": "PHENO-ICB_RESISTANCE",
+      "role": "phenotype",
       "properties": {
         "principal": true,
         "side": "object",
@@ -534,8 +546,26 @@ The complete claim content object is:
       }
     },
     {
-      "entity_id": "MONDO:melanoma",
-      "role": "context_cancer_type",
+      "entity_id": "THR-anti_PD1",
+      "role": "therapy_context",
+      "properties": {
+        "principal": false,
+        "side": "context",
+        "context_dimension": "therapy"
+      }
+    },
+    {
+      "entity_id": "PDCD1",
+      "role": "therapy_target",
+      "properties": {
+        "principal": false,
+        "side": "context",
+        "required": false
+      }
+    },
+    {
+      "entity_id": "ONCO-MELANOMA",
+      "role": "disease_context",
       "properties": {
         "principal": false,
         "side": "context",
@@ -821,17 +851,18 @@ Example:
 
 ```
 Parent claim:
-  SETDB1 overexpression causes anti-PD1 resistance in melanoma
+  SETDB1 overactivity drives anti-PD-1 resistance in melanoma
 
 Child claim:
-  SETDB1 positively regulates ERV expression
+  SETDB1 overactivity drives tumor-intrinsic immunogenicity suppression
 
 Child intrinsic context:
   tumor cells, SETDB1-high state
 
 DAG edge context:
-  anti-PD1-treated melanoma where ERV/interferon signaling is a proposed
-  mechanism connecting SETDB1 overexpression to resistance
+  anti-PD-1-treated melanoma where tumor-intrinsic immunogenicity
+  suppression is a proposed mechanism connecting SETDB1 overactivity to
+  resistance
 ```
 
 The child is not globally sufficient for the parent. It supports the
@@ -849,11 +880,11 @@ meaningful.
 
 Examples:
 
-- Valid narrowing: child says `SETDB1 regulates ERV expression in tumor
-  cells`; parent says `SETDB1 overexpression causes anti-PD1 resistance
-  in melanoma`. The parent context is narrower, so the child could be
-  true in the parent context.
-- Exact match: child and parent both specify melanoma anti-PD1 context.
+- Valid narrowing: child says `SETDB1 drives tumor-intrinsic
+  immunogenicity suppression in tumor cells`; parent says `SETDB1
+  overactivity drives anti-PD-1 resistance in melanoma`. The parent
+  context is narrower, so the child could be true in the parent context.
+- Exact match: child and parent both specify melanoma anti-PD-1 context.
 - Too narrow without justification: child only holds in `IFNg-exposed
   melanoma`, but parent is all melanoma. The edge can still exist as
   proposed, but it should not be counted as satisfied until the missing
@@ -924,7 +955,7 @@ The child becomes part of the parent only through a structural
     },
     "missing_context_dimensions": [],
     "supports_parent_under_context": true,
-    "context_rationale": "ERV expression is relevant here as one proposed route from SETDB1 overexpression to interferon-state changes under anti-PD1 therapy.",
+    "context_rationale": "Tumor-intrinsic immunogenicity suppression is relevant here as one proposed route from SETDB1 overactivity to resistance under anti-PD-1 therapy.",
     "evidence_rollup": {
       "supporting_interpretation_ids": [],
       "refuting_interpretation_ids": [],
@@ -962,16 +993,16 @@ Example:
 
 ```
 Parent:
-  SETDB1 overexpression causes anti-PD1 resistance in melanoma
+  SETDB1 overactivity drives anti-PD-1 resistance in melanoma
 
 Child A:
-  SETDB1 positively regulates ERV expression
+  SETDB1-dependent H3K9me3 domains are enriched for TE-rich immune domains
 
 Child B:
-  ERV expression increases interferon signaling
+  SETDB1 loss derepresses TE-derived regulatory elements
 
 Child C:
-  Interferon signaling changes anti-PD1 response state
+  TE-derived regulatory elements increase tumor-intrinsic immune gene expression
 
 DAG:
   Child A --claim_dag_of--> Parent  (path p1, step 1, ALL_OF)

@@ -23,9 +23,9 @@ analysis_runs -> biological_results -> result_to_claim -> claims
 |---|---|
 | `claim_id` | Stable id. |
 | `claim_text` | Free-text assertion. |
-| `participants` | Free-text and/or entity ids for subject, object, context, phenotype. |
-| `relation_name` | Predicate, e.g. `contributes_to`, `derepresses`, `associates_with`. |
-| `relation_polarity` | `positive`, `negative`, `null_hypothesis`, or `unknown`. |
+| `participants` | Role-labeled KG node ids from `entities`; no prose-only participants. |
+| `relation_name` | Canonical predicate, e.g. `drives_phenotype`, `correlates_with`, `binds`. |
+| `relation_polarity` | `positive`, `negative`, `bidirectional`, `null`, `unknown`, or SQL `NULL` when sign is not applicable. |
 | `context_set_json` | Where the assertion holds. |
 | `evidence_status` | `unchecked`, `evidenced`, `refuted`, `inconclusive`. |
 | `prior_art_status` | `new`, `literature_supported`, `literature_refuted`. |
@@ -34,25 +34,41 @@ analysis_runs -> biological_results -> result_to_claim -> claims
 | `edge_signature` | Canonical dedup hash. |
 | `full_data` | Extra structured JSON; not proof role. |
 
+If no node exists for a needed phenotype, therapy context, or genomic region,
+create a proposed `entities` row first. Do not store that participant as prose.
+
 ## Tiny Example
 
 Parent:
 
 ```text
 P_SETDB1_ICB_RESISTANCE:
-SETDB1 amplification/overactivity contributes to immune-checkpoint-blockade
-resistance by suppressing tumor-intrinsic immunogenicity.
+SETDB1 overactivity drives immune-checkpoint-blockade resistance in tumor
+cells.
 ```
+
+Participant node key:
+
+| node_id | type | meaning |
+|---|---|---|
+| `SETDB1` | `Gene` | SET domain bifurcated histone lysine methyltransferase 1. |
+| `PHENO-ICB_RESISTANCE` | `Phenotype` | Poor response or resistance to immune-checkpoint blockade. |
+| `THR-immune_checkpoint_blockade` | `TherapyRegimen` | ICB regimen. Use `THR-anti_PD1` for anti-PD-1-specific claims. |
+| `TME-tumor_intrinsic` | `TMECompartment` | Tumor-cell-intrinsic compartment. |
+| `EPI-H3K9me3` | `EpigeneticMark` | Histone H3 lysine 9 trimethylation. |
+| `GENOME-TE_IMMUNE_DOMAINS` | `BiologicalProcess` | TE-rich or immune-associated genomic domains. |
+| `GENOME-TE_REGULATORY_ELEMENTS` | `BiologicalProcess` | Latent TE-derived regulatory elements. |
+| `BP-IMMUNOSTIMULATORY_GENE_EXPRESSION` | `BiologicalProcess` | Tumor-intrinsic immune gene expression. |
 
 ### Claims
 
 | ID | claim_text | participants | relation_name | relation_polarity | context/properties |
 |---|---|---|---|---|---|
-| `P_SETDB1_ICB_RESISTANCE` | SETDB1 amplification/overactivity contributes to immune-checkpoint-blockade resistance by suppressing tumor-intrinsic immunogenicity. | SETDB1 amplification/overactivity; tumor-intrinsic immunogenicity; immune-checkpoint-blockade resistance | `contributes_to` | `positive` | therapy=ICB; cell_type=tumor_cell |
-| `F_SETDB1_H3K9ME3_TE_IMMUNE_DOMAINS` | SETDB1-dependent H3K9me3 domains are enriched for transposable elements and immune-related gene clusters. | SETDB1-dependent H3K9me3 domains; transposable elements; immune-related gene clusters; tumor cell | `is_enriched_for` | `positive` | shared anchor |
-| `F_SETDB1_LOSS_DEREPRESSES_TE_REGULATORY_ELEMENTS` | SETDB1 loss derepresses latent TE-derived regulatory elements. | SETDB1 loss; latent TE-derived regulatory elements; tumor cell | `derepresses` | `positive` | perturbation=SETDB1_loss |
-| `F_TE_REGULATORY_ELEMENTS_INCREASE_IMMUNE_GENES` | Derepressed TE-derived regulatory elements increase immunostimulatory gene expression. | TE-derived regulatory elements; immunostimulatory genes; tumor cell | `increases` | `positive` | tumor_intrinsic=true |
-| `F_SETDB1_ASSOCIATES_WITH_ICB_RESISTANCE` | SETDB1 amplification or overactivity associates with immune exclusion or ICB resistance. | SETDB1 amplification/overactivity; immune exclusion; ICB resistance | `associates_with` | `positive` | human context |
+| `P_SETDB1_ICB_RESISTANCE` | SETDB1 overactivity drives immune-checkpoint-blockade resistance in tumor cells. | effector:`SETDB1`; phenotype:`PHENO-ICB_RESISTANCE`; therapy_context:`THR-immune_checkpoint_blockade`; cell_context:`TME-tumor_intrinsic` | `drives_phenotype` | `positive` | SETDB1 alteration=overactivity |
+| `F_SETDB1_H3K9ME3_TE_IMMUNE_DOMAINS` | SETDB1-dependent H3K9me3 domains are enriched for TE-rich and immune-associated genomic domains. | effector:`SETDB1`; mark:`EPI-H3K9me3`; region_class:`GENOME-TE_IMMUNE_DOMAINS`; cell_context:`TME-tumor_intrinsic` | `has_observed_property` | SQL `NULL` | shared anchor |
+| `F_SETDB1_LOSS_DEREPRESSES_TE_REGULATORY_ELEMENTS` | SETDB1 loss derepresses latent TE-derived regulatory elements. | effector:`SETDB1`; target:`GENOME-TE_REGULATORY_ELEMENTS`; cell_context:`TME-tumor_intrinsic` | `perturbation_changes_phenotype` | `positive` | SETDB1 alteration=loss |
+| `F_TE_REGULATORY_ELEMENTS_INCREASE_IMMUNE_GENES` | Derepressed TE-derived regulatory elements increase immunostimulatory gene expression. | effector:`GENOME-TE_REGULATORY_ELEMENTS`; phenotype:`BP-IMMUNOSTIMULATORY_GENE_EXPRESSION`; cell_context:`TME-tumor_intrinsic` | `drives_phenotype` | `positive` | tumor_intrinsic=true |
+| `F_SETDB1_ASSOCIATES_WITH_ICB_RESISTANCE` | SETDB1 overactivity associates with ICB resistance in human tumors. | effector:`SETDB1`; phenotype:`PHENO-ICB_RESISTANCE`; therapy_context:`THR-immune_checkpoint_blockade`; cell_context:`TME-tumor_intrinsic` | `is_associated_with_outcome` | `positive` | human context; SETDB1 alteration=overactivity |
 
 ### Decomposition Edges
 

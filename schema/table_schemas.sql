@@ -84,7 +84,8 @@ CREATE TABLE claim_participants (
             entity_id TEXT NOT NULL,
             role TEXT NOT NULL,
             properties TEXT DEFAULT '{}',
-            FOREIGN KEY (claim_id) REFERENCES claims(claim_id)
+            FOREIGN KEY (claim_id) REFERENCES claims(claim_id),
+            FOREIGN KEY (entity_id) REFERENCES entities(entity_id)
         );
 
 -- table: claim_relations
@@ -125,7 +126,7 @@ CREATE TABLE claims (
             description TEXT DEFAULT '',
             superseded_by TEXT DEFAULT '',
             full_data TEXT DEFAULT '{}'
-        , evidence_status TEXT DEFAULT 'draft', prior_art_status TEXT DEFAULT 'unsearched', review_status TEXT DEFAULT 'clean', claim_text TEXT DEFAULT '', context_set_json TEXT DEFAULT '{}', edge_signature TEXT DEFAULT '', source_release TEXT DEFAULT '', model_name TEXT DEFAULT '', model_version TEXT DEFAULT '', artifact_id TEXT DEFAULT '', context_operator TEXT DEFAULT 'AND', tractability_score REAL, kg_connectivity_score REAL, priority_score REAL, source TEXT DEFAULT '', kg_evidence TEXT DEFAULT '[]', relation_name TEXT DEFAULT '', relation_polarity TEXT DEFAULT '', parent_claim_id TEXT DEFAULT '', refinement_type TEXT DEFAULT '', refinement_rationale TEXT DEFAULT '', refinement_confidence REAL, splits_on_dimension TEXT DEFAULT '', is_general INTEGER DEFAULT 0, target_mechanism_ids TEXT DEFAULT '[]', inherited_evidence_ids TEXT DEFAULT '[]', tools_to_prioritise TEXT DEFAULT '[]', cancer_type_scope TEXT DEFAULT '', embedding_text TEXT DEFAULT '', candidate_gene TEXT DEFAULT '', candidate_id TEXT DEFAULT '', cell_states_json TEXT DEFAULT '[]', last_wave_completed INTEGER DEFAULT 0);
+        , evidence_status TEXT DEFAULT 'draft', prior_art_status TEXT DEFAULT 'unsearched', review_status TEXT DEFAULT 'clean', claim_text TEXT DEFAULT '', context_set_json TEXT DEFAULT '{}', edge_signature TEXT DEFAULT '', source_release TEXT DEFAULT '', model_name TEXT DEFAULT '', model_version TEXT DEFAULT '', artifact_id TEXT DEFAULT '', context_operator TEXT DEFAULT 'AND', tractability_score REAL, kg_connectivity_score REAL, priority_score REAL, source TEXT DEFAULT '', kg_evidence TEXT DEFAULT '[]', relation_name TEXT DEFAULT '', relation_polarity TEXT DEFAULT NULL, parent_claim_id TEXT DEFAULT '', refinement_type TEXT DEFAULT '', refinement_rationale TEXT DEFAULT '', refinement_confidence REAL, splits_on_dimension TEXT DEFAULT '', is_general INTEGER DEFAULT 0, target_mechanism_ids TEXT DEFAULT '[]', inherited_evidence_ids TEXT DEFAULT '[]', tools_to_prioritise TEXT DEFAULT '[]', cancer_type_scope TEXT DEFAULT '', embedding_text TEXT DEFAULT '', candidate_gene TEXT DEFAULT '', candidate_id TEXT DEFAULT '', cell_states_json TEXT DEFAULT '[]', last_wave_completed INTEGER DEFAULT 0);
 
 -- table: context_nodes
 CREATE TABLE context_nodes (
@@ -446,6 +447,9 @@ CREATE INDEX idx_evidence_pmid ON evidence(pmid);
 -- index: idx_participants_entity
 CREATE INDEX idx_participants_entity ON claim_participants(entity_id);
 
+-- index: idx_participants_claim
+CREATE INDEX idx_participants_claim ON claim_participants(claim_id);
+
 -- index: idx_result_to_claim_claim
 CREATE INDEX idx_result_to_claim_claim ON result_to_claim(claim_id);
 
@@ -463,4 +467,3 @@ CREATE INDEX idx_tool_cache_reserved ON tool_cache(reserved_by);
 
 -- index: idx_tool_cache_tool
 CREATE INDEX idx_tool_cache_tool ON tool_cache(tool_id);
-

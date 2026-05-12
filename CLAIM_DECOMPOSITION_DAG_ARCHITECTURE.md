@@ -27,9 +27,9 @@ anchor, or leaf in any particular DAG.
 |---|---|
 | `claim_id` | Stable id. |
 | `claim_text` | Full assertion text. |
-| `participants` | Subject/object/context/phenotype entities; free text plus ids. |
-| `relation_name` | Predicate, e.g. `increases`, `binds`, `causes`, `represses`. |
-| `relation_polarity` | `positive`, `negative`, `null_hypothesis`, `unknown`. |
+| `participants` | `claim_participants` rows. Every participant is a KG node id from `entities`. |
+| `relation_name` | Canonical predicate, e.g. `drives_phenotype`, `regulates_activity`, `binds`. |
+| `relation_polarity` | `positive`, `negative`, `bidirectional`, `null`, `unknown`, or SQL `NULL` when the predicate has no sign. |
 | `context_set_json` | Where/when the claim holds. |
 | `cell_states_json` | Cell-state qualifiers. |
 | `context_operator` | How context predicates compose. |
@@ -129,6 +129,15 @@ active incoming decomposition children -> acts as module
 no active incoming decomposition children -> acts as leaf
 ```
 
+Participant invariant:
+
+```text
+claim_participants.entity_id must resolve to entities.entity_id.
+Do not store prose phrases as participants.
+Use participant properties for alteration/dose/state qualifiers.
+Use context_set_json for scope when no biological node is needed.
+```
+
 `enables` remains a semantic relation:
 
 ```text
@@ -154,7 +163,7 @@ CREATE TABLE claims (
   claim_id TEXT PRIMARY KEY,
   claim_text TEXT NOT NULL,
   relation_name TEXT NOT NULL,
-  relation_polarity TEXT NOT NULL,
+  relation_polarity TEXT DEFAULT NULL,
   context_set_json TEXT DEFAULT '{}',
   cell_states_json TEXT DEFAULT '[]',
   context_operator TEXT DEFAULT 'AND',
@@ -166,6 +175,15 @@ CREATE TABLE claims (
   rollups TEXT DEFAULT '{}',
   edge_signature TEXT DEFAULT '',
   full_data TEXT DEFAULT '{}'
+);
+
+CREATE TABLE claim_participants (
+  claim_id TEXT NOT NULL,
+  entity_id TEXT NOT NULL,
+  role TEXT NOT NULL,
+  properties TEXT DEFAULT '{}',
+  FOREIGN KEY (claim_id) REFERENCES claims(claim_id),
+  FOREIGN KEY (entity_id) REFERENCES entities(entity_id)
 );
 
 CREATE TABLE claim_relations (
@@ -198,6 +216,8 @@ CREATE TABLE claim_decomposition_edges (
 CREATE INDEX idx_claim_relations_source ON claim_relations(source_claim_id);
 CREATE INDEX idx_claim_relations_target ON claim_relations(target_claim_id);
 CREATE INDEX idx_claim_relations_kind ON claim_relations(relation_kind);
+CREATE INDEX idx_claim_participants_claim ON claim_participants(claim_id);
+CREATE INDEX idx_claim_participants_entity ON claim_participants(entity_id);
 
 CREATE INDEX idx_claim_decomp_source ON claim_decomposition_edges(source_claim_id);
 CREATE INDEX idx_claim_decomp_target ON claim_decomposition_edges(target_claim_id);
