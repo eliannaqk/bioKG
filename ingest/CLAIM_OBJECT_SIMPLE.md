@@ -24,7 +24,7 @@ analysis_runs -> biological_results -> result_to_claim -> claims
 | `claim_id` | Stable id. |
 | `claim_text` | Free-text assertion. |
 | `participants` | Free-text and/or entity ids for subject, object, context, phenotype. |
-| `relation_name` | Predicate, e.g. `increases`, `represses`, `causes_resistance_to`. |
+| `relation_name` | Predicate, e.g. `contributes_to`, `derepresses`, `associates_with`. |
 | `relation_polarity` | `positive`, `negative`, `null_hypothesis`, or `unknown`. |
 | `context_set_json` | Where the assertion holds. |
 | `evidence_status` | `unchecked`, `evidenced`, `refuted`, `inconclusive`. |
@@ -39,54 +39,59 @@ analysis_runs -> biological_results -> result_to_claim -> claims
 Parent:
 
 ```text
-P_SETDB1_PD1: SETDB1 overexpression causes anti-PD-1 resistance.
+P_SETDB1_ICB_RESISTANCE:
+SETDB1 amplification/overactivity contributes to immune-checkpoint-blockade
+resistance by suppressing tumor-intrinsic immunogenicity.
 ```
 
 ### Claims
 
 | ID | claim_text | participants | relation_name | relation_polarity | context/properties |
 |---|---|---|---|---|---|
-| `P_SETDB1_PD1` | SETDB1 overexpression causes anti-PD-1 resistance. | SETDB1; anti-PD-1 therapy; tumor cell; resistance phenotype | `causes_resistance_to` | `positive` | therapy=anti-PD1; cell_type=tumor_cell |
-| `F_SETDB1_H3K9ME3_ERV` | SETDB1 increases H3K9me3 at ERV loci. | SETDB1; H3K9me3; ERV loci; tumor cell | `increases` | `positive` | locus_class=ERV |
-| `F_H3K9ME3_REPRESSES_ERV` | H3K9me3 represses ERV transcription. | H3K9me3; ERV transcription; tumor cell | `represses` | `negative` | locus_class=ERV |
-| `F_ERV_REPRESSION_LOWERS_IMMUNE` | ERV repression lowers tumour immune activation. | ERV repression; dsRNA/immune activation; tumor cell | `lowers` | `negative` | tumor_intrinsic=true |
+| `P_SETDB1_ICB_RESISTANCE` | SETDB1 amplification/overactivity contributes to immune-checkpoint-blockade resistance by suppressing tumor-intrinsic immunogenicity. | SETDB1 amplification/overactivity; tumor-intrinsic immunogenicity; immune-checkpoint-blockade resistance | `contributes_to` | `positive` | therapy=ICB; cell_type=tumor_cell |
+| `F_SETDB1_H3K9ME3_TE_IMMUNE_DOMAINS` | SETDB1-dependent H3K9me3 domains are enriched for transposable elements and immune-related gene clusters. | SETDB1-dependent H3K9me3 domains; transposable elements; immune-related gene clusters; tumor cell | `is_enriched_for` | `positive` | shared anchor |
+| `F_SETDB1_LOSS_DEREPRESSES_TE_REGULATORY_ELEMENTS` | SETDB1 loss derepresses latent TE-derived regulatory elements. | SETDB1 loss; latent TE-derived regulatory elements; tumor cell | `derepresses` | `positive` | perturbation=SETDB1_loss |
+| `F_TE_REGULATORY_ELEMENTS_INCREASE_IMMUNE_GENES` | Derepressed TE-derived regulatory elements increase immunostimulatory gene expression. | TE-derived regulatory elements; immunostimulatory genes; tumor cell | `increases` | `positive` | tumor_intrinsic=true |
+| `F_SETDB1_ASSOCIATES_WITH_ICB_RESISTANCE` | SETDB1 amplification or overactivity associates with immune exclusion or ICB resistance. | SETDB1 amplification/overactivity; immune exclusion; ICB resistance | `associates_with` | `positive` | human context |
 
 ### Decomposition Edges
 
 | source_claim_id | target_claim_id | support_operator | source_role | target_role | group_id |
 |---|---|---|---|---|---|
-| `F_SETDB1_H3K9ME3_ERV` | `P_SETDB1_PD1` | `ALL_OF` | `required_step` | `parent_claim` | `setdb1_required_chain` |
-| `F_H3K9ME3_REPRESSES_ERV` | `P_SETDB1_PD1` | `ALL_OF` | `required_step` | `parent_claim` | `setdb1_required_chain` |
-| `F_ERV_REPRESSION_LOWERS_IMMUNE` | `P_SETDB1_PD1` | `ALL_OF` | `required_step` | `parent_claim` | `setdb1_required_chain` |
+| `F_SETDB1_H3K9ME3_TE_IMMUNE_DOMAINS` | `P_SETDB1_ICB_RESISTANCE` | `ALL_OF` | `shared_anchor` | `parent_claim` | `setdb1_simple` |
+| `F_SETDB1_LOSS_DEREPRESSES_TE_REGULATORY_ELEMENTS` | `P_SETDB1_ICB_RESISTANCE` | `ALL_OF` | `required_step` | `parent_claim` | `setdb1_simple` |
+| `F_TE_REGULATORY_ELEMENTS_INCREASE_IMMUNE_GENES` | `P_SETDB1_ICB_RESISTANCE` | `ALL_OF` | `required_step` | `parent_claim` | `setdb1_simple` |
+| `F_SETDB1_ASSOCIATES_WITH_ICB_RESISTANCE` | `P_SETDB1_ICB_RESISTANCE` | `ALL_OF` | `context_bridge` | `parent_claim` | `setdb1_simple` |
 
 ### Semantic Claim Relations
 
 | source_claim_id | target_claim_id | relation_kind | notes |
 |---|---|---|---|
-| `F_SETDB1_H3K9ME3_ERV` | `F_H3K9ME3_REPRESSES_ERV` | `enables` | Temporal/mechanistic order only. |
-| `F_H3K9ME3_REPRESSES_ERV` | `F_ERV_REPRESSION_LOWERS_IMMUNE` | `enables` | Temporal/mechanistic order only. |
+| `F_SETDB1_LOSS_DEREPRESSES_TE_REGULATORY_ELEMENTS` | `F_TE_REGULATORY_ELEMENTS_INCREASE_IMMUNE_GENES` | `enables` | Temporal/mechanistic order only. |
 
 ### DAG
 
 ```mermaid
 flowchart TD
-  F1["F_SETDB1_H3K9ME3_ERV"]
-  F2["F_H3K9ME3_REPRESSES_ERV"]
-  F3["F_ERV_REPRESSION_LOWERS_IMMUNE"]
-  P["P_SETDB1_PD1"]
+  F1["F_SETDB1_H3K9ME3_TE_IMMUNE_DOMAINS"]
+  F2["F_SETDB1_LOSS_DEREPRESSES_TE_REGULATORY_ELEMENTS"]
+  F3["F_TE_REGULATORY_ELEMENTS_INCREASE_IMMUNE_GENES"]
+  F4["F_SETDB1_ASSOCIATES_WITH_ICB_RESISTANCE"]
+  P["P_SETDB1_ICB_RESISTANCE"]
 
   F1 -- "decomposition: ALL_OF" --> P
   F2 -- "decomposition: ALL_OF" --> P
   F3 -- "decomposition: ALL_OF" --> P
+  F4 -- "decomposition: ALL_OF" --> P
 
-  F1 -. "claim_relations: enables" .-> F2
   F2 -. "claim_relations: enables" .-> F3
 ```
 
 Readout:
 
 ```text
-P_SETDB1_PD1 is satisfied only if all three active child claims are supported.
+P_SETDB1_ICB_RESISTANCE is satisfied only if all four active child claims are
+supported.
 The dotted enables edges do not count toward rollup.
 ```
 

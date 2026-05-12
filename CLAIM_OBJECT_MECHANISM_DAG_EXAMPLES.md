@@ -70,82 +70,84 @@ flowchart TD
 Formula:
 
 ```text
-P_SETDB1 = M_IMMUNOGENICITY AND M_THERAPY_CONTEXT
-M_IMMUNOGENICITY = M_TE_DSRNA OR M_ANTIGEN_PRESENTATION
-M_TE_DSRNA = F_SETDB1_H3K9ME3 AND F_TE_DEREPRESSION AND F_DSRNA_SIGNALING
-M_ANTIGEN_PRESENTATION = F_SETDB1_H3K9ME3 AND F_AP_REPRESSION AND F_TCELL_RECOGNITION
-M_THERAPY_CONTEXT = F_HUMAN_SETDB1_AMP AND F_ICB_ASSOCIATION
+P_SETDB1_ICB_RESISTANCE = M_SETDB1_SUPPRESSES_IMMUNOGENICITY AND M_HUMAN_ICB_CONTEXT
+M_SETDB1_SUPPRESSES_IMMUNOGENICITY = M_TE_REGULATORY_ELEMENT_ARM OR M_TE_ANTIGEN_TCELL_ARM
+M_TE_REGULATORY_ELEMENT_ARM =
+  F_SETDB1_H3K9ME3_TE_IMMUNE_DOMAINS AND
+  F_SETDB1_LOSS_DEREPRESSES_TE_REGULATORY_ELEMENTS AND
+  F_TE_REGULATORY_ELEMENTS_INCREASE_IMMUNE_GENES
+M_TE_ANTIGEN_TCELL_ARM =
+  F_SETDB1_H3K9ME3_TE_IMMUNE_DOMAINS AND
+  F_SETDB1_LOSS_DEREPRESSES_TE_RETROVIRAL_ANTIGENS AND
+  F_TE_ANTIGENS_ELICIT_CD8_TCELL_RESPONSES
+M_HUMAN_ICB_CONTEXT = F_SETDB1_AMPLIFIED_HUMAN_TUMORS AND F_SETDB1_ASSOCIATES_WITH_ICB_RESISTANCE
 ```
 
 Claims:
 
 | ID | claim_text | participants | relation_name | relation_polarity | context/properties |
 |---|---|---|---|---|---|
-| `P_SETDB1` | SETDB1 overactivity suppresses tumor-intrinsic immunogenicity and can contribute to immune-checkpoint-blockade resistance. | SETDB1; tumor cell; immunogenicity; immune-checkpoint blockade response | `suppresses_immunogenicity_and_contributes_to_resistance` | `positive` | tumor_intrinsic=true; therapy=ICB |
-| `M_IMMUNOGENICITY` | SETDB1 suppresses tumor immunogenicity through TE/dsRNA or antigen-presentation mechanisms. | SETDB1; tumor immunogenicity; TE/dsRNA arm; antigen-presentation arm | `suppresses` | `negative` | module=true |
-| `M_TE_DSRNA` | SETDB1 suppresses viral-mimicry signaling through TE repression. | SETDB1; transposable elements; dsRNA signaling | `suppresses` | `negative` | module=true |
-| `M_ANTIGEN_PRESENTATION` | SETDB1 suppresses antigen-presentation-mediated T-cell recognition. | SETDB1; antigen presentation; cytotoxic T cells | `suppresses` | `negative` | module=true |
-| `M_THERAPY_CONTEXT` | SETDB1 status is relevant to human ICB resistance context. | SETDB1 amplification; human tumors; ICB response | `associates_with` | `positive` | module=true |
-| `F_SETDB1_H3K9ME3` | SETDB1 imposes repressive H3K9me3/heterochromatin at immune-relevant repetitive or open-genome regions. | SETDB1; H3K9me3; repetitive/open-genome regions; tumor cell | `increases` | `positive` | shared anchor |
-| `F_TE_DEREPRESSION` | SETDB1 loss derepresses transposable-element-derived RNAs or regulatory elements. | SETDB1 loss; TE-derived RNAs/elements; tumor cell | `derepresses` | `positive` | TE arm |
-| `F_DSRNA_SIGNALING` | TE derepression increases dsRNA/viral-mimicry or inflammatory signaling. | TE derepression; dsRNA; viral mimicry; inflammatory signaling | `increases` | `positive` | TE arm |
-| `F_AP_REPRESSION` | SETDB1 activity represses antigen-presentation-related loci or MHC-I pathway output. | SETDB1; antigen-presentation loci; MHC-I output | `represses` | `negative` | AP arm |
-| `F_TCELL_RECOGNITION` | Reduced antigen presentation lowers tumor recognition by cytotoxic T cells. | antigen presentation; cytotoxic T cells; tumor recognition | `lowers` | `negative` | AP arm |
-| `F_HUMAN_SETDB1_AMP` | SETDB1 amplification or overactivity occurs in human tumors in the claimed context. | SETDB1; human tumors | `occurs_in` | `positive` | human context |
-| `F_ICB_ASSOCIATION` | SETDB1 amplification or overactivity associates with immune exclusion or ICB resistance. | SETDB1; immune exclusion; ICB resistance | `associates_with` | `positive` | human context |
+| `P_SETDB1_ICB_RESISTANCE` | SETDB1 amplification/overactivity contributes to immune-checkpoint-blockade resistance by suppressing tumor-intrinsic immunogenicity. | SETDB1 amplification/overactivity; tumor-intrinsic immunogenicity; immune-checkpoint-blockade resistance | `contributes_to` | `positive` | tumor_intrinsic=true; therapy=ICB |
+| `M_SETDB1_SUPPRESSES_IMMUNOGENICITY` | SETDB1-dependent epigenetic silencing suppresses tumor-intrinsic immunogenicity through TE regulatory or TE antigen mechanisms. | SETDB1-dependent epigenetic silencing; tumor-intrinsic immunogenicity; TE regulatory elements; TE antigens | `suppresses` | `negative` | module=true |
+| `M_TE_REGULATORY_ELEMENT_ARM` | SETDB1 loss derepresses latent TE-derived regulatory elements and increases immunostimulatory gene expression. | SETDB1 loss; latent TE-derived regulatory elements; immunostimulatory genes | `increases_expression_via_derepression` | `positive` | module=true |
+| `M_TE_ANTIGEN_TCELL_ARM` | SETDB1 loss derepresses TE-encoded retroviral antigens and elicits TE-specific CD8 T-cell responses. | SETDB1 loss; TE-encoded retroviral antigens; CD8 T cells | `elicits` | `positive` | module=true |
+| `M_HUMAN_ICB_CONTEXT` | SETDB1 amplification/overactivity in human tumors associates with immune exclusion or ICB resistance. | SETDB1 amplification/overactivity; human tumors; immune exclusion; ICB resistance | `associates_with` | `positive` | module=true |
+| `F_SETDB1_H3K9ME3_TE_IMMUNE_DOMAINS` | SETDB1-dependent H3K9me3 domains are enriched for transposable elements and immune-related gene clusters. | SETDB1-dependent H3K9me3 domains; transposable elements; immune-related gene clusters; tumor cell | `is_enriched_for` | `positive` | shared anchor |
+| `F_SETDB1_LOSS_DEREPRESSES_TE_REGULATORY_ELEMENTS` | SETDB1 loss derepresses latent TE-derived regulatory elements. | SETDB1 loss; latent TE-derived regulatory elements; tumor cell | `derepresses` | `positive` | TE regulatory arm |
+| `F_TE_REGULATORY_ELEMENTS_INCREASE_IMMUNE_GENES` | Derepressed TE-derived regulatory elements increase immunostimulatory gene expression. | TE-derived regulatory elements; immunostimulatory genes; tumor cell | `increases` | `positive` | TE regulatory arm |
+| `F_SETDB1_LOSS_DEREPRESSES_TE_RETROVIRAL_ANTIGENS` | SETDB1 loss derepresses TE-encoded retroviral antigens. | SETDB1 loss; TE-encoded retroviral antigens; tumor cell | `derepresses` | `positive` | TE antigen arm |
+| `F_TE_ANTIGENS_ELICIT_CD8_TCELL_RESPONSES` | TE-encoded retroviral antigens elicit TE-specific CD8 cytotoxic T-cell responses. | TE-encoded retroviral antigens; TE-specific CD8 cytotoxic T cells; tumor cell | `elicits` | `positive` | TE antigen arm |
+| `F_SETDB1_AMPLIFIED_HUMAN_TUMORS` | SETDB1 amplification or overactivity occurs in a subset of human tumors. | SETDB1 amplification/overactivity; human tumors | `occurs_in` | `positive` | human context |
+| `F_SETDB1_ASSOCIATES_WITH_ICB_RESISTANCE` | SETDB1 amplification or overactivity associates with immune exclusion or ICB resistance. | SETDB1 amplification/overactivity; immune exclusion; ICB resistance | `associates_with` | `positive` | human context |
 
 Decomposition edges:
 
 | source -> target | operator | source_role | group_id |
 |---|---|---|---|
-| `M_IMMUNOGENICITY -> P_SETDB1` | `ALL_OF` | `required_step` | `setdb1_parent` |
-| `M_THERAPY_CONTEXT -> P_SETDB1` | `ALL_OF` | `context_bridge` | `setdb1_parent` |
-| `M_TE_DSRNA -> M_IMMUNOGENICITY` | `ANY_OF` | `sufficient_module` | `immune_arm_choice` |
-| `M_ANTIGEN_PRESENTATION -> M_IMMUNOGENICITY` | `ANY_OF` | `sufficient_module` | `immune_arm_choice` |
-| `F_SETDB1_H3K9ME3 -> M_TE_DSRNA` | `ALL_OF` | `shared_anchor` | `te_dsrna` |
-| `F_SETDB1_H3K9ME3 -> M_ANTIGEN_PRESENTATION` | `ALL_OF` | `shared_anchor` | `antigen_presentation` |
+| `M_SETDB1_SUPPRESSES_IMMUNOGENICITY -> P_SETDB1_ICB_RESISTANCE` | `ALL_OF` | `required_step` | `setdb1_parent` |
+| `M_HUMAN_ICB_CONTEXT -> P_SETDB1_ICB_RESISTANCE` | `ALL_OF` | `context_bridge` | `setdb1_parent` |
+| `M_TE_REGULATORY_ELEMENT_ARM -> M_SETDB1_SUPPRESSES_IMMUNOGENICITY` | `ANY_OF` | `sufficient_module` | `immune_arm_choice` |
+| `M_TE_ANTIGEN_TCELL_ARM -> M_SETDB1_SUPPRESSES_IMMUNOGENICITY` | `ANY_OF` | `sufficient_module` | `immune_arm_choice` |
+| `F_SETDB1_H3K9ME3_TE_IMMUNE_DOMAINS -> M_TE_REGULATORY_ELEMENT_ARM` | `ALL_OF` | `shared_anchor` | `te_regulatory_element` |
+| `F_SETDB1_H3K9ME3_TE_IMMUNE_DOMAINS -> M_TE_ANTIGEN_TCELL_ARM` | `ALL_OF` | `shared_anchor` | `te_antigen_tcell` |
 | all other fact edges | `ALL_OF` | `required_step` | matching module |
 
 Semantic claim_relations:
 
 | source -> target | relation_kind |
 |---|---|
-| `F_SETDB1_H3K9ME3 -> F_TE_DEREPRESSION` | `enables` |
-| `F_TE_DEREPRESSION -> F_DSRNA_SIGNALING` | `enables` |
-| `F_SETDB1_H3K9ME3 -> F_AP_REPRESSION` | `enables` |
-| `F_AP_REPRESSION -> F_TCELL_RECOGNITION` | `enables` |
+| `F_SETDB1_LOSS_DEREPRESSES_TE_REGULATORY_ELEMENTS -> F_TE_REGULATORY_ELEMENTS_INCREASE_IMMUNE_GENES` | `enables` |
+| `F_SETDB1_LOSS_DEREPRESSES_TE_RETROVIRAL_ANTIGENS -> F_TE_ANTIGENS_ELICIT_CD8_TCELL_RESPONSES` | `enables` |
 
 ```mermaid
 flowchart TD
-  P["P_SETDB1"]
-  IMM["M_IMMUNOGENICITY"]
-  TE["M_TE_DSRNA"]
-  AP["M_ANTIGEN_PRESENTATION"]
-  TX["M_THERAPY_CONTEXT"]
-  A1["F_SETDB1_H3K9ME3"]
-  A2["F_TE_DEREPRESSION"]
-  A3["F_DSRNA_SIGNALING"]
-  B2["F_AP_REPRESSION"]
-  B3["F_TCELL_RECOGNITION"]
-  H1["F_HUMAN_SETDB1_AMP"]
-  H2["F_ICB_ASSOCIATION"]
+  P["P_SETDB1_ICB_RESISTANCE"]
+  IMM["M_SETDB1_SUPPRESSES_IMMUNOGENICITY"]
+  TE["M_TE_REGULATORY_ELEMENT_ARM"]
+  AG["M_TE_ANTIGEN_TCELL_ARM"]
+  TX["M_HUMAN_ICB_CONTEXT"]
+  A1["F_SETDB1_H3K9ME3_TE_IMMUNE_DOMAINS"]
+  A2["F_SETDB1_LOSS_DEREPRESSES_TE_REGULATORY_ELEMENTS"]
+  A3["F_TE_REGULATORY_ELEMENTS_INCREASE_IMMUNE_GENES"]
+  B2["F_SETDB1_LOSS_DEREPRESSES_TE_RETROVIRAL_ANTIGENS"]
+  B3["F_TE_ANTIGENS_ELICIT_CD8_TCELL_RESPONSES"]
+  H1["F_SETDB1_AMPLIFIED_HUMAN_TUMORS"]
+  H2["F_SETDB1_ASSOCIATES_WITH_ICB_RESISTANCE"]
 
   IMM -- "ALL_OF" --> P
   TX -- "ALL_OF" --> P
   TE -- "ANY_OF" --> IMM
-  AP -- "ANY_OF" --> IMM
+  AG -- "ANY_OF" --> IMM
   A1 -- "ALL_OF shared_anchor" --> TE
-  A1 -- "ALL_OF shared_anchor" --> AP
+  A1 -- "ALL_OF shared_anchor" --> AG
   A2 -- "ALL_OF" --> TE
   A3 -- "ALL_OF" --> TE
-  B2 -- "ALL_OF" --> AP
-  B3 -- "ALL_OF" --> AP
+  B2 -- "ALL_OF" --> AG
+  B3 -- "ALL_OF" --> AG
   H1 -- "ALL_OF" --> TX
   H2 -- "ALL_OF" --> TX
 
-  A1 -. "enables" .-> A2
   A2 -. "enables" .-> A3
-  A1 -. "enables" .-> B2
   B2 -. "enables" .-> B3
 ```
 
