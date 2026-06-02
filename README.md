@@ -25,6 +25,10 @@ CLAIM_DECOMPOSITION_DAG_ARCHITECTURE.md
 CLAIM_OBJECT_SIMPLE.md  Minimal claim-object example.
 CLAIM_OBJECT_MECHANISM_DAG_EXAMPLES.md
                         Mechanism DAG examples using claim_decomposition_edges.
+LLM_STEP0_CANDIDATE_CLAIM_DAG_EXAMPLES_20260602.md
+                        Live Step0 candidate claim DAGs for five tumor-immunity
+                        hypotheses, formatted as claim rows, decomposition
+                        edges, semantic relations, diagrams, and rationale.
   KG_PROVENANCE.md      curated provenance map: license, API, proof-level per source
 ingest/                 redacted ingestion scripts (one per source) + SLURM wrapper
 INGEST.md               per-source recipe: endpoint, query, version, what it produces
