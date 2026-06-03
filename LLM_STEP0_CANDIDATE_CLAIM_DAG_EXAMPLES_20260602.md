@@ -12,16 +12,135 @@ outputs into candidate claim rows, decomposition edges, semantic relations, and
 human-readable rationale.
 
 Important scope: these are candidate DAG2 mechanism decompositions, not proven
-claims. Examples 1-5 came from a live Stage0 LLM compiler run with
-`GBD_STAGE0_REQUIRE_DAG2_LLM=1`; deterministic fallback was not used. Examples
-6-7 were added afterward from the local ADAR1 paper and the supplied RBMS1 lab
-hypothesis so those mechanisms are visible in the same claim-object format.
+claims. The "Live Step0 Atomic Rerun" section below is the current
+post-fix Step0 output. The later numbered examples are retained as historical
+worked examples from the earlier document version; examples 6-7 in that older
+section were manually added before the live ADAR1/RBMS1 rerun existed.
 
 Every section includes a Mermaid graph. GitHub renders these blocks as
 boxed-arrow DAG images.
 The same DAGs are also committed as PNG and SVG files under
 `assets/claim_dags/` and embedded directly in this document, so the diagrams
 remain visible even when a Markdown viewer does not render Mermaid.
+
+## Live Step0 Atomic Rerun, 2026-06-03
+
+Run artifact: `/tmp/step0_atomic_claim_dag_rerun_20260603.json`
+
+This section is the current bounded Step0 DAG2 output after tightening the
+compiler to require non-overlapping child claims, explicit participants, primary
+readouts, and reified modules for alternative mechanisms. This was a DAG2
+compiler rerun, not an L2/L3 proof-wave run. All five cases below reported
+`dag2_generation.mode = llm_claim_specific_dag2_decomposition`.
+
+PTPN correction: peptide-MHC-I presentation is treated as CD8 visibility
+evidence. It is not treated as NK killing evidence. NK claims require NK-cell
+participants and NK-specific susceptibility or killing readouts.
+
+### ADAR1 / dsRNA Sensing / PD-1 Sensitization
+
+Input hypothesis:
+
+```text
+ADAR1 blockade will sensitize tumors to PD-1 therapy by allowing endogenous double-stranded RNA to activate antiviral sensing and tumor inflammation.
+```
+
+DAG2 mode: `llm_claim_specific_dag2_decomposition`; child claims: 8; edge
+operators: `ALL_OF`, `ANY_OF`.
+
+| role | claim | primary readout | participants |
+|---|---|---|---|
+| `mechanism_mda5_mavs_module` | ADAR1 blockade sensitizes tumors to PD-1 therapy through an MDA5-MAVS-driven inflammatory mechanism. | loss of ADAR1 blockade-mediated improvement in anti-PD-1 tumor control when MDA5 or MAVS is disabled | perturbed_regulator:`ADAR1`; sensor:`IFIH1`; adaptor:`MAVS`; combination_therapy_context:`PDCD1_therapy` |
+| `mechanism_pkr_module` | ADAR1 blockade sensitizes tumors to PD-1 therapy through a PKR-dependent stress mechanism. | loss of ADAR1 blockade-mediated improvement in anti-PD-1 tumor control when PKR is disabled | perturbed_regulator:`ADAR1`; sensor_kinase:`EIF2AK2`; combination_therapy_context:`PDCD1_therapy` |
+| `mechanism_adar1_to_dsRNA` | ADAR1 blockade increases accumulation of endogenous immunostimulatory double-stranded RNA in tumor cells. | cellular endogenous dsRNA abundance | perturbed_regulator:`ADAR1`; molecular_state:`endogenous_dsRNA` |
+| `mechanism_dsrna_to_mda5_mavs` | Accumulated endogenous dsRNA activates MDA5-MAVS signaling in tumor cells. | MDA5-MAVS pathway activation status | activating_ligand:`endogenous_dsRNA`; sensor:`IFIH1`; adaptor:`MAVS` |
+| `mechanism_mda5_mavs_to_inflammation` | MDA5-MAVS activation induces an inflammatory program in tumor cells or the tumor microenvironment. | type I interferon/inflammatory gene-expression program | upstream_sensor:`IFIH1`; upstream_adaptor:`MAVS`; downstream_state:`tumor_inflammatory_program` |
+| `mechanism_inflammation_to_pd1_sensitization` | An ADAR1 blockade-induced tumor inflammatory program increases tumor responsiveness to PD-1 therapy. | incremental anti-PD-1 tumor control in inflamed versus non-inflamed tumors | sensitizing_state:`tumor_inflammatory_program`; therapy:`PDCD1_therapy` |
+| `mechanism_dsrna_to_pkr` | Accumulated endogenous dsRNA activates PKR in tumor cells. | PKR activation status | activating_ligand:`endogenous_dsRNA`; sensor_kinase:`EIF2AK2` |
+| `mechanism_pkr_to_pd1_sensitization` | PKR activation in tumor cells increases tumor sensitivity to PD-1 therapy. | incremental anti-PD-1 tumor control attributable to PKR activity | upstream_kinase:`EIF2AK2`; therapy:`PDCD1_therapy` |
+
+### RBMS1 / Endogenous dsRNA Shielding
+
+Input hypothesis:
+
+```text
+RBMS1 binds endogenous dsRNA hairpins and shields them from MDA5 and PKR recognition, preventing activation of antiviral interferon signaling and thereby reducing cell-intrinsic immune activation.
+```
+
+DAG2 mode: `llm_claim_specific_dag2_decomposition`; child claims: 7; edge
+operators: `ALL_OF`.
+
+| role | claim | primary readout | participants |
+|---|---|---|---|
+| `mechanism_dsrna_hairpin_binding_module` | RBMS1-mediated endogenous dsRNA hairpin shielding is a sufficient mechanism module for suppressing antiviral innate sensing. | module satisfaction by its required child claims | candidate_regulator:`RBMS1`; proximal_substrate:`endogenous_dsRNA_hairpins` |
+| `mechanism_rbms1_associates_endogenous_dsrna_hairpins` | RBMS1 associates with endogenous dsRNA hairpin structures in cells. | enrichment of endogenous dsRNA hairpin RNAs in RBMS1 immunoprecipitates | rna_binding_protein:`RBMS1`; bound_rna:`endogenous_dsRNA_hairpins` |
+| `mechanism_rbms1_reduces_mda5_access_to_endogenous_dsrna` | RBMS1 occupancy on endogenous dsRNA hairpins reduces MDA5 association with those RNAs. | MDA5-associated endogenous dsRNA hairpin abundance | competitive_shield:`RBMS1`; MDA5_sensor:`IFIH1`; shared_rna_ligand:`endogenous_dsRNA_hairpins` |
+| `mechanism_reduced_mda5_access_lowers_mavs_ifn_program` | Reduced MDA5 engagement of endogenous dsRNA lowers MAVS-dependent type I interferon program activation. | IFNB1 transcript abundance | upstream_sensor:`IFIH1`; signal_transducer:`MAVS`; downstream_program:`type_I_interferon_program` |
+| `mechanism_rbms1_reduces_pkr_access_to_endogenous_dsrna` | RBMS1 occupancy on endogenous dsRNA hairpins reduces PKR association with those RNAs. | PKR-associated endogenous dsRNA hairpin abundance | competitive_shield:`RBMS1`; PKR_sensor:`EIF2AK2`; shared_rna_ligand:`endogenous_dsRNA_hairpins` |
+| `mechanism_reduced_pkr_access_lowers_pkr_stress_signaling` | Reduced PKR engagement of endogenous dsRNA lowers PKR stress signaling. | phospho-eIF2alpha abundance | upstream_sensor:`EIF2AK2`; downstream_program:`PKR_stress_signaling` |
+| `mechanism_reduced_antiviral_sensor_signaling_lowers_cell_intrinsic_immune_` | Lower endogenous MDA5/MAVS interferon signaling and PKR stress signaling reduce cell-intrinsic immune activation. | basal ISG score | input_program:`type_I_interferon_program`; input_program:`PKR_stress_signaling`; cell_state_output:`cell_intrinsic_immune_activation` |
+
+### PTPN2/PTPN1 / IFN, CD8, And NK Killing
+
+Input hypothesis:
+
+```text
+PTPN2/PTPN1 act as brakes on JAK-STAT interferon signaling, so dual inhibition should amplify IFN response, antigen presentation, and NK/CD8 killing.
+```
+
+DAG2 mode: `llm_claim_specific_dag2_decomposition`; child claims: 9; edge
+operators: `ALL_OF`.
+
+| role | claim | primary readout | participants |
+|---|---|---|---|
+| `mechanism_ifn_stat_amplification` | Dual PTPN2/PTPN1 inhibition increases interferon-stimulated STAT activation in tumor cells. | phospho-STAT1 or phospho-STAT3 level after IFN stimulation | inhibited_negative_regulator:`PTPN2`; inhibited_negative_regulator:`PTPN1`; amplified_signaling_axis:`IFN-JAK-STAT`; measured_compartment:`tumor_cell` |
+| `mechanism_ifn_program_module` | Amplified IFN-JAK-STAT signaling drives a stronger interferon-stimulated transcriptional program in tumor cells. | interferon-stimulated gene expression score | upstream_driver:`IFN-JAK-STAT`; transcriptional_program:`interferon_stimulated_genes`; measured_compartment:`tumor_cell` |
+| `mechanism_isg_expression` | Dual PTPN2/PTPN1 inhibition increases interferon-stimulated gene expression in tumor cells. | ISG mRNA expression | inhibited_negative_regulator:`PTPN2`; inhibited_negative_regulator:`PTPN1`; measured_output:`interferon_stimulated_genes`; measured_compartment:`tumor_cell` |
+| `mechanism_antigen_presentation_module` | Amplified IFN-JAK-STAT signaling increases MHC-I antigen-presentation machinery in tumor cells. | surface peptide-MHC-I or antigen-presentation machinery abundance | upstream_driver:`IFN-JAK-STAT`; downstream_program:`MHC-I_antigen_presentation_machinery`; measured_compartment:`tumor_cell` |
+| `mechanism_mhc_i_presentation` | Dual PTPN2/PTPN1 inhibition increases tumor-cell peptide-MHC-I antigen presentation. | surface peptide-MHC-I abundance | inhibited_negative_regulator:`PTPN2`; inhibited_negative_regulator:`PTPN1`; measured_output:`peptide-MHC-I`; measured_compartment:`tumor_cell` |
+| `mechanism_cd8_killing_module` | Increased tumor peptide-MHC-I presentation enhances CD8 T-cell-mediated tumor killing. | CD8 T-cell-mediated tumor cell killing | enabling_tumor_visibility:`peptide-MHC-I`; immune_effector:`CD8_T_cell`; target_cell:`tumor_cell` |
+| `mechanism_cd8_killing` | Dual PTPN2/PTPN1 inhibition increases CD8 T-cell-mediated killing of tumor cells. | CD8-dependent tumor cell killing | inhibited_negative_regulator:`PTPN2`; inhibited_negative_regulator:`PTPN1`; immune_effector:`CD8_T_cell`; target_cell:`tumor_cell` |
+| `mechanism_nk_susceptibility_module` | Dual PTPN2/PTPN1 inhibition alters tumor-cell state in a way that increases susceptibility to NK-cell attack. | NK-cell-mediated tumor lysis | inhibited_negative_regulator:`PTPN2`; inhibited_negative_regulator:`PTPN1`; immune_effector:`NK_cell`; target_cell:`tumor_cell` |
+| `mechanism_nk_killing` | Dual PTPN2/PTPN1 inhibition increases NK-cell-mediated killing of tumor cells. | NK-dependent tumor cell killing | inhibited_negative_regulator:`PTPN2`; inhibited_negative_regulator:`PTPN1`; immune_effector:`NK_cell`; target_cell:`tumor_cell` |
+
+### Ferroptosis Suppression Alternatives
+
+Input hypothesis:
+
+```text
+Cells suppress ferroptosis by detoxifying lipid peroxides or lipid radicals.
+```
+
+DAG2 mode: `llm_claim_specific_dag2_decomposition`; child claims: 5; edge
+operators: `ALL_OF`, `ANY_OF`.
+
+| role | claim | primary readout | participants |
+|---|---|---|---|
+| `mechanism_gpx4_detox_module` | A GPX4-dependent phospholipid hydroperoxide detoxification program can suppress ferroptosis. | ferroptosis sensitivity | mechanism_module:`GPX4_pathway` |
+| `mechanism_gpx4_reduces_phospholipid_hydroperoxides` | GPX4 activity decreases phospholipid hydroperoxide abundance in cellular membranes. | membrane phospholipid hydroperoxide level | causal_regulator:`GPX4`; regulated_species:`phospholipid_hydroperoxides` |
+| `mechanism_fsp1_coq_module` | An FSP1-CoQ radical-trapping antioxidant program can suppress ferroptosis independently of GPX4. | ferroptosis sensitivity | mechanism_module:`FSP1_CoQ_pathway` |
+| `mechanism_fsp1_regenerates_reduced_coq` | FSP1 activity increases the reduced CoQ pool at membranes. | reduced CoQ level | causal_regulator:`FSP1`; regulated_species:`reduced_CoQ` |
+| `mechanism_reduced_coq_traps_lipid_radicals` | Reduced CoQ decreases lipid radical abundance by radical trapping in membranes. | membrane lipid radical level | causal_regulator:`reduced_CoQ`; regulated_species:`lipid_radicals` |
+
+### Lenalidomide / del(5q) MDS / CK1alpha Degradation
+
+Input hypothesis:
+
+```text
+Lenalidomide creates a therapeutic window in del(5q) MDS by degrading CK1alpha.
+```
+
+DAG2 mode: `llm_claim_specific_dag2_decomposition`; child claims: 6; edge
+operators: `ALL_OF`.
+
+| role | claim | primary readout | participants |
+|---|---|---|---|
+| `mechanism_crbn_recruits_ck1a_on_lenalidomide` | In the presence of lenalidomide, CRBN recruits CK1alpha into the CRL4-CRBN substrate complex. | CK1alpha-CRBN complex formation | perturbagen:`CHEBI:6437`; substrate receptor:`HGNC:23400`; recruited substrate:`HGNC:2452` |
+| `mechanism_crl4_crbn_ubiquitinates_ck1a` | Lenalidomide-induced recruitment of CK1alpha to CRL4-CRBN causes CK1alpha ubiquitination. | polyubiquitinated CK1alpha abundance | e3_ligase_receptor:`HGNC:23400`; ubiquitinated_substrate:`HGNC:2452` |
+| `mechanism_lenalidomide_reduces_ck1a_protein` | Lenalidomide treatment reduces CK1alpha protein abundance in MDS cells. | CK1alpha protein abundance | perturbagen:`CHEBI:6437`; degraded_protein:`HGNC:2452` |
+| `mechanism_del5q_reduces_csnk1a1_dosage` | del(5q) MDS cells have reduced CSNK1A1 gene dosage relative to non-del(5q) MDS cells. | CSNK1A1 copy number | disease_context:`MONDO:0018881`; haploinsufficient_gene:`HGNC:2452` |
+| `mechanism_ck1a_loss_selectively_impairs_del5q_cell_fitness` | A comparable reduction in CK1alpha causes a larger loss of cell fitness in del(5q) MDS cells than in non-del(5q) hematopoietic cells. | differential cell viability or proliferation after CK1alpha reduction | causal_protein:`HGNC:2452`; sensitive_context:`MONDO:0018881` |
+| `mechanism_lenalidomide_selectively_suppresses_del5q_clone` | Lenalidomide preferentially suppresses survival or expansion of del(5q) MDS cells relative to non-del(5q) hematopoietic cells. | differential clonal abundance or cell viability under lenalidomide | perturbagen:`CHEBI:6437`; preferred_target_context:`MONDO:0018881` |
 
 ## Key
 
