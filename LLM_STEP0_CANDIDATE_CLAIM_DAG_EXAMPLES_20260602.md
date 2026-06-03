@@ -19,29 +19,34 @@ section were manually added before the live ADAR1/RBMS1 rerun existed.
 
 Every section includes a Mermaid graph. GitHub renders these blocks as
 boxed-arrow DAG images.
-The same DAGs are also committed as PNG and SVG files under
-`assets/claim_dags/` and embedded directly in this document, so the diagrams
-remain visible even when a Markdown viewer does not render Mermaid.
+Some historical numbered examples also have PNG and SVG files under
+`assets/claim_dags/` and embed those images directly. The live rerun section
+uses Mermaid blocks generated from the current Step0 artifact.
 
 ## Live Step0 Atomic Rerun, 2026-06-03
 
-Run artifact: `/tmp/step0_atomic_claim_dag_rerun_20260603.json`
+Run artifact: `/tmp/step0_atomic_claim_dag_rerun_20260603_entity_contract_v5b.json`
 
-This section is the current bounded Step0 DAG2 output after tightening the
-compiler to require non-overlapping child claims, explicit participants, primary
-readouts, and reified modules for alternative mechanisms. This was a DAG2
-compiler rerun, not an L2/L3 proof-wave run. All five cases below reported
-`dag2_generation.mode = llm_claim_specific_dag2_decomposition`.
+This section is the current bounded Step0 DAG2 compiler output after the
+entity-contract and participant-completeness fixes. This was a DAG2 compiler
+rerun, not an L2/L3 proof-wave run. All five cases below reported
+`dag2_generation.mode = llm_claim_specific_dag2_decomposition`; none used
+the deterministic fallback.
 
-PTPN correction: peptide-MHC-I presentation is treated as CD8 visibility
-evidence. It is not treated as NK killing evidence. NK claims require NK-cell
-participants and NK-specific susceptibility or killing readouts.
+The tables above each graph now show the claim-object fields that the DAG2
+compiler emitted: relation predicate, polarity, role-labeled participants,
+context/properties, decomposition edges, and semantic mechanism edges. The
+context/properties column is planning metadata, not proof evidence.
 
-Gene-alias correction: participants should resolve through the KG/gene-alias
-resolver before materialization, so common aliases do not create duplicate gene
-nodes. For example, `MDA5` should resolve to the canonical IFIH1 gene node,
-`PKR` to EIF2AK2, and `ADAR1` to ADAR when those are emitted as gene/protein
-participants.
+Participant correction: immune endpoint claims should carry the relevant
+cell-type participants explicitly. Peptide-MHC-I presentation can support CD8
+recognition/killing, but it is not NK-killing evidence by itself.
+
+Gene-alias correction: gene/protein participants resolve through the
+KG/gene-alias resolver before materialization. In this rerun, MDA5 resolves
+to `HGNC:IFIH1`, PKR resolves to `HGNC:EIF2AK2`, ADAR1 resolves to
+`HGNC:ADAR`, and CK1alpha resolves to `HGNC:CSNK1A1` when the canonical
+candidate gene is supplied.
 
 ### ADAR1 / dsRNA Sensing / PD-1 Sensitization
 
@@ -51,47 +56,81 @@ Input hypothesis:
 ADAR1 blockade will sensitize tumors to PD-1 therapy by allowing endogenous double-stranded RNA to activate antiviral sensing and tumor inflammation.
 ```
 
-DAG2 mode: `llm_claim_specific_dag2_decomposition`; child claims: 8; edge
-operators: `ALL_OF`, `ANY_OF`.
+DAG2 mode: `llm_claim_specific_dag2_decomposition`; child claims: 7; edge operators: `ALL_OF`.
 
-| role | claim | primary readout | participants |
-|---|---|---|---|
-| `mechanism_mda5_mavs_module` | ADAR1 blockade sensitizes tumors to PD-1 therapy through an MDA5-MAVS-driven inflammatory mechanism. | loss of ADAR1 blockade-mediated improvement in anti-PD-1 tumor control when MDA5 or MAVS is disabled | perturbed_regulator:`ADAR1`; sensor:`IFIH1`; adaptor:`MAVS`; combination_therapy_context:`PDCD1_therapy` |
-| `mechanism_pkr_module` | ADAR1 blockade sensitizes tumors to PD-1 therapy through a PKR-dependent stress mechanism. | loss of ADAR1 blockade-mediated improvement in anti-PD-1 tumor control when PKR is disabled | perturbed_regulator:`ADAR1`; sensor_kinase:`EIF2AK2`; combination_therapy_context:`PDCD1_therapy` |
-| `mechanism_adar1_to_dsRNA` | ADAR1 blockade increases accumulation of endogenous immunostimulatory double-stranded RNA in tumor cells. | cellular endogenous dsRNA abundance | perturbed_regulator:`ADAR1`; molecular_state:`endogenous_dsRNA` |
-| `mechanism_dsrna_to_mda5_mavs` | Accumulated endogenous dsRNA activates MDA5-MAVS signaling in tumor cells. | MDA5-MAVS pathway activation status | activating_ligand:`endogenous_dsRNA`; sensor:`IFIH1`; adaptor:`MAVS` |
-| `mechanism_mda5_mavs_to_inflammation` | MDA5-MAVS activation induces an inflammatory program in tumor cells or the tumor microenvironment. | type I interferon/inflammatory gene-expression program | upstream_sensor:`IFIH1`; upstream_adaptor:`MAVS`; downstream_state:`tumor_inflammatory_program` |
-| `mechanism_inflammation_to_pd1_sensitization` | An ADAR1 blockade-induced tumor inflammatory program increases tumor responsiveness to PD-1 therapy. | incremental anti-PD-1 tumor control in inflamed versus non-inflamed tumors | sensitizing_state:`tumor_inflammatory_program`; therapy:`PDCD1_therapy` |
-| `mechanism_dsrna_to_pkr` | Accumulated endogenous dsRNA activates PKR in tumor cells. | PKR activation status | activating_ligand:`endogenous_dsRNA`; sensor_kinase:`EIF2AK2` |
-| `mechanism_pkr_to_pd1_sensitization` | PKR activation in tumor cells increases tumor sensitivity to PD-1 therapy. | incremental anti-PD-1 tumor control attributable to PKR activity | upstream_kinase:`EIF2AK2`; therapy:`PDCD1_therapy` |
+#### Parent Claim Object
+
+| field | value |
+|---|---|
+| `claim_id` | `P_ADAR1_PD1_SENSITIZATION` |
+| `claim_text` | ADAR1 blockade will sensitize tumors to PD-1 therapy by allowing endogenous double-stranded RNA to activate antiviral sensing and tumor inflammation. |
+| `relation_name` | `drives_phenotype` |
+| `relation_polarity` | `positive` |
+| `participants` | perturbed_regulator:`HGNC:ADAR` (canonical_gene_symbol=ADAR; original_label=HGNC:ADAR); therapy_context:`PROPOSED-PDCD1_THERAPY` (proposed_entity_label=PD-1 therapy; requires_entity_row=True) |
+| `candidate_gene` | `ADAR` |
+
+#### Claim Rows
+
+| role | claim_text | relation_name | polarity | participants | context/properties |
+|---|---|---|---|---|---|
+| `mechanism_viral_sensing_module` | One mechanism by which ADAR1 blockade sensitizes tumors to PD-1 therapy is activation of endogenous dsRNA-triggered antiviral sensing in tumor cells. | `describes_mechanism` | `` | mechanism_effector:`HGNC:ADAR` (canonical_gene_symbol=ADAR; original_label=HGNC:ADAR); therapy_context:`PROPOSED-PDCD1_THERAPY` (proposed_entity_label=PD-1 therapy; requires_entity_row=True); mechanism_process:`PROPOSED-ENDOGENOUS_DSRNA_ANTIVIRAL_SENSING_PROGRAM` (proposed_entity_label=endogenous dsRNA-triggered antiviral sensing program; requires_entity_row=True) | scope=mechanism_module; primary_readout=activation of a tumor-intrinsic antiviral sensing program; truth_condition=In the PD-1/PD-L1 therapy context, ADAR perturbation engages a tumor-intrinsic antiviral sensing program attributable to endogenous dsRNA.; why=Reifies the specific mechanistic branch stated in the root claim so downstream steps can be organized without conflating them with the therapy endpoint.; source_mode=llm_claim_specific_dag2_decomposition |
+| `mechanism_dsrna_accumulation` | ADAR1 blockade increases the abundance of endogenous immunostimulatory double-stranded RNA in tumor cells. | `perturbation_changes_phenotype` | `positive` | perturbed_regulator:`HGNC:ADAR` (canonical_gene_symbol=ADAR; original_label=HGNC:ADAR); phenotype:`PROPOSED-ENDOGENOUS_DSRNA` (proposed_entity_label=endogenous double-stranded RNA; requires_entity_row=True); cell_context:`PROPOSED-TUMOR_CELL` (proposed_entity_label=tumor cell; requires_entity_row=True) | scope=molecular_signal; primary_readout=endogenous dsRNA abundance; truth_condition=Loss or inhibition of ADAR1 increases cellular endogenous dsRNA signal relative to control in tumor cells.; why=This is the proximal molecular consequence explicitly named by the root claim and should be separated from downstream sensing and inflammation readouts.; source_mode=llm_claim_specific_dag2_decomposition |
+| `mechanism_antiviral_sensing_activation` | Accumulated endogenous double-stranded RNA activates antiviral sensing in tumor cells. | `regulates_activity` | `positive` | regulator:`PROPOSED-ENDOGENOUS_DSRNA` (proposed_entity_label=endogenous double-stranded RNA; requires_entity_row=True); regulated_process:`PROPOSED-ANTIVIRAL_DSRNA_SENSING_PATHWAY` (proposed_entity_label=antiviral dsRNA-sensing pathway; requires_entity_row=True); cell_context:`PROPOSED-TUMOR_CELL` (proposed_entity_label=tumor cell; requires_entity_row=True) | scope=molecular_signal; primary_readout=antiviral dsRNA-sensing pathway activity; truth_condition=Higher endogenous dsRNA is accompanied by increased activity of antiviral dsRNA-sensing pathways in tumor cells.; why=Separates the dsRNA accumulation step from the sensing step so the mechanism is not collapsed into one claim.; source_mode=llm_claim_specific_dag2_decomposition |
+| `mechanism_tumor_inflammation_induction` | Activation of antiviral sensing in tumor cells induces a tumor inflammatory program. | `drives_phenotype` | `positive` | effector:`PROPOSED-ANTIVIRAL_DSRNA_SENSING_PATHWAY` (proposed_entity_label=antiviral dsRNA-sensing pathway; requires_entity_row=True); phenotype:`PROPOSED-TUMOR_INFLAMMATORY_PROGRAM` (proposed_entity_label=tumor inflammatory program; requires_entity_row=True); cell_context:`PROPOSED-TUMOR_CELL` (proposed_entity_label=tumor cell; requires_entity_row=True) | scope=cell_state; primary_readout=tumor inflammatory program expression; truth_condition=In tumor cells, increased antiviral sensing activity raises inflammatory gene-expression output such as interferon-stimulated or chemokine programs.; why=Captures the inflammation step named in the root claim without yet asserting immune-cell recruitment or therapy response.; source_mode=llm_claim_specific_dag2_decomposition |
+| `mechanism_cd8_recruitment` | A tumor inflammatory program increases CD8 T-cell recruitment into the tumor microenvironment. | `regulates_cell_recruitment` | `positive` | regulator:`PROPOSED-TUMOR_INFLAMMATORY_PROGRAM` (proposed_entity_label=tumor inflammatory program; requires_entity_row=True); recruited_cell:`PROPOSED-CD8_T_CELL` (proposed_entity_label=CD8 T cell; requires_entity_row=True); target_compartment:`PROPOSED-TUMOR_MICROENVIRONMENT` (proposed_entity_label=tumor microenvironment; requires_entity_row=True) | scope=immune_effector; primary_readout=intratumoral CD8 T-cell infiltration; truth_condition=Tumors with a stronger inflammatory program show increased intratumoral CD8 T-cell infiltration.; why=Provides a distinct immune-effector consequence of inflammation that can plausibly connect tumor-intrinsic sensing to checkpoint response.; source_mode=llm_claim_specific_dag2_decomposition |
+| `mechanism_pd1_response_potentiation` | Increased intratumoral CD8 T-cell infiltration potentiates tumor response to PD-1 therapy. | `modifies_response_to` | `positive` | response_modifier:`PROPOSED-CD8_T_CELL` (proposed_entity_label=CD8 T cell; requires_entity_row=True); therapy:`PROPOSED-PDCD1_THERAPY` (proposed_entity_label=PD-1 therapy; requires_entity_row=True); treatment_response:`PROPOSED-ANTI_PD1_TUMOR_RESPONSE` (proposed_entity_label=tumor response to PD-1 therapy; requires_entity_row=True); context_compartment:`PROPOSED-TUMOR_MICROENVIRONMENT` (proposed_entity_label=tumor microenvironment; requires_entity_row=True) | scope=therapy_endpoint; primary_readout=tumor control under PD-1 therapy; truth_condition=Greater CD8 T-cell infiltration is associated with improved tumor control under PD-1 therapy.; why=Links the immune-inflamed state to the named therapeutic endpoint rather than stopping at inflammation alone.; source_mode=llm_claim_specific_dag2_decomposition |
+| `mechanism_root_therapy_endpoint` | ADAR1 blockade sensitizes tumors to PD-1 therapy. | `confers_sensitivity_to` | `positive` | effector:`HGNC:ADAR` (canonical_gene_symbol=ADAR; original_label=HGNC:ADAR); therapy:`PROPOSED-PDCD1_THERAPY` (proposed_entity_label=PD-1 therapy; requires_entity_row=True); disease_entity:`PROPOSED-TUMOR` (proposed_entity_label=tumor; requires_entity_row=True) | scope=therapy_endpoint; primary_readout=improved tumor response under PD-1 therapy; truth_condition=ADAR1 loss or inhibition improves tumor control or response under PD-1/PD-L1 blockade relative to matched control.; why=Keeps the final therapeutic implication as a distinct endpoint claim rather than embedding it inside mechanistic intermediate claims.; source_mode=llm_claim_specific_dag2_decomposition |
+
+#### Decomposition Edges
+
+| source_dag2_role | source_claim_id | target_dag2_role | target_claim_id | support_operator | source_role | group_id |
+|---|---|---|---|---|---|---|
+| `mechanism_viral_sensing_module` | `P_ADAR1_PD1_SENSITIZATION.stage0.viral_sensing_module` | `parent_claim` | `P_ADAR1_PD1_SENSITIZATION` | `ALL_OF` | `sufficient_module` | `adar1_pd1_main` |
+| `mechanism_dsrna_accumulation` | `P_ADAR1_PD1_SENSITIZATION.stage0.adar_blockade_increases_unedited_endogenous_dsRNA` | `mechanism_viral_sensing_module` | `P_ADAR1_PD1_SENSITIZATION.stage0.viral_sensing_module` | `ALL_OF` | `required_step` | `viral_sensing_chain` |
+| `mechanism_antiviral_sensing_activation` | `P_ADAR1_PD1_SENSITIZATION.stage0.endogenous_dsRNA_activates_antiviral_sensing` | `mechanism_viral_sensing_module` | `P_ADAR1_PD1_SENSITIZATION.stage0.viral_sensing_module` | `ALL_OF` | `required_step` | `viral_sensing_chain` |
+| `mechanism_tumor_inflammation_induction` | `P_ADAR1_PD1_SENSITIZATION.stage0.antiviral_sensing_induces_inflammatory_program` | `mechanism_viral_sensing_module` | `P_ADAR1_PD1_SENSITIZATION.stage0.viral_sensing_module` | `ALL_OF` | `required_step` | `viral_sensing_chain` |
+| `mechanism_cd8_recruitment` | `P_ADAR1_PD1_SENSITIZATION.stage0.tumor_inflammation_recruits_cd8_t_cells` | `mechanism_viral_sensing_module` | `P_ADAR1_PD1_SENSITIZATION.stage0.viral_sensing_module` | `ALL_OF` | `required_step` | `viral_sensing_chain` |
+| `mechanism_pd1_response_potentiation` | `P_ADAR1_PD1_SENSITIZATION.stage0.cd8_infiltration_potentiates_pd1_response` | `mechanism_viral_sensing_module` | `P_ADAR1_PD1_SENSITIZATION.stage0.viral_sensing_module` | `ALL_OF` | `required_step` | `viral_sensing_chain` |
+| `mechanism_root_therapy_endpoint` | `P_ADAR1_PD1_SENSITIZATION.stage0.adar_blockade_sensitizes_to_pd1` | `parent_claim` | `P_ADAR1_PD1_SENSITIZATION` | `ALL_OF` | `ordinary_child` | `adar1_pd1_main` |
+
+#### Semantic Relations
+
+| source_dag2_role | source_claim_id | relation_kind | target_dag2_role | target_claim_id | notes |
+|---|---|---|---|---|---|
+| `mechanism_dsrna_accumulation` | `P_ADAR1_PD1_SENSITIZATION.stage0.adar_blockade_increases_unedited_endogenous_dsRNA` | `enables` | `mechanism_antiviral_sensing_activation` | `P_ADAR1_PD1_SENSITIZATION.stage0.endogenous_dsRNA_activates_antiviral_sensing` | Endogenous dsRNA accumulation is the proposed upstream trigger for antiviral sensing. |
+| `mechanism_antiviral_sensing_activation` | `P_ADAR1_PD1_SENSITIZATION.stage0.endogenous_dsRNA_activates_antiviral_sensing` | `candidate_mechanism_link` | `mechanism_tumor_inflammation_induction` | `P_ADAR1_PD1_SENSITIZATION.stage0.antiviral_sensing_induces_inflammatory_program` | Antiviral sensing is proposed to induce inflammatory transcriptional output. |
+| `mechanism_tumor_inflammation_induction` | `P_ADAR1_PD1_SENSITIZATION.stage0.antiviral_sensing_induces_inflammatory_program` | `candidate_mechanism_link` | `mechanism_cd8_recruitment` | `P_ADAR1_PD1_SENSITIZATION.stage0.tumor_inflammation_recruits_cd8_t_cells` | Inflammatory tumor programs can recruit effector T cells into the tumor microenvironment. |
+| `mechanism_cd8_recruitment` | `P_ADAR1_PD1_SENSITIZATION.stage0.tumor_inflammation_recruits_cd8_t_cells` | `candidate_mechanism_link` | `mechanism_pd1_response_potentiation` | `P_ADAR1_PD1_SENSITIZATION.stage0.cd8_infiltration_potentiates_pd1_response` | Greater CD8 T-cell presence provides a plausible substrate for improved PD-1 blockade efficacy. |
+| `mechanism_viral_sensing_module` | `P_ADAR1_PD1_SENSITIZATION.stage0.viral_sensing_module` | `refines` | `mechanism_root_therapy_endpoint` | `P_ADAR1_PD1_SENSITIZATION.stage0.adar_blockade_sensitizes_to_pd1` | The module specifies the proposed mechanism underlying the therapy sensitization endpoint. |
+| `mechanism_viral_sensing_module` | `P_ADAR1_PD1_SENSITIZATION.stage0.viral_sensing_module` | `candidate_mechanism_link` | `mechanism_dsrna_accumulation` | `P_ADAR1_PD1_SENSITIZATION.stage0.adar_blockade_increases_unedited_endogenous_dsRNA` | Stage0 inferred these biological claims as related parts of the grounded mechanism; reviewer/L1 may later split, reorder, strengthen, or retire the semantic link. |
+| `mechanism_pd1_response_potentiation` | `P_ADAR1_PD1_SENSITIZATION.stage0.cd8_infiltration_potentiates_pd1_response` | `candidate_mechanism_link` | `mechanism_root_therapy_endpoint` | `P_ADAR1_PD1_SENSITIZATION.stage0.adar_blockade_sensitizes_to_pd1` | Stage0 inferred these biological claims as related parts of the grounded mechanism; reviewer/L1 may later split, reorder, strengthen, or retire the semantic link. |
 
 ```mermaid
 flowchart TD
-  P["ADAR1 blockade sensitizes tumors to PD-1 therapy"]
-  M1["MDA5-MAVS inflammatory module"]
-  M2["PKR stress module"]
-  A1["ADAR1 blockade increases endogenous dsRNA"]
-  A2["dsRNA activates MDA5-MAVS"]
-  A3["MDA5-MAVS induces tumor inflammation"]
-  A4["inflammation increases PD-1 responsiveness"]
-  B1["dsRNA activates PKR"]
-  B2["PKR increases PD-1 sensitivity"]
+  P["Parent: ADAR1 blockade will sensitize tumors to PD-1 therapy by allowing endogenous d..."]
+  N1["mechanism_viral_sensing_module: One mechanism by which ADAR1 blockade sensitizes tumors to P..."]
+  N2["mechanism_dsrna_accumulation: ADAR1 blockade increases the abundance of endogenous immunosti..."]
+  N3["mechanism_antiviral_sensing_activation: Accumulated endogenous double-stranded RNA activates..."]
+  N4["mechanism_tumor_inflammation_induction: Activation of antiviral sensing in tumor cells induc..."]
+  N5["mechanism_cd8_recruitment: A tumor inflammatory program increases CD8 T-cell recruitment int..."]
+  N6["mechanism_pd1_response_potentiation: Increased intratumoral CD8 T-cell infiltration potentia..."]
+  N7["mechanism_root_therapy_endpoint: ADAR1 blockade sensitizes tumors to PD-1 therapy."]
 
-  M1 -- "ANY_OF" --> P
-  M2 -- "ANY_OF" --> P
-  A1 -- "ALL_OF" --> M1
-  A2 -- "ALL_OF" --> M1
-  A3 -- "ALL_OF" --> M1
-  A4 -- "ALL_OF" --> M1
-  A1 -- "ALL_OF shared substrate" --> M2
-  B1 -- "ALL_OF" --> M2
-  B2 -- "ALL_OF" --> M2
+  N1 -- "ALL_OF sufficient_module" --> P
+  N2 -- "ALL_OF required_step" --> N1
+  N3 -- "ALL_OF required_step" --> N1
+  N4 -- "ALL_OF required_step" --> N1
+  N5 -- "ALL_OF required_step" --> N1
+  N6 -- "ALL_OF required_step" --> N1
+  N7 -- "ALL_OF ordinary_child" --> P
 
-  A1 -. "enables" .-> A2
-  A2 -. "enables" .-> A3
-  A3 -. "enables" .-> A4
-  A1 -. "enables" .-> B1
-  B1 -. "enables" .-> B2
+  N2 -. "enables" .-> N3
+  N3 -. "candidate_mechanism_link" .-> N4
+  N4 -. "candidate_mechanism_link" .-> N5
+  N5 -. "candidate_mechanism_link" .-> N6
+  N1 -. "refines" .-> N7
+  N1 -. "candidate_mechanism_link" .-> N2
+  N6 -. "candidate_mechanism_link" .-> N7
 ```
 
 ### RBMS1 / Endogenous dsRNA Shielding
@@ -102,44 +141,97 @@ Input hypothesis:
 RBMS1 binds endogenous dsRNA hairpins and shields them from MDA5 and PKR recognition, preventing activation of antiviral interferon signaling and thereby reducing cell-intrinsic immune activation.
 ```
 
-DAG2 mode: `llm_claim_specific_dag2_decomposition`; child claims: 7; edge
-operators: `ALL_OF`.
+DAG2 mode: `llm_claim_specific_dag2_decomposition`; child claims: 8; edge operators: `ALL_OF, ANY_OF`.
 
-| role | claim | primary readout | participants |
-|---|---|---|---|
-| `mechanism_dsrna_hairpin_binding_module` | RBMS1-mediated endogenous dsRNA hairpin shielding is a sufficient mechanism module for suppressing antiviral innate sensing. | module satisfaction by its required child claims | candidate_regulator:`RBMS1`; proximal_substrate:`endogenous_dsRNA_hairpins` |
-| `mechanism_rbms1_associates_endogenous_dsrna_hairpins` | RBMS1 associates with endogenous dsRNA hairpin structures in cells. | enrichment of endogenous dsRNA hairpin RNAs in RBMS1 immunoprecipitates | rna_binding_protein:`RBMS1`; bound_rna:`endogenous_dsRNA_hairpins` |
-| `mechanism_rbms1_reduces_mda5_access_to_endogenous_dsrna` | RBMS1 occupancy on endogenous dsRNA hairpins reduces MDA5 association with those RNAs. | MDA5-associated endogenous dsRNA hairpin abundance | competitive_shield:`RBMS1`; MDA5_sensor:`IFIH1`; shared_rna_ligand:`endogenous_dsRNA_hairpins` |
-| `mechanism_reduced_mda5_access_lowers_mavs_ifn_program` | Reduced MDA5 engagement of endogenous dsRNA lowers MAVS-dependent type I interferon program activation. | IFNB1 transcript abundance | upstream_sensor:`IFIH1`; signal_transducer:`MAVS`; downstream_program:`type_I_interferon_program` |
-| `mechanism_rbms1_reduces_pkr_access_to_endogenous_dsrna` | RBMS1 occupancy on endogenous dsRNA hairpins reduces PKR association with those RNAs. | PKR-associated endogenous dsRNA hairpin abundance | competitive_shield:`RBMS1`; PKR_sensor:`EIF2AK2`; shared_rna_ligand:`endogenous_dsRNA_hairpins` |
-| `mechanism_reduced_pkr_access_lowers_pkr_stress_signaling` | Reduced PKR engagement of endogenous dsRNA lowers PKR stress signaling. | phospho-eIF2alpha abundance | upstream_sensor:`EIF2AK2`; downstream_program:`PKR_stress_signaling` |
-| `mechanism_reduced_antiviral_sensor_signaling_lowers_cell_intrinsic_immune_` | Lower endogenous MDA5/MAVS interferon signaling and PKR stress signaling reduce cell-intrinsic immune activation. | basal ISG score | input_program:`type_I_interferon_program`; input_program:`PKR_stress_signaling`; cell_state_output:`cell_intrinsic_immune_activation` |
+#### Parent Claim Object
+
+| field | value |
+|---|---|
+| `claim_id` | `P_RBMS1_DSRNA_SHIELDING` |
+| `claim_text` | RBMS1 binds endogenous dsRNA hairpins and shields them from MDA5 and PKR recognition, preventing activation of antiviral interferon signaling and thereby reducing cell-intrinsic immune activation. |
+| `relation_name` | `drives_phenotype` |
+| `relation_polarity` | `positive` |
+| `participants` | rna_binding_protein:`HGNC:RBMS1` (canonical_gene_symbol=RBMS1; original_label=HGNC:RBMS1); rna_substrate:`PROPOSED-ENDOGENOUS_DSRNA_HAIRPINS` (proposed_entity_label=endogenous dsRNA hairpins; requires_entity_row=True) |
+| `candidate_gene` | `RBMS1` |
+
+#### Claim Rows
+
+| role | claim_text | relation_name | polarity | participants | context/properties |
+|---|---|---|---|---|---|
+| `mechanism_dsrna_binding_step` | RBMS1 physically binds endogenous dsRNA hairpins. | `binds_rna` | `` | binder:`HGNC:RBMS1`; rna_target:`PROPOSED-ENDOGENOUS_DSRNA_HAIRPINS` (proposed_entity_label=endogenous dsRNA hairpins; requires_entity_row=True) | scope=molecular_signal; primary_readout=RBMS1-bound endogenous dsRNA hairpin enrichment; truth_condition=RBMS1-associated RNA is enriched for endogenous dsRNA hairpin species relative to control.; why=This is the proximal substrate-engagement step named explicitly in the root mechanism.; source_mode=llm_claim_specific_dag2_decomposition |
+| `mechanism_mda5_shielding_step` | RBMS1 reduces IFIH1/MDA5 association with endogenous dsRNA hairpins. | `modifies_effect_of` | `negative` | modifier:`HGNC:RBMS1`; regulated_sensor:`HGNC:IFIH1` (canonical_gene_symbol=IFIH1; original_label=HGNC:IFIH1); rna_target:`PROPOSED-ENDOGENOUS_DSRNA_HAIRPINS` (proposed_entity_label=endogenous dsRNA hairpins; requires_entity_row=True) | scope=molecular_signal; primary_readout=MDA5-associated endogenous dsRNA hairpin abundance; truth_condition=Increasing RBMS1 lowers MDA5-bound endogenous dsRNA hairpin signal, or RBMS1 loss increases it.; why=The root claim specifically asserts shielding from MDA5 recognition, which is distinct from simple RBMS1-RNA binding.; source_mode=llm_claim_specific_dag2_decomposition |
+| `mechanism_pkr_shielding_step` | RBMS1 reduces EIF2AK2/PKR association with endogenous dsRNA hairpins. | `modifies_effect_of` | `negative` | modifier:`HGNC:RBMS1`; regulated_sensor:`HGNC:EIF2AK2` (canonical_gene_symbol=EIF2AK2; original_label=HGNC:EIF2AK2); rna_target:`PROPOSED-ENDOGENOUS_DSRNA_HAIRPINS` (proposed_entity_label=endogenous dsRNA hairpins; requires_entity_row=True) | scope=molecular_signal; primary_readout=PKR-associated endogenous dsRNA hairpin abundance; truth_condition=Increasing RBMS1 lowers PKR-bound endogenous dsRNA hairpin signal, or RBMS1 loss increases it.; why=The root claim separately names shielding from PKR recognition, which should be represented as a distinct mechanism branch from MDA5 shielding.; source_mode=llm_claim_specific_dag2_decomposition |
+| `mechanism_mda5_shielding_module` | RBMS1 suppresses antiviral interferon signaling through a MDA5-shielding mechanism. | `describes_mechanism` | `` | effector:`HGNC:RBMS1` (canonical_gene_symbol=RBMS1; original_label=HGNC:RBMS1); sensor:`HGNC:IFIH1` (canonical_gene_symbol=IFIH1; original_label=HGNC:IFIH1); rna_trigger:`PROPOSED-ENDOGENOUS_DSRNA_HAIRPINS` (proposed_entity_label=endogenous dsRNA hairpins; requires_entity_row=True); downstream_pathway:`PROPOSED-ANTIVIRAL_INTERFERON_SIGNALING` (proposed_entity_label=antiviral interferon signaling; requires_entity_row=True) | scope=mechanism_module; primary_readout=interferon-stimulated gene program after RBMS1 perturbation in an MDA5-dependent setting; truth_condition=RBMS1-dependent reduction in antiviral interferon signaling is explained by reduced MDA5 access to endogenous dsRNA hairpins.; why=This reifies one alternative sufficient branch of the root mechanism so downstream signaling can be attached without conflating it with PKR.; source_mode=llm_claim_specific_dag2_decomposition |
+| `mechanism_mda5_to_ifn_step` | IFIH1/MDA5 recognition of endogenous dsRNA hairpins increases antiviral interferon signaling. | `regulates_activity` | `positive` | regulator:`HGNC:IFIH1` (canonical_gene_symbol=IFIH1; original_label=HGNC:IFIH1); regulated_pathway:`PROPOSED-ANTIVIRAL_INTERFERON_SIGNALING` (proposed_entity_label=antiviral interferon signaling; requires_entity_row=True); activating_ligand:`PROPOSED-ENDOGENOUS_DSRNA_HAIRPINS` (proposed_entity_label=endogenous dsRNA hairpins; requires_entity_row=True) | scope=molecular_signal; primary_readout=type I interferon / ISG induction; truth_condition=Enhancing MDA5 access to endogenous dsRNA hairpins increases interferon-pathway output, and reducing MDA5 decreases it.; why=This transmits the MDA5 shielding branch to the antiviral interferon endpoint named in the root claim.; source_mode=llm_claim_specific_dag2_decomposition |
+| `mechanism_pkr_shielding_module` | RBMS1 suppresses antiviral interferon signaling through a PKR-shielding mechanism. | `describes_mechanism` | `` | effector:`HGNC:RBMS1` (canonical_gene_symbol=RBMS1; original_label=HGNC:RBMS1); sensor:`HGNC:EIF2AK2` (canonical_gene_symbol=EIF2AK2; original_label=HGNC:EIF2AK2); rna_trigger:`PROPOSED-ENDOGENOUS_DSRNA_HAIRPINS` (proposed_entity_label=endogenous dsRNA hairpins; requires_entity_row=True); downstream_pathway:`PROPOSED-ANTIVIRAL_INTERFERON_SIGNALING` (proposed_entity_label=antiviral interferon signaling; requires_entity_row=True) | scope=mechanism_module; primary_readout=interferon-stimulated gene program after RBMS1 perturbation in a PKR-dependent setting; truth_condition=RBMS1-dependent reduction in antiviral interferon signaling is explained by reduced PKR access to endogenous dsRNA hairpins.; why=This reifies the second alternative sufficient branch of the root mechanism so it remains non-overlapping with the MDA5 branch.; source_mode=llm_claim_specific_dag2_decomposition |
+| `mechanism_pkr_to_ifn_step` | EIF2AK2/PKR recognition of endogenous dsRNA hairpins increases antiviral interferon signaling. | `regulates_activity` | `positive` | regulator:`HGNC:EIF2AK2` (canonical_gene_symbol=EIF2AK2; original_label=HGNC:EIF2AK2); regulated_pathway:`PROPOSED-ANTIVIRAL_INTERFERON_SIGNALING` (proposed_entity_label=antiviral interferon signaling; requires_entity_row=True); activating_ligand:`PROPOSED-ENDOGENOUS_DSRNA_HAIRPINS` (proposed_entity_label=endogenous dsRNA hairpins; requires_entity_row=True) | scope=molecular_signal; primary_readout=type I interferon / ISG induction; truth_condition=Enhancing PKR access to endogenous dsRNA hairpins increases interferon-pathway output, and reducing PKR decreases it.; why=This transmits the PKR shielding branch to the antiviral interferon endpoint named in the root claim.; source_mode=llm_claim_specific_dag2_decomposition |
+| `mechanism_ifn_to_intrinsic_immune_activation_step` | Antiviral interferon signaling increases cell-intrinsic immune activation. | `regulates_cell_state` | `positive` | regulator:`PROPOSED-ANTIVIRAL_INTERFERON_SIGNALING` (proposed_entity_label=antiviral interferon signaling; requires_entity_row=True); regulated_cell_state:`PROPOSED-CELL_INTRINSIC_IMMUNE_ACTIVATION` (proposed_entity_label=cell-intrinsic immune activation; requires_entity_row=True) | scope=cell_state; primary_readout=cell-intrinsic immune activation score; truth_condition=Higher antiviral interferon signaling increases intrinsic immune activation markers in the same cells.; why=This is the final downstream step connecting antiviral interferon signaling to the root endpoint of reduced cell-intrinsic immune activation.; source_mode=llm_claim_specific_dag2_decomposition |
+
+#### Decomposition Edges
+
+| source_dag2_role | source_claim_id | target_dag2_role | target_claim_id | support_operator | source_role | group_id |
+|---|---|---|---|---|---|---|
+| `mechanism_mda5_shielding_module` | `P_RBMS1_DSRNA_SHIELDING.stage0.mda5_shielding_module` | `parent_claim` | `P_RBMS1_DSRNA_SHIELDING` | `ANY_OF` | `sufficient_module` | `alternative_sensor_shielding_modules` |
+| `mechanism_pkr_shielding_module` | `P_RBMS1_DSRNA_SHIELDING.stage0.pkr_shielding_module` | `parent_claim` | `P_RBMS1_DSRNA_SHIELDING` | `ANY_OF` | `sufficient_module` | `alternative_sensor_shielding_modules` |
+| `mechanism_ifn_to_intrinsic_immune_activation_step` | `P_RBMS1_DSRNA_SHIELDING.stage0.interferon_signaling_increases_cell_intrinsic_immune_a` | `parent_claim` | `P_RBMS1_DSRNA_SHIELDING` | `ALL_OF` | `required_step` | `shared_downstream_consequence` |
+| `mechanism_dsrna_binding_step` | `P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_binds_endogenous_dsrna_hairpins` | `mechanism_mda5_shielding_module` | `P_RBMS1_DSRNA_SHIELDING.stage0.mda5_shielding_module` | `ALL_OF` | `required_step` | `mda5_module_steps` |
+| `mechanism_mda5_shielding_step` | `P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_limits_mda5_access_to_endogenous_dsRNA` | `mechanism_mda5_shielding_module` | `P_RBMS1_DSRNA_SHIELDING.stage0.mda5_shielding_module` | `ALL_OF` | `required_step` | `mda5_module_steps` |
+| `mechanism_mda5_to_ifn_step` | `P_RBMS1_DSRNA_SHIELDING.stage0.mda5_recognition_activates_interferon_signaling` | `mechanism_mda5_shielding_module` | `P_RBMS1_DSRNA_SHIELDING.stage0.mda5_shielding_module` | `ALL_OF` | `required_step` | `mda5_module_steps` |
+| `mechanism_dsrna_binding_step` | `P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_binds_endogenous_dsrna_hairpins` | `mechanism_pkr_shielding_module` | `P_RBMS1_DSRNA_SHIELDING.stage0.pkr_shielding_module` | `ALL_OF` | `required_step` | `pkr_module_steps` |
+| `mechanism_pkr_shielding_step` | `P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_limits_pkr_access_to_endogenous_dsRNA` | `mechanism_pkr_shielding_module` | `P_RBMS1_DSRNA_SHIELDING.stage0.pkr_shielding_module` | `ALL_OF` | `required_step` | `pkr_module_steps` |
+| `mechanism_pkr_to_ifn_step` | `P_RBMS1_DSRNA_SHIELDING.stage0.pkr_recognition_activates_interferon_signaling` | `mechanism_pkr_shielding_module` | `P_RBMS1_DSRNA_SHIELDING.stage0.pkr_shielding_module` | `ALL_OF` | `required_step` | `pkr_module_steps` |
+
+#### Semantic Relations
+
+| source_dag2_role | source_claim_id | relation_kind | target_dag2_role | target_claim_id | notes |
+|---|---|---|---|---|---|
+| `mechanism_dsrna_binding_step` | `P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_binds_endogenous_dsrna_hairpins` | `enables` | `mechanism_mda5_shielding_step` | `P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_limits_mda5_access_to_endogenous_dsRNA` | RBMS1 must bind endogenous dsRNA hairpins to physically occlude MDA5 access. |
+| `mechanism_dsrna_binding_step` | `P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_binds_endogenous_dsrna_hairpins` | `enables` | `mechanism_pkr_shielding_step` | `P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_limits_pkr_access_to_endogenous_dsRNA` | RBMS1 must bind endogenous dsRNA hairpins to physically occlude PKR access. |
+| `mechanism_mda5_shielding_step` | `P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_limits_mda5_access_to_endogenous_dsRNA` | `candidate_mechanism_link` | `mechanism_mda5_to_ifn_step` | `P_RBMS1_DSRNA_SHIELDING.stage0.mda5_recognition_activates_interferon_signaling` | Reduced MDA5 access is proposed to lower downstream antiviral interferon signaling. |
+| `mechanism_pkr_shielding_step` | `P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_limits_pkr_access_to_endogenous_dsRNA` | `candidate_mechanism_link` | `mechanism_pkr_to_ifn_step` | `P_RBMS1_DSRNA_SHIELDING.stage0.pkr_recognition_activates_interferon_signaling` | Reduced PKR access is proposed to lower downstream antiviral interferon signaling. |
+| `mechanism_mda5_shielding_module` | `P_RBMS1_DSRNA_SHIELDING.stage0.mda5_shielding_module` | `parallel_to` | `mechanism_pkr_shielding_module` | `P_RBMS1_DSRNA_SHIELDING.stage0.pkr_shielding_module` | These are alternative sensor-shielding mechanisms named in the root claim. |
+| `mechanism_mda5_to_ifn_step` | `P_RBMS1_DSRNA_SHIELDING.stage0.mda5_recognition_activates_interferon_signaling` | `enables` | `mechanism_ifn_to_intrinsic_immune_activation_step` | `P_RBMS1_DSRNA_SHIELDING.stage0.interferon_signaling_increases_cell_intrinsic_immune_a` | MDA5-driven interferon signaling feeds the downstream intrinsic immune activation state. |
+| `mechanism_pkr_to_ifn_step` | `P_RBMS1_DSRNA_SHIELDING.stage0.pkr_recognition_activates_interferon_signaling` | `enables` | `mechanism_ifn_to_intrinsic_immune_activation_step` | `P_RBMS1_DSRNA_SHIELDING.stage0.interferon_signaling_increases_cell_intrinsic_immune_a` | PKR-driven interferon signaling feeds the downstream intrinsic immune activation state. |
+| `mechanism_mda5_shielding_step` | `P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_limits_mda5_access_to_endogenous_dsRNA` | `candidate_mechanism_link` | `mechanism_pkr_shielding_step` | `P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_limits_pkr_access_to_endogenous_dsRNA` | Stage0 inferred these biological claims as related parts of the grounded mechanism; reviewer/L1 may later split, reorder, strengthen, or retire the semantic link. |
+| `mechanism_pkr_shielding_step` | `P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_limits_pkr_access_to_endogenous_dsRNA` | `candidate_mechanism_link` | `mechanism_mda5_shielding_module` | `P_RBMS1_DSRNA_SHIELDING.stage0.mda5_shielding_module` | Stage0 inferred these biological claims as related parts of the grounded mechanism; reviewer/L1 may later split, reorder, strengthen, or retire the semantic link. |
+| `mechanism_mda5_shielding_module` | `P_RBMS1_DSRNA_SHIELDING.stage0.mda5_shielding_module` | `candidate_mechanism_link` | `mechanism_mda5_to_ifn_step` | `P_RBMS1_DSRNA_SHIELDING.stage0.mda5_recognition_activates_interferon_signaling` | Stage0 inferred these biological claims as related parts of the grounded mechanism; reviewer/L1 may later split, reorder, strengthen, or retire the semantic link. |
+| `mechanism_mda5_to_ifn_step` | `P_RBMS1_DSRNA_SHIELDING.stage0.mda5_recognition_activates_interferon_signaling` | `candidate_mechanism_link` | `mechanism_pkr_shielding_module` | `P_RBMS1_DSRNA_SHIELDING.stage0.pkr_shielding_module` | Stage0 inferred these biological claims as related parts of the grounded mechanism; reviewer/L1 may later split, reorder, strengthen, or retire the semantic link. |
+| `mechanism_pkr_shielding_module` | `P_RBMS1_DSRNA_SHIELDING.stage0.pkr_shielding_module` | `candidate_mechanism_link` | `mechanism_pkr_to_ifn_step` | `P_RBMS1_DSRNA_SHIELDING.stage0.pkr_recognition_activates_interferon_signaling` | Stage0 inferred these biological claims as related parts of the grounded mechanism; reviewer/L1 may later split, reorder, strengthen, or retire the semantic link. |
 
 ```mermaid
 flowchart TD
-  P["RBMS1 reduces cell-intrinsic immune activation"]
-  M["RBMS1 dsRNA hairpin shielding module"]
-  A1["RBMS1 binds endogenous dsRNA hairpins"]
-  A2["RBMS1 reduces MDA5 access"]
-  A3["reduced MDA5 access lowers MAVS/IFN program"]
-  B2["RBMS1 reduces PKR access"]
-  B3["reduced PKR access lowers PKR stress signaling"]
-  C["sensor-signal reduction lowers immune activation"]
+  P["Parent: RBMS1 binds endogenous dsRNA hairpins and shields them from MDA5 and PKR reco..."]
+  N1["mechanism_dsrna_binding_step: RBMS1 physically binds endogenous dsRNA hairpins."]
+  N2["mechanism_mda5_shielding_step: RBMS1 reduces IFIH1/MDA5 association with endogenous dsRNA ha..."]
+  N3["mechanism_pkr_shielding_step: RBMS1 reduces EIF2AK2/PKR association with endogenous dsRNA ha..."]
+  N4["mechanism_mda5_shielding_module: RBMS1 suppresses antiviral interferon signaling through a M..."]
+  N5["mechanism_mda5_to_ifn_step: IFIH1/MDA5 recognition of endogenous dsRNA hairpins increases an..."]
+  N6["mechanism_pkr_shielding_module: RBMS1 suppresses antiviral interferon signaling through a PK..."]
+  N7["mechanism_pkr_to_ifn_step: EIF2AK2/PKR recognition of endogenous dsRNA hairpins increases an..."]
+  N8["mechanism_ifn_to_intrinsic_immune_activation_step: Antiviral interferon signaling increases ..."]
 
-  M -- "ALL_OF" --> P
-  A1 -- "ALL_OF" --> M
-  A2 -- "ALL_OF" --> M
-  A3 -- "ALL_OF" --> M
-  B2 -- "ALL_OF" --> M
-  B3 -- "ALL_OF" --> M
-  C -- "ALL_OF" --> M
+  N4 -- "ANY_OF sufficient_module" --> P
+  N6 -- "ANY_OF sufficient_module" --> P
+  N8 -- "ALL_OF required_step" --> P
+  N1 -- "ALL_OF required_step" --> N4
+  N2 -- "ALL_OF required_step" --> N4
+  N5 -- "ALL_OF required_step" --> N4
+  N1 -- "ALL_OF required_step" --> N6
+  N3 -- "ALL_OF required_step" --> N6
+  N7 -- "ALL_OF required_step" --> N6
 
-  A1 -. "enables" .-> A2
-  A2 -. "enables" .-> A3
-  A1 -. "enables" .-> B2
-  B2 -. "enables" .-> B3
-  A3 -. "enables" .-> C
-  B3 -. "enables" .-> C
+  N1 -. "enables" .-> N2
+  N1 -. "enables" .-> N3
+  N2 -. "candidate_mechanism_link" .-> N5
+  N3 -. "candidate_mechanism_link" .-> N7
+  N4 -. "parallel_to" .-> N6
+  N5 -. "enables" .-> N8
+  N7 -. "enables" .-> N8
+  N2 -. "candidate_mechanism_link" .-> N3
+  N3 -. "candidate_mechanism_link" .-> N4
+  N4 -. "candidate_mechanism_link" .-> N5
+  N5 -. "candidate_mechanism_link" .-> N6
+  N6 -. "candidate_mechanism_link" .-> N7
 ```
 
 ### PTPN2/PTPN1 / IFN, CD8, And NK Killing
@@ -150,52 +242,87 @@ Input hypothesis:
 PTPN2/PTPN1 act as brakes on JAK-STAT interferon signaling, so dual inhibition should amplify IFN response, antigen presentation, and NK/CD8 killing.
 ```
 
-DAG2 mode: `llm_claim_specific_dag2_decomposition`; child claims: 9; edge
-operators: `ALL_OF`.
+DAG2 mode: `llm_claim_specific_dag2_decomposition`; child claims: 8; edge operators: `ALL_OF, ANY_OF`.
 
-| role | claim | primary readout | participants |
-|---|---|---|---|
-| `mechanism_ifn_stat_amplification` | Dual PTPN2/PTPN1 inhibition increases interferon-stimulated STAT activation in tumor cells. | phospho-STAT1 or phospho-STAT3 level after IFN stimulation | inhibited_negative_regulator:`PTPN2`; inhibited_negative_regulator:`PTPN1`; amplified_signaling_axis:`IFN-JAK-STAT`; measured_compartment:`tumor_cell` |
-| `mechanism_ifn_program_module` | Amplified IFN-JAK-STAT signaling drives a stronger interferon-stimulated transcriptional program in tumor cells. | interferon-stimulated gene expression score | upstream_driver:`IFN-JAK-STAT`; transcriptional_program:`interferon_stimulated_genes`; measured_compartment:`tumor_cell` |
-| `mechanism_isg_expression` | Dual PTPN2/PTPN1 inhibition increases interferon-stimulated gene expression in tumor cells. | ISG mRNA expression | inhibited_negative_regulator:`PTPN2`; inhibited_negative_regulator:`PTPN1`; measured_output:`interferon_stimulated_genes`; measured_compartment:`tumor_cell` |
-| `mechanism_antigen_presentation_module` | Amplified IFN-JAK-STAT signaling increases MHC-I antigen-presentation machinery in tumor cells. | surface peptide-MHC-I or antigen-presentation machinery abundance | upstream_driver:`IFN-JAK-STAT`; downstream_program:`MHC-I_antigen_presentation_machinery`; measured_compartment:`tumor_cell` |
-| `mechanism_mhc_i_presentation` | Dual PTPN2/PTPN1 inhibition increases tumor-cell peptide-MHC-I antigen presentation. | surface peptide-MHC-I abundance | inhibited_negative_regulator:`PTPN2`; inhibited_negative_regulator:`PTPN1`; measured_output:`peptide-MHC-I`; measured_compartment:`tumor_cell` |
-| `mechanism_cd8_killing_module` | Increased tumor peptide-MHC-I presentation enhances CD8 T-cell-mediated tumor killing. | CD8 T-cell-mediated tumor cell killing | enabling_tumor_visibility:`peptide-MHC-I`; immune_effector:`CD8_T_cell`; target_cell:`tumor_cell` |
-| `mechanism_cd8_killing` | Dual PTPN2/PTPN1 inhibition increases CD8 T-cell-mediated killing of tumor cells. | CD8-dependent tumor cell killing | inhibited_negative_regulator:`PTPN2`; inhibited_negative_regulator:`PTPN1`; immune_effector:`CD8_T_cell`; target_cell:`tumor_cell` |
-| `mechanism_nk_susceptibility_module` | Dual PTPN2/PTPN1 inhibition alters tumor-cell state in a way that increases susceptibility to NK-cell attack. | NK-cell-mediated tumor lysis | inhibited_negative_regulator:`PTPN2`; inhibited_negative_regulator:`PTPN1`; immune_effector:`NK_cell`; target_cell:`tumor_cell` |
-| `mechanism_nk_killing` | Dual PTPN2/PTPN1 inhibition increases NK-cell-mediated killing of tumor cells. | NK-dependent tumor cell killing | inhibited_negative_regulator:`PTPN2`; inhibited_negative_regulator:`PTPN1`; immune_effector:`NK_cell`; target_cell:`tumor_cell` |
+#### Parent Claim Object
+
+| field | value |
+|---|---|
+| `claim_id` | `P_PTPN2_PTPN1_IFN_KILLING` |
+| `claim_text` | PTPN2/PTPN1 act as brakes on JAK-STAT interferon signaling, so dual inhibition should amplify IFN response, antigen presentation, and NK/CD8 killing. |
+| `relation_name` | `drives_phenotype` |
+| `relation_polarity` | `positive` |
+| `participants` | negative_regulator:`HGNC:PTPN2` (canonical_gene_symbol=PTPN2; original_label=HGNC:PTPN2); negative_regulator:`HGNC:PTPN1` (canonical_gene_symbol=PTPN1; original_label=HGNC:PTPN1); immune_effector_cell:`PROPOSED-CD8_T_CELL` (proposed_entity_label=CD8 T cell; requires_entity_row=True); immune_effector_cell:`PROPOSED-NK_CELL` (proposed_entity_label=NK cell; requires_entity_row=True); target_cell:`PROPOSED-TUMOR_CELL` (proposed_entity_label=tumor cell; requires_entity_row=True) |
+| `candidate_gene` | `PTPN2` |
+
+#### Claim Rows
+
+| role | claim_text | relation_name | polarity | participants | context/properties |
+|---|---|---|---|---|---|
+| `mechanism_ifn_signal_amplification_module` | One sufficient mechanism for the parent claim is that dual PTPN2/PTPN1 inhibition amplifies tumor-cell interferon signaling. | `describes_mechanism` | `` | negative_regulator:`HGNC:PTPN2` (canonical_gene_symbol=PTPN2; original_label=HGNC:PTPN2); negative_regulator:`HGNC:PTPN1` (canonical_gene_symbol=PTPN1; original_label=HGNC:PTPN1); target_cell:`PROPOSED-TUMOR_CELL` (proposed_entity_label=tumor cell; requires_entity_row=True) | scope=mechanism_module; primary_readout=tumor-cell interferon pathway activation; truth_condition=A perturbation that inhibits both PTPN2 and PTPN1 increases a direct interferon-pathway signaling readout in tumor cells.; why=Reifies the interferon-amplification branch as a distinct mechanism module under the parent.; source_mode=llm_claim_specific_dag2_decomposition |
+| `mechanism_antigen_presentation_module` | One sufficient mechanism for the parent claim is that dual PTPN2/PTPN1 inhibition increases tumor-cell antigen presentation to CD8 T cells. | `describes_mechanism` | `` | negative_regulator:`HGNC:PTPN2` (canonical_gene_symbol=PTPN2; original_label=HGNC:PTPN2); negative_regulator:`HGNC:PTPN1` (canonical_gene_symbol=PTPN1; original_label=HGNC:PTPN1); target_cell:`PROPOSED-TUMOR_CELL` (proposed_entity_label=tumor cell; requires_entity_row=True); immune_effector_cell:`PROPOSED-CD8_T_CELL` (proposed_entity_label=CD8 T cell; requires_entity_row=True) | scope=mechanism_module; primary_readout=tumor-cell peptide-MHC-I presentation; truth_condition=A perturbation that inhibits both PTPN2 and PTPN1 increases a direct peptide-MHC-I antigen-presentation readout in tumor cells.; why=Separates antigen-presentation biology from upstream interferon signaling and downstream killing.; source_mode=llm_claim_specific_dag2_decomposition |
+| `mechanism_nk_killing_module` | One sufficient mechanism for the parent claim is that dual PTPN2/PTPN1 inhibition increases tumor susceptibility to NK-cell-mediated killing. | `describes_mechanism` | `` | negative_regulator:`HGNC:PTPN2` (canonical_gene_symbol=PTPN2; original_label=HGNC:PTPN2); negative_regulator:`HGNC:PTPN1` (canonical_gene_symbol=PTPN1; original_label=HGNC:PTPN1); target_cell:`PROPOSED-TUMOR_CELL` (proposed_entity_label=tumor cell; requires_entity_row=True); immune_effector_cell:`PROPOSED-NK_CELL` (proposed_entity_label=NK cell; requires_entity_row=True) | scope=mechanism_module; primary_readout=NK-cell-mediated tumor killing; truth_condition=A perturbation that inhibits both PTPN2 and PTPN1 increases a direct NK-mediated tumor-cell killing readout.; why=Keeps NK-specific killing distinct from CD8 visibility and generic interferon signaling.; source_mode=llm_claim_specific_dag2_decomposition |
+| `mechanism_dual_inhibition_increases_tumor_stat_activity` | Dual inhibition of PTPN2 and PTPN1 increases interferon-stimulated STAT activity in tumor cells. | `perturbation_changes_phenotype` | `positive` | perturbed_gene:`HGNC:PTPN2` (canonical_gene_symbol=PTPN2; original_label=HGNC:PTPN2); perturbed_gene:`HGNC:PTPN1` (canonical_gene_symbol=PTPN1; original_label=HGNC:PTPN1); target_cell:`PROPOSED-TUMOR_CELL` (proposed_entity_label=tumor cell; requires_entity_row=True); phenotype:`PROPOSED-INTERFERON_SIGNALING_STATE` (proposed_entity_label=interferon-stimulated STAT activity; requires_entity_row=True) | scope=molecular_signal; primary_readout=STAT phosphorylation or IFN-responsive reporter activity; truth_condition=Compared with control, combined PTPN2/PTPN1 inhibition increases a direct STAT phosphorylation or transcriptional reporter readout after interferon stimulation in tumor cells.; why=Captures the core upstream signaling consequence asserted by the root claim.; source_mode=llm_claim_specific_dag2_decomposition |
+| `mechanism_tumor_ifn_signaling_induces_ifn_response_genes` | In tumor cells, increased interferon signaling induces interferon-response gene expression. | `transcriptionally_regulates` | `positive` | regulator_state:`PROPOSED-INTERFERON_SIGNALING_STATE` (proposed_entity_label=interferon-stimulated STAT activity; requires_entity_row=True); target_program:`PROPOSED-IFN_RESPONSE_GENE_PROGRAM` (proposed_entity_label=interferon-response gene program; requires_entity_row=True); context_cell:`PROPOSED-TUMOR_CELL` (proposed_entity_label=tumor cell; requires_entity_row=True) | scope=cell_state; primary_readout=interferon-stimulated gene expression; truth_condition=Across matched perturbation conditions, higher tumor-cell interferon signaling is accompanied by increased expression of interferon-stimulated genes.; why=Separates immediate pathway activation from downstream transcriptional IFN response.; source_mode=llm_claim_specific_dag2_decomposition |
+| `mechanism_tumor_ifn_signaling_increases_mhc1_presentation` | In tumor cells, increased interferon signaling increases peptide-MHC-I antigen presentation. | `perturbation_changes_phenotype` | `positive` | upstream_state:`PROPOSED-INTERFERON_SIGNALING_STATE` (proposed_entity_label=interferon-stimulated STAT activity; requires_entity_row=True); target_cell:`PROPOSED-TUMOR_CELL` (proposed_entity_label=tumor cell; requires_entity_row=True); phenotype:`PROPOSED-PEPTIDE_MHC_I_PRESENTATION` (proposed_entity_label=peptide-MHC-I antigen presentation; requires_entity_row=True) | scope=cell_state; primary_readout=cell-surface peptide-MHC-I presentation; truth_condition=Across matched perturbation conditions, higher tumor-cell interferon signaling increases a direct cell-surface peptide-MHC-I presentation readout.; why=Provides the mechanistic bridge from interferon signaling to CD8-relevant immune visibility.; source_mode=llm_claim_specific_dag2_decomposition |
+| `mechanism_mhc1_presentation_permits_cd8_killing` | Tumor-cell peptide-MHC-I antigen presentation permits CD8 T-cell-mediated tumor killing. | `permits` | `positive` | permissive_state:`PROPOSED-PEPTIDE_MHC_I_PRESENTATION` (proposed_entity_label=peptide-MHC-I antigen presentation; requires_entity_row=True); immune_effector_cell:`PROPOSED-CD8_T_CELL` (proposed_entity_label=CD8 T cell; requires_entity_row=True); target_cell:`PROPOSED-TUMOR_CELL` (proposed_entity_label=tumor cell; requires_entity_row=True); phenotype:`PROPOSED-CD8_TUMOR_KILLING` (proposed_entity_label=CD8 T-cell-mediated tumor killing; requires_entity_row=True) | scope=immune_effector; primary_readout=CD8 T-cell-mediated tumor killing; truth_condition=Reducing peptide-MHC-I presentation diminishes CD8 T-cell-mediated tumor-cell killing in the matched system.; why=Links antigen presentation specifically to CD8 effector function without conflating it with NK biology.; source_mode=llm_claim_specific_dag2_decomposition |
+| `mechanism_dual_inhibition_increases_nk_tumor_killing` | Dual inhibition of PTPN2 and PTPN1 increases NK-cell-mediated killing of tumor cells. | `perturbation_changes_phenotype` | `positive` | perturbed_gene:`HGNC:PTPN2` (canonical_gene_symbol=PTPN2; original_label=HGNC:PTPN2); perturbed_gene:`HGNC:PTPN1` (canonical_gene_symbol=PTPN1; original_label=HGNC:PTPN1); immune_effector_cell:`PROPOSED-NK_CELL` (proposed_entity_label=NK cell; requires_entity_row=True); target_cell:`PROPOSED-TUMOR_CELL` (proposed_entity_label=tumor cell; requires_entity_row=True); phenotype:`PROPOSED-NK_TUMOR_KILLING` (proposed_entity_label=NK-cell-mediated tumor killing; requires_entity_row=True) | scope=immune_effector; primary_readout=NK-cell-mediated tumor killing; truth_condition=Compared with control, combined PTPN2/PTPN1 inhibition increases direct NK-cell cytotoxicity against tumor cells in co-culture or in vivo.; why=Captures the NK arm as a distinct endpoint branch rather than inferring it from MHC-I or generic IFN readouts.; source_mode=llm_claim_specific_dag2_decomposition |
+
+#### Decomposition Edges
+
+| source_dag2_role | source_claim_id | target_dag2_role | target_claim_id | support_operator | source_role | group_id |
+|---|---|---|---|---|---|---|
+| `mechanism_ifn_signal_amplification_module` | `P_PTPN2_PTPN1_IFN_KILLING.stage0.ifn_signal_amplification_module` | `parent_claim` | `P_PTPN2_PTPN1_IFN_KILLING` | `ANY_OF` | `sufficient_module` | `root_alternative_mechanisms` |
+| `mechanism_antigen_presentation_module` | `P_PTPN2_PTPN1_IFN_KILLING.stage0.antigen_presentation_module` | `parent_claim` | `P_PTPN2_PTPN1_IFN_KILLING` | `ANY_OF` | `sufficient_module` | `root_alternative_mechanisms` |
+| `mechanism_nk_killing_module` | `P_PTPN2_PTPN1_IFN_KILLING.stage0.nk_killing_module` | `parent_claim` | `P_PTPN2_PTPN1_IFN_KILLING` | `ANY_OF` | `sufficient_module` | `root_alternative_mechanisms` |
+| `mechanism_dual_inhibition_increases_tumor_stat_activity` | `P_PTPN2_PTPN1_IFN_KILLING.stage0.dual_inhibition_increases_tumor_stat_activity` | `mechanism_ifn_signal_amplification_module` | `P_PTPN2_PTPN1_IFN_KILLING.stage0.ifn_signal_amplification_module` | `ALL_OF` | `required_step` | `ifn_signal_branch` |
+| `mechanism_tumor_ifn_signaling_induces_ifn_response_genes` | `P_PTPN2_PTPN1_IFN_KILLING.stage0.tumor_ifn_signaling_induces_ifn_response_genes` | `mechanism_ifn_signal_amplification_module` | `P_PTPN2_PTPN1_IFN_KILLING.stage0.ifn_signal_amplification_module` | `ALL_OF` | `required_step` | `ifn_signal_branch` |
+| `mechanism_tumor_ifn_signaling_increases_mhc1_presentation` | `P_PTPN2_PTPN1_IFN_KILLING.stage0.tumor_ifn_signaling_increases_mhc1_presentation` | `mechanism_antigen_presentation_module` | `P_PTPN2_PTPN1_IFN_KILLING.stage0.antigen_presentation_module` | `ALL_OF` | `required_step` | `antigen_presentation_branch` |
+| `mechanism_mhc1_presentation_permits_cd8_killing` | `P_PTPN2_PTPN1_IFN_KILLING.stage0.mhc1_presentation_permits_cd8_killing` | `mechanism_antigen_presentation_module` | `P_PTPN2_PTPN1_IFN_KILLING.stage0.antigen_presentation_module` | `ALL_OF` | `required_step` | `antigen_presentation_branch` |
+| `mechanism_dual_inhibition_increases_nk_tumor_killing` | `P_PTPN2_PTPN1_IFN_KILLING.stage0.dual_inhibition_increases_nk_tumor_killing` | `mechanism_nk_killing_module` | `P_PTPN2_PTPN1_IFN_KILLING.stage0.nk_killing_module` | `ALL_OF` | `required_step` | `nk_killing_branch` |
+
+#### Semantic Relations
+
+| source_dag2_role | source_claim_id | relation_kind | target_dag2_role | target_claim_id | notes |
+|---|---|---|---|---|---|
+| `mechanism_dual_inhibition_increases_tumor_stat_activity` | `P_PTPN2_PTPN1_IFN_KILLING.stage0.dual_inhibition_increases_tumor_stat_activity` | `enables` | `mechanism_tumor_ifn_signaling_induces_ifn_response_genes` | `P_PTPN2_PTPN1_IFN_KILLING.stage0.tumor_ifn_signaling_induces_ifn_response_genes` | Upstream interferon-pathway activation can drive IFN-response transcription. |
+| `mechanism_dual_inhibition_increases_tumor_stat_activity` | `P_PTPN2_PTPN1_IFN_KILLING.stage0.dual_inhibition_increases_tumor_stat_activity` | `enables` | `mechanism_tumor_ifn_signaling_increases_mhc1_presentation` | `P_PTPN2_PTPN1_IFN_KILLING.stage0.tumor_ifn_signaling_increases_mhc1_presentation` | Amplified interferon signaling can increase tumor antigen-presentation machinery. |
+| `mechanism_tumor_ifn_signaling_increases_mhc1_presentation` | `P_PTPN2_PTPN1_IFN_KILLING.stage0.tumor_ifn_signaling_increases_mhc1_presentation` | `enables` | `mechanism_mhc1_presentation_permits_cd8_killing` | `P_PTPN2_PTPN1_IFN_KILLING.stage0.mhc1_presentation_permits_cd8_killing` | Peptide-MHC-I presentation is a permissive prerequisite for CD8 recognition and killing. |
+| `mechanism_antigen_presentation_module` | `P_PTPN2_PTPN1_IFN_KILLING.stage0.antigen_presentation_module` | `parallel_to` | `mechanism_nk_killing_module` | `P_PTPN2_PTPN1_IFN_KILLING.stage0.nk_killing_module` | CD8-visibility and NK-killing are distinct downstream immune-effector branches. |
+| `mechanism_ifn_signal_amplification_module` | `P_PTPN2_PTPN1_IFN_KILLING.stage0.ifn_signal_amplification_module` | `candidate_mechanism_link` | `mechanism_antigen_presentation_module` | `P_PTPN2_PTPN1_IFN_KILLING.stage0.antigen_presentation_module` | Antigen-presentation changes may arise downstream of amplified interferon signaling, but the module is kept distinct from the upstream signaling readout. |
+| `mechanism_nk_killing_module` | `P_PTPN2_PTPN1_IFN_KILLING.stage0.nk_killing_module` | `candidate_mechanism_link` | `mechanism_dual_inhibition_increases_tumor_stat_activity` | `P_PTPN2_PTPN1_IFN_KILLING.stage0.dual_inhibition_increases_tumor_stat_activity` | Stage0 inferred these biological claims as related parts of the grounded mechanism; reviewer/L1 may later split, reorder, strengthen, or retire the semantic link. |
+| `mechanism_tumor_ifn_signaling_induces_ifn_response_genes` | `P_PTPN2_PTPN1_IFN_KILLING.stage0.tumor_ifn_signaling_induces_ifn_response_genes` | `candidate_mechanism_link` | `mechanism_tumor_ifn_signaling_increases_mhc1_presentation` | `P_PTPN2_PTPN1_IFN_KILLING.stage0.tumor_ifn_signaling_increases_mhc1_presentation` | Stage0 inferred these biological claims as related parts of the grounded mechanism; reviewer/L1 may later split, reorder, strengthen, or retire the semantic link. |
+| `mechanism_mhc1_presentation_permits_cd8_killing` | `P_PTPN2_PTPN1_IFN_KILLING.stage0.mhc1_presentation_permits_cd8_killing` | `candidate_mechanism_link` | `mechanism_dual_inhibition_increases_nk_tumor_killing` | `P_PTPN2_PTPN1_IFN_KILLING.stage0.dual_inhibition_increases_nk_tumor_killing` | Stage0 inferred these biological claims as related parts of the grounded mechanism; reviewer/L1 may later split, reorder, strengthen, or retire the semantic link. |
 
 ```mermaid
 flowchart TD
-  P["PTPN2/PTPN1 inhibition amplifies IFN, antigen presentation, CD8 and NK killing"]
-  J["IFN-stimulated STAT activation"]
-  I["stronger IFN transcriptional program"]
-  G["ISG expression"]
-  AP["MHC-I antigen-presentation machinery"]
-  MHC["tumor peptide-MHC-I presentation"]
-  CD8M["CD8 killing module"]
-  CD8["CD8 T-cell-mediated killing"]
-  NKM["NK susceptibility module"]
-  NK["NK-cell-mediated killing"]
+  P["Parent: PTPN2/PTPN1 act as brakes on JAK-STAT interferon signaling, so dual inhibitio..."]
+  N1["mechanism_ifn_signal_amplification_module: One sufficient mechanism for the parent claim is ..."]
+  N2["mechanism_antigen_presentation_module: One sufficient mechanism for the parent claim is that..."]
+  N3["mechanism_nk_killing_module: One sufficient mechanism for the parent claim is that dual PTPN..."]
+  N4["mechanism_dual_inhibition_increases_tumor_stat_activity: Dual inhibition of PTPN2 and PTPN1 ..."]
+  N5["mechanism_tumor_ifn_signaling_induces_ifn_response_genes: In tumor cells, increased interfer..."]
+  N6["mechanism_tumor_ifn_signaling_increases_mhc1_presentation: In tumor cells, increased interfe..."]
+  N7["mechanism_mhc1_presentation_permits_cd8_killing: Tumor-cell peptide-MHC-I antigen presentati..."]
+  N8["mechanism_dual_inhibition_increases_nk_tumor_killing: Dual inhibition of PTPN2 and PTPN1 inc..."]
 
-  J -- "ALL_OF" --> P
-  I -- "ALL_OF" --> P
-  G -- "ALL_OF" --> P
-  AP -- "ALL_OF" --> P
-  MHC -- "ALL_OF" --> P
-  CD8M -- "ALL_OF" --> P
-  CD8 -- "ALL_OF" --> P
-  NKM -- "ALL_OF" --> P
-  NK -- "ALL_OF" --> P
+  N1 -- "ANY_OF sufficient_module" --> P
+  N2 -- "ANY_OF sufficient_module" --> P
+  N3 -- "ANY_OF sufficient_module" --> P
+  N4 -- "ALL_OF required_step" --> N1
+  N5 -- "ALL_OF required_step" --> N1
+  N6 -- "ALL_OF required_step" --> N2
+  N7 -- "ALL_OF required_step" --> N2
+  N8 -- "ALL_OF required_step" --> N3
 
-  J -. "enables" .-> I
-  I -. "enables" .-> G
-  I -. "enables" .-> AP
-  AP -. "enables" .-> MHC
-  MHC -. "CD8 visibility, not NK evidence" .-> CD8M
-  CD8M -. "enables" .-> CD8
-  J -. "separate NK susceptibility biology" .-> NKM
-  NKM -. "enables" .-> NK
+  N4 -. "enables" .-> N5
+  N4 -. "enables" .-> N6
+  N6 -. "enables" .-> N7
+  N2 -. "parallel_to" .-> N3
+  N1 -. "candidate_mechanism_link" .-> N2
+  N3 -. "candidate_mechanism_link" .-> N4
+  N5 -. "candidate_mechanism_link" .-> N6
+  N7 -. "candidate_mechanism_link" .-> N8
 ```
 
 ### Ferroptosis Suppression Alternatives
@@ -206,32 +333,77 @@ Input hypothesis:
 Cells suppress ferroptosis by detoxifying lipid peroxides or lipid radicals.
 ```
 
-DAG2 mode: `llm_claim_specific_dag2_decomposition`; child claims: 5; edge
-operators: `ALL_OF`, `ANY_OF`.
+DAG2 mode: `llm_claim_specific_dag2_decomposition`; child claims: 6; edge operators: `ALL_OF, ANY_OF`.
 
-| role | claim | primary readout | participants |
-|---|---|---|---|
-| `mechanism_gpx4_detox_module` | A GPX4-dependent phospholipid hydroperoxide detoxification program can suppress ferroptosis. | ferroptosis sensitivity | mechanism_module:`GPX4_pathway` |
-| `mechanism_gpx4_reduces_phospholipid_hydroperoxides` | GPX4 activity decreases phospholipid hydroperoxide abundance in cellular membranes. | membrane phospholipid hydroperoxide level | causal_regulator:`GPX4`; regulated_species:`phospholipid_hydroperoxides` |
-| `mechanism_fsp1_coq_module` | An FSP1-CoQ radical-trapping antioxidant program can suppress ferroptosis independently of GPX4. | ferroptosis sensitivity | mechanism_module:`FSP1_CoQ_pathway` |
-| `mechanism_fsp1_regenerates_reduced_coq` | FSP1 activity increases the reduced CoQ pool at membranes. | reduced CoQ level | causal_regulator:`FSP1`; regulated_species:`reduced_CoQ` |
-| `mechanism_reduced_coq_traps_lipid_radicals` | Reduced CoQ decreases lipid radical abundance by radical trapping in membranes. | membrane lipid radical level | causal_regulator:`reduced_CoQ`; regulated_species:`lipid_radicals` |
+#### Parent Claim Object
+
+| field | value |
+|---|---|
+| `claim_id` | `P_FERROPTOSIS_LIPID_DETOX` |
+| `claim_text` | Cells suppress ferroptosis by detoxifying lipid peroxides or lipid radicals. |
+| `relation_name` | `drives_phenotype` |
+| `relation_polarity` | `positive` |
+| `participants` | cell_death_process:`PROPOSED-FERROPTOSIS` (proposed_entity_label=ferroptosis; requires_entity_row=True); toxic_lipid_species:`PROPOSED-LIPID_PEROXIDES` (proposed_entity_label=lipid peroxides; requires_entity_row=True); toxic_lipid_species:`PROPOSED-LIPID_RADICALS` (proposed_entity_label=lipid radicals; requires_entity_row=True) |
+| `candidate_gene` | `` |
+
+#### Claim Rows
+
+| role | claim_text | relation_name | polarity | participants | context/properties |
+|---|---|---|---|---|---|
+| `mechanism_lipid_peroxide_detox_module` | Detoxification of lipid peroxides is a sufficient mechanism by which cells suppress ferroptosis. | `describes_mechanism` | `` | mechanistic_intermediate:`PROPOSED-LIPID_PEROXIDES` (proposed_entity_label=LIPID_PEROXIDES; requires_entity_row=True); phenotype:`PROPOSED-FERROPTOSIS` (proposed_entity_label=FERROPTOSIS; requires_entity_row=True) | scope=mechanism_module; primary_readout=cellular lipid peroxide abundance; truth_condition=A decrease in cellular lipid peroxide burden is directionally linked to reduced ferroptotic cell death.; why=The root claim states an alternative mechanism branch centered on lipid peroxide detoxification.; source_mode=llm_claim_specific_dag2_decomposition |
+| `mechanism_lipid_radical_detox_module` | Detoxification of lipid radicals is a sufficient mechanism by which cells suppress ferroptosis. | `describes_mechanism` | `` | mechanistic_intermediate:`PROPOSED-LIPID_RADICALS` (proposed_entity_label=LIPID_RADICALS; requires_entity_row=True); phenotype:`PROPOSED-FERROPTOSIS` (proposed_entity_label=FERROPTOSIS; requires_entity_row=True) | scope=mechanism_module; primary_readout=cellular lipid radical abundance; truth_condition=A decrease in cellular lipid radical burden is directionally linked to reduced ferroptotic cell death.; why=The root claim explicitly includes lipid radical detoxification as an alternative mechanism branch.; source_mode=llm_claim_specific_dag2_decomposition |
+| `mechanism_reduced_lipid_peroxides` | Lower cellular lipid peroxide abundance suppresses ferroptosis. | `perturbation_changes_phenotype` | `negative` | subject:`PROPOSED-LIPID_PEROXIDES` (proposed_entity_label=LIPID_PEROXIDES; requires_entity_row=True); phenotype:`PROPOSED-FERROPTOSIS` (proposed_entity_label=FERROPTOSIS; requires_entity_row=True) | scope=cell_state; primary_readout=ferroptotic cell death; truth_condition=When lipid peroxide levels are reduced, ferroptotic cell death decreases in the same cellular context.; why=This captures the causal consequence of lowering lipid peroxides on the endpoint without restating a specific detox chemistry.; source_mode=llm_claim_specific_dag2_decomposition |
+| `mechanism_detox_process_lowers_lipid_peroxides` | Cellular lipid peroxide detoxification decreases lipid peroxide abundance. | `perturbation_changes_phenotype` | `negative` | subject:`PROPOSED-LIPID_PEROXIDE_DETOXIFICATION` (proposed_entity_label=lipid peroxide detoxification; requires_entity_row=True); phenotype:`PROPOSED-LIPID_PEROXIDES` (proposed_entity_label=LIPID_PEROXIDES; requires_entity_row=True) | scope=molecular_signal; primary_readout=cellular lipid peroxide abundance; truth_condition=Activation or presence of a lipid peroxide detoxification process lowers measured lipid peroxide levels.; why=This is the upstream mechanistic step that defines the lipid peroxide detoxification branch.; source_mode=llm_claim_specific_dag2_decomposition |
+| `mechanism_reduced_lipid_radicals` | Lower cellular lipid radical abundance suppresses ferroptosis. | `perturbation_changes_phenotype` | `negative` | subject:`PROPOSED-LIPID_RADICALS` (proposed_entity_label=LIPID_RADICALS; requires_entity_row=True); phenotype:`PROPOSED-FERROPTOSIS` (proposed_entity_label=FERROPTOSIS; requires_entity_row=True) | scope=cell_state; primary_readout=ferroptotic cell death; truth_condition=When lipid radical levels are reduced, ferroptotic cell death decreases in the same cellular context.; why=This captures the causal consequence of lowering lipid radicals on ferroptosis as a distinct branch from lipid peroxide detoxification.; source_mode=llm_claim_specific_dag2_decomposition |
+| `mechanism_detox_process_lowers_lipid_radicals` | Cellular lipid radical detoxification decreases lipid radical abundance. | `perturbation_changes_phenotype` | `negative` | subject:`PROPOSED-LIPID_RADICAL_DETOXIFICATION` (proposed_entity_label=lipid radical detoxification; requires_entity_row=True); phenotype:`PROPOSED-LIPID_RADICALS` (proposed_entity_label=LIPID_RADICALS; requires_entity_row=True) | scope=molecular_signal; primary_readout=cellular lipid radical abundance; truth_condition=Activation or presence of a lipid radical detoxification process lowers measured lipid radical levels.; why=This is the upstream mechanistic step that defines the lipid radical detoxification branch.; source_mode=llm_claim_specific_dag2_decomposition |
+
+#### Decomposition Edges
+
+| source_dag2_role | source_claim_id | target_dag2_role | target_claim_id | support_operator | source_role | group_id |
+|---|---|---|---|---|---|---|
+| `mechanism_lipid_peroxide_detox_module` | `P_FERROPTOSIS_LIPID_DETOX.stage0.lipid_peroxide_detox_module` | `parent_claim` | `P_FERROPTOSIS_LIPID_DETOX` | `ANY_OF` | `sufficient_module` | `ferroptosis_lipid_detox_alternatives` |
+| `mechanism_lipid_radical_detox_module` | `P_FERROPTOSIS_LIPID_DETOX.stage0.lipid_radical_detox_module` | `parent_claim` | `P_FERROPTOSIS_LIPID_DETOX` | `ANY_OF` | `sufficient_module` | `ferroptosis_lipid_detox_alternatives` |
+| `mechanism_detox_process_lowers_lipid_peroxides` | `P_FERROPTOSIS_LIPID_DETOX.stage0.detox_process_lowers_lipid_peroxides` | `mechanism_lipid_peroxide_detox_module` | `P_FERROPTOSIS_LIPID_DETOX.stage0.lipid_peroxide_detox_module` | `ALL_OF` | `required_step` | `lipid_peroxide_detox_branch` |
+| `mechanism_reduced_lipid_peroxides` | `P_FERROPTOSIS_LIPID_DETOX.stage0.reduced_lipid_peroxides` | `mechanism_lipid_peroxide_detox_module` | `P_FERROPTOSIS_LIPID_DETOX.stage0.lipid_peroxide_detox_module` | `ALL_OF` | `required_step` | `lipid_peroxide_detox_branch` |
+| `mechanism_detox_process_lowers_lipid_radicals` | `P_FERROPTOSIS_LIPID_DETOX.stage0.detox_process_lowers_lipid_radicals` | `mechanism_lipid_radical_detox_module` | `P_FERROPTOSIS_LIPID_DETOX.stage0.lipid_radical_detox_module` | `ALL_OF` | `required_step` | `lipid_radical_detox_branch` |
+| `mechanism_reduced_lipid_radicals` | `P_FERROPTOSIS_LIPID_DETOX.stage0.reduced_lipid_radicals` | `mechanism_lipid_radical_detox_module` | `P_FERROPTOSIS_LIPID_DETOX.stage0.lipid_radical_detox_module` | `ALL_OF` | `required_step` | `lipid_radical_detox_branch` |
+
+#### Semantic Relations
+
+| source_dag2_role | source_claim_id | relation_kind | target_dag2_role | target_claim_id | notes |
+|---|---|---|---|---|---|
+| `mechanism_detox_process_lowers_lipid_peroxides` | `P_FERROPTOSIS_LIPID_DETOX.stage0.detox_process_lowers_lipid_peroxides` | `enables` | `mechanism_reduced_lipid_peroxides` | `P_FERROPTOSIS_LIPID_DETOX.stage0.reduced_lipid_peroxides` | Lowering lipid peroxide abundance is the mechanistic intermediate linking detoxification to ferroptosis suppression. |
+| `mechanism_detox_process_lowers_lipid_radicals` | `P_FERROPTOSIS_LIPID_DETOX.stage0.detox_process_lowers_lipid_radicals` | `enables` | `mechanism_reduced_lipid_radicals` | `P_FERROPTOSIS_LIPID_DETOX.stage0.reduced_lipid_radicals` | Lowering lipid radical abundance is the mechanistic intermediate linking detoxification to ferroptosis suppression. |
+| `mechanism_lipid_peroxide_detox_module` | `P_FERROPTOSIS_LIPID_DETOX.stage0.lipid_peroxide_detox_module` | `parallel_to` | `mechanism_lipid_radical_detox_module` | `P_FERROPTOSIS_LIPID_DETOX.stage0.lipid_radical_detox_module` | These are alternative non-overlapping mechanism branches stated by the root claim. |
+| `mechanism_lipid_radical_detox_module` | `P_FERROPTOSIS_LIPID_DETOX.stage0.lipid_radical_detox_module` | `candidate_mechanism_link` | `mechanism_reduced_lipid_peroxides` | `P_FERROPTOSIS_LIPID_DETOX.stage0.reduced_lipid_peroxides` | Stage0 inferred these biological claims as related parts of the grounded mechanism; reviewer/L1 may later split, reorder, strengthen, or retire the semantic link. |
+| `mechanism_reduced_lipid_peroxides` | `P_FERROPTOSIS_LIPID_DETOX.stage0.reduced_lipid_peroxides` | `candidate_mechanism_link` | `mechanism_detox_process_lowers_lipid_peroxides` | `P_FERROPTOSIS_LIPID_DETOX.stage0.detox_process_lowers_lipid_peroxides` | Stage0 inferred these biological claims as related parts of the grounded mechanism; reviewer/L1 may later split, reorder, strengthen, or retire the semantic link. |
+| `mechanism_detox_process_lowers_lipid_peroxides` | `P_FERROPTOSIS_LIPID_DETOX.stage0.detox_process_lowers_lipid_peroxides` | `candidate_mechanism_link` | `mechanism_reduced_lipid_radicals` | `P_FERROPTOSIS_LIPID_DETOX.stage0.reduced_lipid_radicals` | Stage0 inferred these biological claims as related parts of the grounded mechanism; reviewer/L1 may later split, reorder, strengthen, or retire the semantic link. |
+| `mechanism_reduced_lipid_radicals` | `P_FERROPTOSIS_LIPID_DETOX.stage0.reduced_lipid_radicals` | `candidate_mechanism_link` | `mechanism_detox_process_lowers_lipid_radicals` | `P_FERROPTOSIS_LIPID_DETOX.stage0.detox_process_lowers_lipid_radicals` | Stage0 inferred these biological claims as related parts of the grounded mechanism; reviewer/L1 may later split, reorder, strengthen, or retire the semantic link. |
 
 ```mermaid
 flowchart TD
-  P["cells suppress ferroptosis"]
-  GPM["GPX4 lipid-peroxide detox module"]
-  FCM["FSP1-CoQ radical-trapping module"]
-  GPX4["GPX4 decreases phospholipid hydroperoxides"]
-  FSP1["FSP1 regenerates reduced CoQ"]
-  COQ["reduced CoQ traps lipid radicals"]
+  P["Parent: Cells suppress ferroptosis by detoxifying lipid peroxides or lipid radicals."]
+  N1["mechanism_lipid_peroxide_detox_module: Detoxification of lipid peroxides is a sufficient mec..."]
+  N2["mechanism_lipid_radical_detox_module: Detoxification of lipid radicals is a sufficient mecha..."]
+  N3["mechanism_reduced_lipid_peroxides: Lower cellular lipid peroxide abundance suppresses ferrop..."]
+  N4["mechanism_detox_process_lowers_lipid_peroxides: Cellular lipid peroxide detoxification decre..."]
+  N5["mechanism_reduced_lipid_radicals: Lower cellular lipid radical abundance suppresses ferropto..."]
+  N6["mechanism_detox_process_lowers_lipid_radicals: Cellular lipid radical detoxification decreas..."]
 
-  GPM -- "ANY_OF" --> P
-  FCM -- "ANY_OF" --> P
-  GPX4 -- "ALL_OF" --> GPM
-  FSP1 -- "ALL_OF" --> FCM
-  COQ -- "ALL_OF" --> FCM
-  FSP1 -. "enables" .-> COQ
+  N1 -- "ANY_OF sufficient_module" --> P
+  N2 -- "ANY_OF sufficient_module" --> P
+  N4 -- "ALL_OF required_step" --> N1
+  N3 -- "ALL_OF required_step" --> N1
+  N6 -- "ALL_OF required_step" --> N2
+  N5 -- "ALL_OF required_step" --> N2
+
+  N4 -. "enables" .-> N3
+  N6 -. "enables" .-> N5
+  N1 -. "parallel_to" .-> N2
+  N2 -. "candidate_mechanism_link" .-> N3
+  N3 -. "candidate_mechanism_link" .-> N4
+  N4 -. "candidate_mechanism_link" .-> N5
+  N5 -. "candidate_mechanism_link" .-> N6
 ```
 
 ### Lenalidomide / del(5q) MDS / CK1alpha Degradation
@@ -242,40 +414,73 @@ Input hypothesis:
 Lenalidomide creates a therapeutic window in del(5q) MDS by degrading CK1alpha.
 ```
 
-DAG2 mode: `llm_claim_specific_dag2_decomposition`; child claims: 6; edge
-operators: `ALL_OF`.
+DAG2 mode: `llm_claim_specific_dag2_decomposition`; child claims: 5; edge operators: `ALL_OF`.
 
-| role | claim | primary readout | participants |
-|---|---|---|---|
-| `mechanism_crbn_recruits_ck1a_on_lenalidomide` | In the presence of lenalidomide, CRBN recruits CK1alpha into the CRL4-CRBN substrate complex. | CK1alpha-CRBN complex formation | perturbagen:`CHEBI:6437`; substrate receptor:`HGNC:23400`; recruited substrate:`HGNC:2452` |
-| `mechanism_crl4_crbn_ubiquitinates_ck1a` | Lenalidomide-induced recruitment of CK1alpha to CRL4-CRBN causes CK1alpha ubiquitination. | polyubiquitinated CK1alpha abundance | e3_ligase_receptor:`HGNC:23400`; ubiquitinated_substrate:`HGNC:2452` |
-| `mechanism_lenalidomide_reduces_ck1a_protein` | Lenalidomide treatment reduces CK1alpha protein abundance in MDS cells. | CK1alpha protein abundance | perturbagen:`CHEBI:6437`; degraded_protein:`HGNC:2452` |
-| `mechanism_del5q_reduces_csnk1a1_dosage` | del(5q) MDS cells have reduced CSNK1A1 gene dosage relative to non-del(5q) MDS cells. | CSNK1A1 copy number | disease_context:`MONDO:0018881`; haploinsufficient_gene:`HGNC:2452` |
-| `mechanism_ck1a_loss_selectively_impairs_del5q_cell_fitness` | A comparable reduction in CK1alpha causes a larger loss of cell fitness in del(5q) MDS cells than in non-del(5q) hematopoietic cells. | differential cell viability or proliferation after CK1alpha reduction | causal_protein:`HGNC:2452`; sensitive_context:`MONDO:0018881` |
-| `mechanism_lenalidomide_selectively_suppresses_del5q_clone` | Lenalidomide preferentially suppresses survival or expansion of del(5q) MDS cells relative to non-del(5q) hematopoietic cells. | differential clonal abundance or cell viability under lenalidomide | perturbagen:`CHEBI:6437`; preferred_target_context:`MONDO:0018881` |
+#### Parent Claim Object
+
+| field | value |
+|---|---|
+| `claim_id` | `P_LENALIDOMIDE_DEL5Q_CK1A` |
+| `claim_text` | Lenalidomide creates a therapeutic window in del(5q) MDS by degrading CK1alpha. |
+| `relation_name` | `drives_phenotype` |
+| `relation_polarity` | `positive` |
+| `participants` | degraded_substrate_gene:`HGNC:CSNK1A1` (canonical_gene_symbol=CSNK1A1; original_label=HGNC:CSNK1A1); perturbagen:`PROPOSED-LENALIDOMIDE` (proposed_entity_label=lenalidomide; requires_entity_row=True); disease_context:`PROPOSED-DEL5Q_MDS` (proposed_entity_label=del(5q) MDS; requires_entity_row=True) |
+| `candidate_gene` | `CSNK1A1` |
+
+#### Claim Rows
+
+| role | claim_text | relation_name | polarity | participants | context/properties |
+|---|---|---|---|---|---|
+| `mechanism_ck1a_abundance_step` | Lenalidomide decreases CK1alpha protein abundance in del(5q) MDS cells. | `regulates_protein_abundance` | `negative` | perturbagen:`PROPOSED-LENALIDOMIDE` (proposed_entity_label=lenalidomide; requires_entity_row=True); target_gene:`HGNC:CSNK1A1` (canonical_gene_symbol=CSNK1A1; original_label=HGNC:CSNK1A1); disease_context:`PROPOSED-DEL5Q_MDS` (proposed_entity_label=del(5q) MDS; requires_entity_row=True); cell_population:`PROPOSED-DEL5Q_MDS_CELL` (proposed_entity_label=del(5q) MDS cell; requires_entity_row=True) | scope=molecular_signal; primary_readout=CK1alpha protein abundance; truth_condition=In del(5q) MDS cells exposed to lenalidomide, CK1alpha protein level is reduced relative to matched untreated cells.; why=This is the core proximal mechanism asserted by the root claim and anchors downstream selectivity claims.; source_mode=llm_claim_specific_dag2_decomposition |
+| `mechanism_del5q_selective_dependency_step` | del(5q) MDS cells have stronger dependency on residual CSNK1A1 dosage than matched non-del(5q) hematopoietic cells. | `has_selective_dependency` | `positive` | dependency_gene:`HGNC:CSNK1A1` (canonical_gene_symbol=CSNK1A1; original_label=HGNC:CSNK1A1); selected_cell_population:`PROPOSED-DEL5Q_MDS_CELL` (proposed_entity_label=del(5q) MDS cell; requires_entity_row=True); reference_cell_population:`PROPOSED-NON_DEL5Q_HEMATOPOIETIC_CELL` (proposed_entity_label=non-del(5q) hematopoietic cell; requires_entity_row=True) | scope=therapy_endpoint; primary_readout=differential cell viability or growth after CSNK1A1 reduction; truth_condition=Reducing CSNK1A1 state produces a larger viability or growth defect in del(5q) MDS cells than in matched non-del(5q) hematopoietic cells.; why=The therapeutic window requires selective vulnerability of del(5q) cells to further CK1alpha loss, not just CK1alpha reduction itself.; source_mode=llm_claim_specific_dag2_decomposition |
+| `mechanism_therapeutic_window_step` | Lenalidomide preferentially decreases survival of del(5q) MDS cells relative to non-del(5q) hematopoietic cells. | `perturbation_changes_phenotype` | `negative` | perturbagen:`PROPOSED-LENALIDOMIDE` (proposed_entity_label=lenalidomide; requires_entity_row=True); affected_cell_population:`PROPOSED-DEL5Q_MDS_CELL` (proposed_entity_label=del(5q) MDS cell; requires_entity_row=True); reference_cell_population:`PROPOSED-NON_DEL5Q_HEMATOPOIETIC_CELL` (proposed_entity_label=non-del(5q) hematopoietic cell; requires_entity_row=True) | scope=therapy_endpoint; primary_readout=differential cell viability or expansion under lenalidomide; truth_condition=Under matched lenalidomide exposure, del(5q) MDS cells show a larger reduction in viability or expansion than non-del(5q) hematopoietic cells.; why=This operationalizes the claimed therapeutic window as selective anti-clonal effect in the del(5q) context.; source_mode=llm_claim_specific_dag2_decomposition |
+| `mechanism_ck1a_sufficiency_step` | Direct reduction of CSNK1A1 is sufficient to preferentially impair del(5q) MDS cell survival. | `perturbation_changes_phenotype` | `negative` | perturbed_gene:`HGNC:CSNK1A1` (canonical_gene_symbol=CSNK1A1; original_label=HGNC:CSNK1A1); affected_cell_population:`PROPOSED-DEL5Q_MDS_CELL` (proposed_entity_label=del(5q) MDS cell; requires_entity_row=True); reference_cell_population:`PROPOSED-NON_DEL5Q_HEMATOPOIETIC_CELL` (proposed_entity_label=non-del(5q) hematopoietic cell; requires_entity_row=True) | scope=therapy_endpoint; primary_readout=differential cell viability or growth after CSNK1A1 reduction; truth_condition=Experimental CSNK1A1 reduction, without lenalidomide, causes a larger survival or growth defect in del(5q) MDS cells than in matched non-del(5q) hematopoietic cells.; why=This separates the claimed causal mediator from other possible lenalidomide effects by asking whether CK1alpha loss alone reproduces selectivity.; source_mode=llm_claim_specific_dag2_decomposition |
+| `mechanism_ck1a_necessity_step` | Maintaining CSNK1A1 abundance buffers the selective cytotoxic effect of lenalidomide in del(5q) MDS cells. | `requires` | `positive` | required_gene:`HGNC:CSNK1A1` (canonical_gene_symbol=CSNK1A1; original_label=HGNC:CSNK1A1); upstream_perturbagen:`PROPOSED-LENALIDOMIDE` (proposed_entity_label=lenalidomide; requires_entity_row=True); affected_cell_population:`PROPOSED-DEL5Q_MDS_CELL` (proposed_entity_label=del(5q) MDS cell; requires_entity_row=True); phenotype:`PROPOSED-LENALIDOMIDE_SELECTIVE_CYTOTOXICITY` (proposed_entity_label=lenalidomide selective cytotoxicity in del(5q) MDS; requires_entity_row=True) | scope=therapy_endpoint; primary_readout=rescue of del(5q) MDS cell survival during lenalidomide exposure; truth_condition=When CSNK1A1 abundance is experimentally maintained during lenalidomide treatment, the reduction in del(5q) MDS cell survival is attenuated.; why=This tests whether CK1alpha loss is necessary for the lenalidomide therapeutic window rather than merely correlated with it.; source_mode=llm_claim_specific_dag2_decomposition |
+
+#### Decomposition Edges
+
+| source_dag2_role | source_claim_id | target_dag2_role | target_claim_id | support_operator | source_role | group_id |
+|---|---|---|---|---|---|---|
+| `mechanism_ck1a_abundance_step` | `P_LENALIDOMIDE_DEL5Q_CK1A.stage0.ck1a_protein_abundance_decrease` | `parent_claim` | `P_LENALIDOMIDE_DEL5Q_CK1A` | `ALL_OF` | `ordinary_child` | `len_ck1a_window` |
+| `mechanism_del5q_selective_dependency_step` | `P_LENALIDOMIDE_DEL5Q_CK1A.stage0.del5q_ck1a_haploinsufficient_dependency` | `parent_claim` | `P_LENALIDOMIDE_DEL5Q_CK1A` | `ALL_OF` | `ordinary_child` | `len_ck1a_window` |
+| `mechanism_therapeutic_window_step` | `P_LENALIDOMIDE_DEL5Q_CK1A.stage0.lenalidomide_selective_del5q_cell_killing` | `parent_claim` | `P_LENALIDOMIDE_DEL5Q_CK1A` | `ALL_OF` | `ordinary_child` | `len_ck1a_window` |
+| `mechanism_ck1a_sufficiency_step` | `P_LENALIDOMIDE_DEL5Q_CK1A.stage0.ck1a_loss_recapitulates_del5q_selective_toxicity` | `parent_claim` | `P_LENALIDOMIDE_DEL5Q_CK1A` | `ALL_OF` | `ordinary_child` | `len_ck1a_window` |
+| `mechanism_ck1a_necessity_step` | `P_LENALIDOMIDE_DEL5Q_CK1A.stage0.ck1a_restoration_buffers_lenalidomide_selectivity` | `parent_claim` | `P_LENALIDOMIDE_DEL5Q_CK1A` | `ALL_OF` | `ordinary_child` | `len_ck1a_window` |
+
+#### Semantic Relations
+
+| source_dag2_role | source_claim_id | relation_kind | target_dag2_role | target_claim_id | notes |
+|---|---|---|---|---|---|
+| `mechanism_ck1a_abundance_step` | `P_LENALIDOMIDE_DEL5Q_CK1A.stage0.ck1a_protein_abundance_decrease` | `candidate_mechanism_link` | `mechanism_therapeutic_window_step` | `P_LENALIDOMIDE_DEL5Q_CK1A.stage0.lenalidomide_selective_del5q_cell_killing` | Lenalidomide-induced CK1alpha loss is proposed to transmit the selective anti-del(5q) effect. |
+| `mechanism_del5q_selective_dependency_step` | `P_LENALIDOMIDE_DEL5Q_CK1A.stage0.del5q_ck1a_haploinsufficient_dependency` | `enables` | `mechanism_therapeutic_window_step` | `P_LENALIDOMIDE_DEL5Q_CK1A.stage0.lenalidomide_selective_del5q_cell_killing` | Pre-existing heightened dependency on residual CSNK1A1 explains why CK1alpha reduction yields a therapeutic window in del(5q) cells. |
+| `mechanism_ck1a_sufficiency_step` | `P_LENALIDOMIDE_DEL5Q_CK1A.stage0.ck1a_loss_recapitulates_del5q_selective_toxicity` | `refines` | `mechanism_therapeutic_window_step` | `P_LENALIDOMIDE_DEL5Q_CK1A.stage0.lenalidomide_selective_del5q_cell_killing` | Shows that CK1alpha reduction can reproduce the selective phenotype without invoking other lenalidomide actions. |
+| `mechanism_ck1a_necessity_step` | `P_LENALIDOMIDE_DEL5Q_CK1A.stage0.ck1a_restoration_buffers_lenalidomide_selectivity` | `refines` | `mechanism_therapeutic_window_step` | `P_LENALIDOMIDE_DEL5Q_CK1A.stage0.lenalidomide_selective_del5q_cell_killing` | Shows that the selective lenalidomide phenotype depends on CK1alpha loss. |
+| `mechanism_ck1a_abundance_step` | `P_LENALIDOMIDE_DEL5Q_CK1A.stage0.ck1a_protein_abundance_decrease` | `candidate_mechanism_link` | `mechanism_del5q_selective_dependency_step` | `P_LENALIDOMIDE_DEL5Q_CK1A.stage0.del5q_ck1a_haploinsufficient_dependency` | Stage0 inferred these biological claims as related parts of the grounded mechanism; reviewer/L1 may later split, reorder, strengthen, or retire the semantic link. |
+| `mechanism_therapeutic_window_step` | `P_LENALIDOMIDE_DEL5Q_CK1A.stage0.lenalidomide_selective_del5q_cell_killing` | `candidate_mechanism_link` | `mechanism_ck1a_sufficiency_step` | `P_LENALIDOMIDE_DEL5Q_CK1A.stage0.ck1a_loss_recapitulates_del5q_selective_toxicity` | Stage0 inferred these biological claims as related parts of the grounded mechanism; reviewer/L1 may later split, reorder, strengthen, or retire the semantic link. |
+| `mechanism_ck1a_sufficiency_step` | `P_LENALIDOMIDE_DEL5Q_CK1A.stage0.ck1a_loss_recapitulates_del5q_selective_toxicity` | `candidate_mechanism_link` | `mechanism_ck1a_necessity_step` | `P_LENALIDOMIDE_DEL5Q_CK1A.stage0.ck1a_restoration_buffers_lenalidomide_selectivity` | Stage0 inferred these biological claims as related parts of the grounded mechanism; reviewer/L1 may later split, reorder, strengthen, or retire the semantic link. |
 
 ```mermaid
 flowchart TD
-  P["lenalidomide creates a therapeutic window in del(5q) MDS"]
-  A["lenalidomide-bound CRBN recruits CK1alpha"]
-  B["CRL4-CRBN ubiquitinates CK1alpha"]
-  C["lenalidomide reduces CK1alpha protein"]
-  D["del(5q) reduces CSNK1A1 dosage"]
-  E["CK1alpha loss selectively impairs del(5q) cell fitness"]
-  F["lenalidomide selectively suppresses del(5q) clone"]
+  P["Parent: Lenalidomide creates a therapeutic window in del(5q) MDS by degrading CK1alpha."]
+  N1["mechanism_ck1a_abundance_step: Lenalidomide decreases CK1alpha protein abundance in del(5q) ..."]
+  N2["mechanism_del5q_selective_dependency_step: del(5q) MDS cells have stronger dependency on res..."]
+  N3["mechanism_therapeutic_window_step: Lenalidomide preferentially decreases survival of del(5q)..."]
+  N4["mechanism_ck1a_sufficiency_step: Direct reduction of CSNK1A1 is sufficient to preferentially..."]
+  N5["mechanism_ck1a_necessity_step: Maintaining CSNK1A1 abundance buffers the selective cytotoxic..."]
 
-  A -- "ALL_OF" --> P
-  B -- "ALL_OF" --> P
-  C -- "ALL_OF" --> P
-  D -- "ALL_OF" --> P
-  E -- "ALL_OF" --> P
-  F -- "ALL_OF" --> P
+  N1 -- "ALL_OF ordinary_child" --> P
+  N2 -- "ALL_OF ordinary_child" --> P
+  N3 -- "ALL_OF ordinary_child" --> P
+  N4 -- "ALL_OF ordinary_child" --> P
+  N5 -- "ALL_OF ordinary_child" --> P
 
-  A -. "enables" .-> B
-  B -. "enables" .-> C
-  D -. "sensitizes context" .-> E
-  C -. "enables" .-> E
-  E -. "enables" .-> F
+  N1 -. "candidate_mechanism_link" .-> N3
+  N2 -. "enables" .-> N3
+  N4 -. "refines" .-> N3
+  N5 -. "refines" .-> N3
+  N1 -. "candidate_mechanism_link" .-> N2
+  N3 -. "candidate_mechanism_link" .-> N4
+  N4 -. "candidate_mechanism_link" .-> N5
 ```
 
 ## Key
