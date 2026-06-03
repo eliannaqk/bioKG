@@ -1,0 +1,43 @@
+digraph G {
+  graph [rankdir=TB, bgcolor="white", pad="0.25", nodesep="0.45", ranksep="0.75", splines=true];
+  node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=10, margin="0.10,0.08", color="#475569", fillcolor="#f8fafc"];
+  edge [fontname="Helvetica", fontsize=9, color="#334155", arrowsize=0.7];
+  P [label="Parent: Lenalidomide creates a therapeutic
+window in del(5q) MDS by degrading CK1alpha.", fillcolor="#e0f2fe", color="#0284c7", penwidth=1.4];
+  N1 [label="ck1a_abundance_step
+Lenalidomide decreases CK1alpha protein
+abundance in del(5q) MDS cells.", fillcolor="#f8fafc"];
+  N2 [label="del5q_selective_dependency_step
+del(5q) MDS cells have stronger dependency
+on residual CSNK1A1 dosage than matched
+non-del(5q) hematopoietic cells.", fillcolor="#f8fafc"];
+  N3 [label="therapeutic_window_step
+Lenalidomide preferentially decreases
+survival of del(5q) MDS cells relative to
+non-del(5q) hematopoietic cells.", fillcolor="#f8fafc"];
+  N4 [label="ck1a_sufficiency_step
+Direct reduction of CSNK1A1 is sufficient to
+preferentially impair del(5q) MDS cell
+survival.", fillcolor="#f8fafc"];
+  N5 [label="ck1a_necessity_step
+Maintaining CSNK1A1 abundance buffers the
+selective cytotoxic effect of lenalidomide
+in del(5q) MDS cells.", fillcolor="#f8fafc"];
+  N1 -> P [label="ALL_OF
+ordinary_child", color="#334155", penwidth=1.1];
+  N2 -> P [label="ALL_OF
+ordinary_child", color="#334155", penwidth=1.1];
+  N3 -> P [label="ALL_OF
+ordinary_child", color="#334155", penwidth=1.1];
+  N4 -> P [label="ALL_OF
+ordinary_child", color="#334155", penwidth=1.1];
+  N5 -> P [label="ALL_OF
+ordinary_child", color="#334155", penwidth=1.1];
+  N1 -> N3 [label="candidate_mechanism_link", style=dashed, color="#2563eb", fontcolor="#2563eb", constraint=false];
+  N2 -> N3 [label="enables", style=dashed, color="#2563eb", fontcolor="#2563eb", constraint=false];
+  N4 -> N3 [label="refines", style=dashed, color="#2563eb", fontcolor="#2563eb", constraint=false];
+  N5 -> N3 [label="refines", style=dashed, color="#2563eb", fontcolor="#2563eb", constraint=false];
+  N1 -> N2 [label="candidate_mechanism_link", style=dashed, color="#2563eb", fontcolor="#2563eb", constraint=false];
+  N3 -> N4 [label="candidate_mechanism_link", style=dashed, color="#2563eb", fontcolor="#2563eb", constraint=false];
+  N4 -> N5 [label="candidate_mechanism_link", style=dashed, color="#2563eb", fontcolor="#2563eb", constraint=false];
+}

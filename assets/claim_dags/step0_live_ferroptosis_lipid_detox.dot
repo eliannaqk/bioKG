@@ -1,0 +1,46 @@
+digraph G {
+  graph [rankdir=TB, bgcolor="white", pad="0.25", nodesep="0.45", ranksep="0.75", splines=true];
+  node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=10, margin="0.10,0.08", color="#475569", fillcolor="#f8fafc"];
+  edge [fontname="Helvetica", fontsize=9, color="#334155", arrowsize=0.7];
+  P [label="Parent: Cells suppress ferroptosis by
+detoxifying lipid peroxides or lipid radicals.", fillcolor="#e0f2fe", color="#0284c7", penwidth=1.4];
+  N1 [label="lipid_peroxide_detox_module
+Detoxification of lipid peroxides is a
+sufficient mechanism by which cells suppress
+ferroptosis.", fillcolor="#ecfdf5"];
+  N2 [label="lipid_radical_detox_module
+Detoxification of lipid radicals is a
+sufficient mechanism by which cells suppress
+ferroptosis.", fillcolor="#ecfdf5"];
+  N3 [label="reduced_lipid_peroxides
+Lower cellular lipid peroxide abundance
+suppresses ferroptosis.", fillcolor="#f8fafc"];
+  N4 [label="detox_process_lowers_lipid_peroxides
+Cellular lipid peroxide detoxification
+decreases lipid peroxide abundance.", fillcolor="#f8fafc"];
+  N5 [label="reduced_lipid_radicals
+Lower cellular lipid radical abundance
+suppresses ferroptosis.", fillcolor="#f8fafc"];
+  N6 [label="detox_process_lowers_lipid_radicals
+Cellular lipid radical detoxification
+decreases lipid radical abundance.", fillcolor="#f8fafc"];
+  N1 -> P [label="ANY_OF
+sufficient_module", color="#334155", penwidth=1.1];
+  N2 -> P [label="ANY_OF
+sufficient_module", color="#334155", penwidth=1.1];
+  N4 -> N1 [label="ALL_OF
+required_step", color="#334155", penwidth=1.1];
+  N3 -> N1 [label="ALL_OF
+required_step", color="#334155", penwidth=1.1];
+  N6 -> N2 [label="ALL_OF
+required_step", color="#334155", penwidth=1.1];
+  N5 -> N2 [label="ALL_OF
+required_step", color="#334155", penwidth=1.1];
+  N4 -> N3 [label="enables", style=dashed, color="#2563eb", fontcolor="#2563eb", constraint=false];
+  N6 -> N5 [label="enables", style=dashed, color="#2563eb", fontcolor="#2563eb", constraint=false];
+  N1 -> N2 [label="parallel_to", style=dashed, color="#2563eb", fontcolor="#2563eb", constraint=false];
+  N2 -> N3 [label="candidate_mechanism_link", style=dashed, color="#2563eb", fontcolor="#2563eb", constraint=false];
+  N3 -> N4 [label="candidate_mechanism_link", style=dashed, color="#2563eb", fontcolor="#2563eb", constraint=false];
+  N4 -> N5 [label="candidate_mechanism_link", style=dashed, color="#2563eb", fontcolor="#2563eb", constraint=false];
+  N5 -> N6 [label="candidate_mechanism_link", style=dashed, color="#2563eb", fontcolor="#2563eb", constraint=false];
+}

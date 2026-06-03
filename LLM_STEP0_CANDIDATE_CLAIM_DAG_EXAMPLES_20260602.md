@@ -21,7 +21,8 @@ Every section includes a Mermaid graph. GitHub renders these blocks as
 boxed-arrow DAG images.
 Some historical numbered examples also have PNG and SVG files under
 `assets/claim_dags/` and embed those images directly. The live rerun section
-uses Mermaid blocks generated from the current Step0 artifact.
+now embeds Graphviz PNG/SVG assets generated from the current Step0 artifact,
+with Mermaid blocks retained as source diagrams.
 
 ## Live Step0 Atomic Rerun, 2026-06-03
 
@@ -57,6 +58,8 @@ ADAR1 blockade will sensitize tumors to PD-1 therapy by allowing endogenous doub
 ```
 
 DAG2 mode: `llm_claim_specific_dag2_decomposition`; child claims: 7; edge operators: `ALL_OF`.
+
+![Live ADAR1 PD-1 sensitization DAG](assets/claim_dags/step0_live_adar1_pd1_sensitization.png)
 
 #### Parent Claim Object
 
@@ -116,21 +119,20 @@ flowchart TD
   N6["mechanism_pd1_response_potentiation: Increased intratumoral CD8 T-cell infiltration potentia..."]
   N7["mechanism_root_therapy_endpoint: ADAR1 blockade sensitizes tumors to PD-1 therapy."]
 
-  N1 -- "ALL_OF sufficient_module" --> P
-  N2 -- "ALL_OF required_step" --> N1
-  N3 -- "ALL_OF required_step" --> N1
-  N4 -- "ALL_OF required_step" --> N1
-  N5 -- "ALL_OF required_step" --> N1
-  N6 -- "ALL_OF required_step" --> N1
-  N7 -- "ALL_OF ordinary_child" --> P
-
-  N2 -. "enables" .-> N3
-  N3 -. "candidate_mechanism_link" .-> N4
-  N4 -. "candidate_mechanism_link" .-> N5
-  N5 -. "candidate_mechanism_link" .-> N6
-  N1 -. "refines" .-> N7
-  N1 -. "candidate_mechanism_link" .-> N2
-  N6 -. "candidate_mechanism_link" .-> N7
+  N1 -->|ALL_OF sufficient_module| P
+  N2 -->|ALL_OF required_step| N1
+  N3 -->|ALL_OF required_step| N1
+  N4 -->|ALL_OF required_step| N1
+  N5 -->|ALL_OF required_step| N1
+  N6 -->|ALL_OF required_step| N1
+  N7 -->|ALL_OF ordinary_child| P
+  N2 -.->|enables| N3
+  N3 -.->|candidate_mechanism_link| N4
+  N4 -.->|candidate_mechanism_link| N5
+  N5 -.->|candidate_mechanism_link| N6
+  N1 -.->|refines| N7
+  N1 -.->|candidate_mechanism_link| N2
+  N6 -.->|candidate_mechanism_link| N7
 ```
 
 ### RBMS1 / Endogenous dsRNA Shielding
@@ -142,6 +144,8 @@ RBMS1 binds endogenous dsRNA hairpins and shields them from MDA5 and PKR recogni
 ```
 
 DAG2 mode: `llm_claim_specific_dag2_decomposition`; child claims: 8; edge operators: `ALL_OF, ANY_OF`.
+
+![Live RBMS1 dsRNA shielding DAG](assets/claim_dags/step0_live_rbms1_dsrna_shielding.png)
 
 #### Parent Claim Object
 
@@ -210,28 +214,27 @@ flowchart TD
   N7["mechanism_pkr_to_ifn_step: EIF2AK2/PKR recognition of endogenous dsRNA hairpins increases an..."]
   N8["mechanism_ifn_to_intrinsic_immune_activation_step: Antiviral interferon signaling increases ..."]
 
-  N4 -- "ANY_OF sufficient_module" --> P
-  N6 -- "ANY_OF sufficient_module" --> P
-  N8 -- "ALL_OF required_step" --> P
-  N1 -- "ALL_OF required_step" --> N4
-  N2 -- "ALL_OF required_step" --> N4
-  N5 -- "ALL_OF required_step" --> N4
-  N1 -- "ALL_OF required_step" --> N6
-  N3 -- "ALL_OF required_step" --> N6
-  N7 -- "ALL_OF required_step" --> N6
-
-  N1 -. "enables" .-> N2
-  N1 -. "enables" .-> N3
-  N2 -. "candidate_mechanism_link" .-> N5
-  N3 -. "candidate_mechanism_link" .-> N7
-  N4 -. "parallel_to" .-> N6
-  N5 -. "enables" .-> N8
-  N7 -. "enables" .-> N8
-  N2 -. "candidate_mechanism_link" .-> N3
-  N3 -. "candidate_mechanism_link" .-> N4
-  N4 -. "candidate_mechanism_link" .-> N5
-  N5 -. "candidate_mechanism_link" .-> N6
-  N6 -. "candidate_mechanism_link" .-> N7
+  N4 -->|ANY_OF sufficient_module| P
+  N6 -->|ANY_OF sufficient_module| P
+  N8 -->|ALL_OF required_step| P
+  N1 -->|ALL_OF required_step| N4
+  N2 -->|ALL_OF required_step| N4
+  N5 -->|ALL_OF required_step| N4
+  N1 -->|ALL_OF required_step| N6
+  N3 -->|ALL_OF required_step| N6
+  N7 -->|ALL_OF required_step| N6
+  N1 -.->|enables| N2
+  N1 -.->|enables| N3
+  N2 -.->|candidate_mechanism_link| N5
+  N3 -.->|candidate_mechanism_link| N7
+  N4 -.->|parallel_to| N6
+  N5 -.->|enables| N8
+  N7 -.->|enables| N8
+  N2 -.->|candidate_mechanism_link| N3
+  N3 -.->|candidate_mechanism_link| N4
+  N4 -.->|candidate_mechanism_link| N5
+  N5 -.->|candidate_mechanism_link| N6
+  N6 -.->|candidate_mechanism_link| N7
 ```
 
 ### PTPN2/PTPN1 / IFN, CD8, And NK Killing
@@ -243,6 +246,8 @@ PTPN2/PTPN1 act as brakes on JAK-STAT interferon signaling, so dual inhibition s
 ```
 
 DAG2 mode: `llm_claim_specific_dag2_decomposition`; child claims: 8; edge operators: `ALL_OF, ANY_OF`.
+
+![Live PTPN2 PTPN1 IFN and immune-killing DAG](assets/claim_dags/step0_live_ptpn2_ptpn1_ifn_killing.png)
 
 #### Parent Claim Object
 
@@ -306,23 +311,22 @@ flowchart TD
   N7["mechanism_mhc1_presentation_permits_cd8_killing: Tumor-cell peptide-MHC-I antigen presentati..."]
   N8["mechanism_dual_inhibition_increases_nk_tumor_killing: Dual inhibition of PTPN2 and PTPN1 inc..."]
 
-  N1 -- "ANY_OF sufficient_module" --> P
-  N2 -- "ANY_OF sufficient_module" --> P
-  N3 -- "ANY_OF sufficient_module" --> P
-  N4 -- "ALL_OF required_step" --> N1
-  N5 -- "ALL_OF required_step" --> N1
-  N6 -- "ALL_OF required_step" --> N2
-  N7 -- "ALL_OF required_step" --> N2
-  N8 -- "ALL_OF required_step" --> N3
-
-  N4 -. "enables" .-> N5
-  N4 -. "enables" .-> N6
-  N6 -. "enables" .-> N7
-  N2 -. "parallel_to" .-> N3
-  N1 -. "candidate_mechanism_link" .-> N2
-  N3 -. "candidate_mechanism_link" .-> N4
-  N5 -. "candidate_mechanism_link" .-> N6
-  N7 -. "candidate_mechanism_link" .-> N8
+  N1 -->|ANY_OF sufficient_module| P
+  N2 -->|ANY_OF sufficient_module| P
+  N3 -->|ANY_OF sufficient_module| P
+  N4 -->|ALL_OF required_step| N1
+  N5 -->|ALL_OF required_step| N1
+  N6 -->|ALL_OF required_step| N2
+  N7 -->|ALL_OF required_step| N2
+  N8 -->|ALL_OF required_step| N3
+  N4 -.->|enables| N5
+  N4 -.->|enables| N6
+  N6 -.->|enables| N7
+  N2 -.->|parallel_to| N3
+  N1 -.->|candidate_mechanism_link| N2
+  N3 -.->|candidate_mechanism_link| N4
+  N5 -.->|candidate_mechanism_link| N6
+  N7 -.->|candidate_mechanism_link| N8
 ```
 
 ### Ferroptosis Suppression Alternatives
@@ -334,6 +338,8 @@ Cells suppress ferroptosis by detoxifying lipid peroxides or lipid radicals.
 ```
 
 DAG2 mode: `llm_claim_specific_dag2_decomposition`; child claims: 6; edge operators: `ALL_OF, ANY_OF`.
+
+![Live ferroptosis lipid detox DAG](assets/claim_dags/step0_live_ferroptosis_lipid_detox.png)
 
 #### Parent Claim Object
 
@@ -390,20 +396,19 @@ flowchart TD
   N5["mechanism_reduced_lipid_radicals: Lower cellular lipid radical abundance suppresses ferropto..."]
   N6["mechanism_detox_process_lowers_lipid_radicals: Cellular lipid radical detoxification decreas..."]
 
-  N1 -- "ANY_OF sufficient_module" --> P
-  N2 -- "ANY_OF sufficient_module" --> P
-  N4 -- "ALL_OF required_step" --> N1
-  N3 -- "ALL_OF required_step" --> N1
-  N6 -- "ALL_OF required_step" --> N2
-  N5 -- "ALL_OF required_step" --> N2
-
-  N4 -. "enables" .-> N3
-  N6 -. "enables" .-> N5
-  N1 -. "parallel_to" .-> N2
-  N2 -. "candidate_mechanism_link" .-> N3
-  N3 -. "candidate_mechanism_link" .-> N4
-  N4 -. "candidate_mechanism_link" .-> N5
-  N5 -. "candidate_mechanism_link" .-> N6
+  N1 -->|ANY_OF sufficient_module| P
+  N2 -->|ANY_OF sufficient_module| P
+  N4 -->|ALL_OF required_step| N1
+  N3 -->|ALL_OF required_step| N1
+  N6 -->|ALL_OF required_step| N2
+  N5 -->|ALL_OF required_step| N2
+  N4 -.->|enables| N3
+  N6 -.->|enables| N5
+  N1 -.->|parallel_to| N2
+  N2 -.->|candidate_mechanism_link| N3
+  N3 -.->|candidate_mechanism_link| N4
+  N4 -.->|candidate_mechanism_link| N5
+  N5 -.->|candidate_mechanism_link| N6
 ```
 
 ### Lenalidomide / del(5q) MDS / CK1alpha Degradation
@@ -415,6 +420,8 @@ Lenalidomide creates a therapeutic window in del(5q) MDS by degrading CK1alpha.
 ```
 
 DAG2 mode: `llm_claim_specific_dag2_decomposition`; child claims: 5; edge operators: `ALL_OF`.
+
+![Live lenalidomide del(5q) CK1alpha DAG](assets/claim_dags/step0_live_lenalidomide_del5q_ck1a.png)
 
 #### Parent Claim Object
 
@@ -468,19 +475,18 @@ flowchart TD
   N4["mechanism_ck1a_sufficiency_step: Direct reduction of CSNK1A1 is sufficient to preferentially..."]
   N5["mechanism_ck1a_necessity_step: Maintaining CSNK1A1 abundance buffers the selective cytotoxic..."]
 
-  N1 -- "ALL_OF ordinary_child" --> P
-  N2 -- "ALL_OF ordinary_child" --> P
-  N3 -- "ALL_OF ordinary_child" --> P
-  N4 -- "ALL_OF ordinary_child" --> P
-  N5 -- "ALL_OF ordinary_child" --> P
-
-  N1 -. "candidate_mechanism_link" .-> N3
-  N2 -. "enables" .-> N3
-  N4 -. "refines" .-> N3
-  N5 -. "refines" .-> N3
-  N1 -. "candidate_mechanism_link" .-> N2
-  N3 -. "candidate_mechanism_link" .-> N4
-  N4 -. "candidate_mechanism_link" .-> N5
+  N1 -->|ALL_OF ordinary_child| P
+  N2 -->|ALL_OF ordinary_child| P
+  N3 -->|ALL_OF ordinary_child| P
+  N4 -->|ALL_OF ordinary_child| P
+  N5 -->|ALL_OF ordinary_child| P
+  N1 -.->|candidate_mechanism_link| N3
+  N2 -.->|enables| N3
+  N4 -.->|refines| N3
+  N5 -.->|refines| N3
+  N1 -.->|candidate_mechanism_link| N2
+  N3 -.->|candidate_mechanism_link| N4
+  N4 -.->|candidate_mechanism_link| N5
 ```
 
 ## Key

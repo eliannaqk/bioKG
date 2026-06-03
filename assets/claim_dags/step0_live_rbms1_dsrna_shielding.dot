@@ -1,0 +1,67 @@
+digraph G {
+  graph [rankdir=TB, bgcolor="white", pad="0.25", nodesep="0.45", ranksep="0.75", splines=true];
+  node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=10, margin="0.10,0.08", color="#475569", fillcolor="#f8fafc"];
+  edge [fontname="Helvetica", fontsize=9, color="#334155", arrowsize=0.7];
+  P [label="Parent: RBMS1 binds endogenous dsRNA hairpins
+and shields them from MDA5 and PKR recognition,
+preventing activation of antiviral interferon
+signaling and thereby reducing cell-intrinsic
+immune activation.", fillcolor="#e0f2fe", color="#0284c7", penwidth=1.4];
+  N1 [label="dsrna_binding_step
+RBMS1 physically binds endogenous dsRNA
+hairpins.", fillcolor="#f8fafc"];
+  N2 [label="mda5_shielding_step
+RBMS1 reduces IFIH1/MDA5 association with
+endogenous dsRNA hairpins.", fillcolor="#f8fafc"];
+  N3 [label="pkr_shielding_step
+RBMS1 reduces EIF2AK2/PKR association with
+endogenous dsRNA hairpins.", fillcolor="#f8fafc"];
+  N4 [label="mda5_shielding_module
+RBMS1 suppresses antiviral interferon
+signaling through a MDA5-shielding
+mechanism.", fillcolor="#ecfdf5"];
+  N5 [label="mda5_to_ifn_step
+IFIH1/MDA5 recognition of endogenous dsRNA
+hairpins increases antiviral interferon
+signaling.", fillcolor="#f8fafc"];
+  N6 [label="pkr_shielding_module
+RBMS1 suppresses antiviral interferon
+signaling through a PKR-shielding mechanism.", fillcolor="#ecfdf5"];
+  N7 [label="pkr_to_ifn_step
+EIF2AK2/PKR recognition of endogenous dsRNA
+hairpins increases antiviral interferon
+signaling.", fillcolor="#f8fafc"];
+  N8 [label="ifn_to_intrinsic_immune_activation_step
+Antiviral interferon signaling increases
+cell-intrinsic immune activation.", fillcolor="#f8fafc"];
+  N4 -> P [label="ANY_OF
+sufficient_module", color="#334155", penwidth=1.1];
+  N6 -> P [label="ANY_OF
+sufficient_module", color="#334155", penwidth=1.1];
+  N8 -> P [label="ALL_OF
+required_step", color="#334155", penwidth=1.1];
+  N1 -> N4 [label="ALL_OF
+required_step", color="#334155", penwidth=1.1];
+  N2 -> N4 [label="ALL_OF
+required_step", color="#334155", penwidth=1.1];
+  N5 -> N4 [label="ALL_OF
+required_step", color="#334155", penwidth=1.1];
+  N1 -> N6 [label="ALL_OF
+required_step", color="#334155", penwidth=1.1];
+  N3 -> N6 [label="ALL_OF
+required_step", color="#334155", penwidth=1.1];
+  N7 -> N6 [label="ALL_OF
+required_step", color="#334155", penwidth=1.1];
+  N1 -> N2 [label="enables", style=dashed, color="#2563eb", fontcolor="#2563eb", constraint=false];
+  N1 -> N3 [label="enables", style=dashed, color="#2563eb", fontcolor="#2563eb", constraint=false];
+  N2 -> N5 [label="candidate_mechanism_link", style=dashed, color="#2563eb", fontcolor="#2563eb", constraint=false];
+  N3 -> N7 [label="candidate_mechanism_link", style=dashed, color="#2563eb", fontcolor="#2563eb", constraint=false];
+  N4 -> N6 [label="parallel_to", style=dashed, color="#2563eb", fontcolor="#2563eb", constraint=false];
+  N5 -> N8 [label="enables", style=dashed, color="#2563eb", fontcolor="#2563eb", constraint=false];
+  N7 -> N8 [label="enables", style=dashed, color="#2563eb", fontcolor="#2563eb", constraint=false];
+  N2 -> N3 [label="candidate_mechanism_link", style=dashed, color="#2563eb", fontcolor="#2563eb", constraint=false];
+  N3 -> N4 [label="candidate_mechanism_link", style=dashed, color="#2563eb", fontcolor="#2563eb", constraint=false];
+  N4 -> N5 [label="candidate_mechanism_link", style=dashed, color="#2563eb", fontcolor="#2563eb", constraint=false];
+  N5 -> N6 [label="candidate_mechanism_link", style=dashed, color="#2563eb", fontcolor="#2563eb", constraint=false];
+  N6 -> N7 [label="candidate_mechanism_link", style=dashed, color="#2563eb", fontcolor="#2563eb", constraint=false];
+}
