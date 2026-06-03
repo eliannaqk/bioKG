@@ -2,7 +2,7 @@
 
 Date: 2026-06-02
 
-Source run artifact: `/tmp/step0_five_hypotheses_llm_results.json`
+Source run artifact for examples 1-5: `/tmp/step0_five_hypotheses_llm_results.json`
 
 Companion audit: `LLM_STEP0_PAPER_HYPOTHESES_DAG2_AUDIT_20260602.md`
 
@@ -12,8 +12,13 @@ outputs into candidate claim rows, decomposition edges, semantic relations, and
 human-readable rationale.
 
 Important scope: these are candidate DAG2 mechanism decompositions, not proven
-claims. The live Stage0 LLM compiler generated the DAGs with
-`GBD_STAGE0_REQUIRE_DAG2_LLM=1`; deterministic fallback was not used.
+claims. Examples 1-5 came from a live Stage0 LLM compiler run with
+`GBD_STAGE0_REQUIRE_DAG2_LLM=1`; deterministic fallback was not used. Examples
+6-7 were added afterward from the local ADAR1 paper and the supplied RBMS1 lab
+hypothesis so those mechanisms are visible in the same claim-object format.
+
+Every section includes a Mermaid graph. GitHub renders these blocks as
+boxed-arrow DAG images.
 
 ## Key
 
@@ -45,14 +50,17 @@ claims. The live Stage0 LLM compiler generated the DAGs with
 | `nature23465.pdf` | CDK4/6 inhibition triggers anti-tumour immunity | `10.1038/nature23465` |
 | `s41586-020-2229-5.pdf` | Autophagy promotes immune evasion of pancreatic cancer by degrading MHC-I | `10.1038/s41586-020-2229-5` |
 | `s41586-023-06575-7.pdf` | The PTPN2/PTPN1 inhibitor ABBV-CLS-484 unleashes potent anti-tumour immunity | `10.1038/s41586-023-06575-7` |
+| `s41586-024-08439-0.pdf` | Immune evasion through mitochondrial transfer in the tumour microenvironment | `10.1038/s41586-024-08439-0` |
 | `s41580-024-00768-2.pdf` | Profiling cell identity and tissue architecture with single-cell and spatial transcriptomics | `10.1038/s41580-024-00768-2` |
 | `cellTree.pdf` | A reference cell tree will serve science better than a reference cell atlas | `10.1016/j.cell.2023.02.016` |
 | `cellstates.pdf` | Establishing a conceptual framework for holistic cell states and state transitions | `10.1016/j.cell.2024.04.035` |
 
-Only the PTPN2/PTPN1 example had a directly matching primary local paper in
-this folder. The other examples are structurally useful DAG2 decompositions, but
-their direct primary literature should be retrieved before treating the child
-claims as known evidence.
+The ADAR1 PDF text includes DOI `10.1038/s41586-018-0768-9`, although that DOI
+was not present in the PDF metadata. PTPN2/PTPN1, mitochondrial transfer, ADAR1,
+CDK4/6, and autophagy/MHC-I have directly matching primary papers in this local
+folder. The CIN/cGAS-STING, beta-catenin/DC-exclusion, IFNg/ferroptosis, and
+RBMS1 examples still need direct primary literature attachment before their
+child claims should be treated as known evidence.
 
 ## 1. Chromosomal Instability / cGAS-STING Metastasis Bias
 
@@ -212,6 +220,8 @@ Rationale: the DAG prevents overclaiming by requiring evidence for transfer,
 cargo damage, recipient T-cell dysfunction, cytotoxic loss, immune-evasion
 outcome, and rescue after blockade. The rescue child is essential because it
 distinguishes causal transfer from a correlated exhausted T-cell state.
+
+Source: `s41586-024-08439-0.pdf`, DOI `10.1038/s41586-024-08439-0`.
 
 ## 3. PTPN2/PTPN1 Interferon Amplification And Immune Killing
 
@@ -445,6 +455,202 @@ glutathione, and lipid peroxide defense. This prevents the system from treating
 "IFNg kills tumor cells" and "ferroptosis happens" as enough; the causal claim
 requires a ferroptosis-dependent component of CD8/IFNg-mediated killing plus a
 sensitization experiment that improves immune killing.
+
+## 6. ADAR1 Loss / dsRNA Sensing / PD-1 Sensitization
+
+Hypothesis:
+
+```text
+ADAR1 blockade will sensitize tumors to PD-1 therapy by allowing endogenous
+double-stranded RNA to activate antiviral sensing and tumor inflammation.
+```
+
+Formula:
+
+```text
+P_ADAR1_PD1_SENSITIZATION =
+  F_ADAR1_EDITS_ENDOGENOUS_DSRNA AND
+  F_ADAR1_LOSS_ACCUMULATES_UNEDITED_DSRNA AND
+  F_UNEDITED_DSRNA_ACTIVATES_PKR_AND_MDA5 AND
+  F_MDA5_MAVS_INDUCES_TUMOR_INFLAMMATION AND
+  F_PKR_INDUCES_GROWTH_INHIBITION AND
+  F_ADAR1_LOSS_OVERCOMES_PD1_RESISTANCE
+```
+
+Claims:
+
+| ID | claim_text | participants | relation_name | polarity | context/properties |
+|---|---|---|---|---|---|
+| `P_ADAR1_PD1_SENSITIZATION` | ADAR1 loss or blockade sensitizes tumors to PD-1 checkpoint blockade by unleashing endogenous dsRNA sensing and tumor inflammation. | effector:`ADAR`; therapy_context:`THR-anti_PD1`; target:`RNA-endogenous_dsRNA`; pathway:`PATHWAY-antiviral_RNA_sensing`; phenotype:`PHENO-ICB_sensitization`; cell_context:`TME-tumor_intrinsic` | `sensitizes_to_therapy` | `positive` | parent hypothesis |
+| `F_ADAR1_EDITS_ENDOGENOUS_DSRNA` | ADAR1 normally edits endogenous double-stranded RNA in tumor cells. | effector:`ADAR`; substrate:`RNA-endogenous_dsRNA`; process:`BP-A_to_I_RNA_editing`; cell_context:`TME-tumor_intrinsic` | `edits` | `positive` | RNA-editing anchor |
+| `F_ADAR1_LOSS_ACCUMULATES_UNEDITED_DSRNA` | ADAR1 loss or blockade increases unedited endogenous dsRNA available for antiviral sensor recognition. | effector:`ADAR`; substrate:`RNA-unedited_endogenous_dsRNA`; process:`BP-antiviral_sensor_exposure`; cell_context:`TME-tumor_intrinsic` | `increases` | `positive` | sensor substrate |
+| `F_UNEDITED_DSRNA_ACTIVATES_PKR_AND_MDA5` | Unedited endogenous dsRNA activates PKR and MDA5-family antiviral RNA sensing in tumor cells. | substrate:`RNA-unedited_endogenous_dsRNA`; effector:`EIF2AK2`; effector:`IFIH1`; pathway:`PATHWAY-antiviral_RNA_sensing` | `activates` | `positive` | paired sensor activation |
+| `F_MDA5_MAVS_INDUCES_TUMOR_INFLAMMATION` | MDA5-MAVS signaling downstream of unedited dsRNA induces tumor-cell antiviral interferon and inflammatory programs. | effector:`IFIH1`; effector:`MAVS`; pathway:`PATHWAY-type_I_interferon`; phenotype:`PHENO-tumor_inflammation` | `induces` | `positive` | inflammatory arm |
+| `F_PKR_INDUCES_GROWTH_INHIBITION` | PKR activation downstream of unedited dsRNA contributes to tumor-cell growth inhibition. | effector:`EIF2AK2`; pathway:`PATHWAY-integrated_stress_response`; phenotype:`PHENO-tumor_cell_growth_inhibition` | `induces` | `positive` | growth-inhibition arm |
+| `F_ADAR1_LOSS_OVERCOMES_PD1_RESISTANCE` | Loss or blockade of ADAR1 overcomes resistance to PD-1 checkpoint blockade in tumor contexts, including contexts with impaired antigen presentation. | effector:`ADAR`; therapy_context:`THR-anti_PD1`; phenotype:`PHENO-PD1_resistance`; phenotype:`PHENO-ICB_sensitization` | `overcomes_resistance_to` | `positive` | therapeutic endpoint |
+
+Decomposition:
+
+| source -> target | operator | source_role | group_id |
+|---|---|---|---|
+| every `F_*` child -> `P_ADAR1_PD1_SENSITIZATION` | `ALL_OF` | `required_step` | `adar1_dsrna_pd1_chain` |
+
+Semantic claim_relations:
+
+```text
+F_ADAR1_EDITS_ENDOGENOUS_DSRNA enables F_ADAR1_LOSS_ACCUMULATES_UNEDITED_DSRNA
+F_ADAR1_LOSS_ACCUMULATES_UNEDITED_DSRNA enables F_UNEDITED_DSRNA_ACTIVATES_PKR_AND_MDA5
+F_UNEDITED_DSRNA_ACTIVATES_PKR_AND_MDA5 enables F_MDA5_MAVS_INDUCES_TUMOR_INFLAMMATION
+F_UNEDITED_DSRNA_ACTIVATES_PKR_AND_MDA5 enables F_PKR_INDUCES_GROWTH_INHIBITION
+F_MDA5_MAVS_INDUCES_TUMOR_INFLAMMATION enables F_ADAR1_LOSS_OVERCOMES_PD1_RESISTANCE
+F_PKR_INDUCES_GROWTH_INHIBITION enables F_ADAR1_LOSS_OVERCOMES_PD1_RESISTANCE
+```
+
+```mermaid
+flowchart TD
+  P["P_ADAR1_PD1_SENSITIZATION"]
+  F1["F_ADAR1_EDITS_ENDOGENOUS_DSRNA"]
+  F2["F_ADAR1_LOSS_ACCUMULATES_UNEDITED_DSRNA"]
+  F3["F_UNEDITED_DSRNA_ACTIVATES_PKR_AND_MDA5"]
+  F4["F_MDA5_MAVS_INDUCES_TUMOR_INFLAMMATION"]
+  F5["F_PKR_INDUCES_GROWTH_INHIBITION"]
+  F6["F_ADAR1_LOSS_OVERCOMES_PD1_RESISTANCE"]
+
+  F1 -- "ALL_OF" --> P
+  F2 -- "ALL_OF" --> P
+  F3 -- "ALL_OF" --> P
+  F4 -- "ALL_OF" --> P
+  F5 -- "ALL_OF" --> P
+  F6 -- "ALL_OF" --> P
+
+  F1 -. "enables" .-> F2
+  F2 -. "enables" .-> F3
+  F3 -. "MDA5/MAVS arm" .-> F4
+  F3 -. "PKR arm" .-> F5
+  F4 -. "enables" .-> F6
+  F5 -. "enables" .-> F6
+```
+
+Rationale: ADAR1 was not part of the original five-hypothesis Step0 run. This
+added candidate DAG captures the key logic from the local ADAR1 paper: ADAR1
+editing suppresses endogenous dsRNA sensing; ADAR1 loss activates PKR and MDA5
+arms; those arms produce growth inhibition and tumor inflammation; and the
+combined state can overcome PD-1 resistance. The DAG keeps the RNA-editing
+substrate, the sensor arms, and the therapy endpoint separate so evidence can
+attach at the right child claim.
+
+Source: `ADAR1paper.pdf`, DOI found in PDF text: `10.1038/s41586-018-0768-9`.
+
+## 7. RBMS1 / Endogenous dsRNA Shielding / Cell-Intrinsic Immune Suppression
+
+Hypothesis:
+
+```text
+RBMS1 binds endogenous dsRNA hairpins and shields them from MDA5 and PKR
+recognition, preventing activation of antiviral interferon signaling and thereby
+reducing cell-intrinsic immune activation.
+```
+
+Formula:
+
+```text
+P_RBMS1_DSRNA_SHIELDING =
+  F_RBMS1_BINDS_ENDOGENOUS_DSRNA_HAIRPINS AND
+  M_RBMS1_MDA5_SHIELDING_ARM AND
+  M_RBMS1_PKR_SHIELDING_ARM AND
+  F_RBMS1_LOSS_UNMASKS_DSRNA_SENSOR_ACTIVATION AND
+  F_SENSOR_SUPPRESSION_REDUCES_CELL_INTRINSIC_IMMUNE_ACTIVATION
+
+M_RBMS1_MDA5_SHIELDING_ARM =
+  F_RBMS1_SHIELDS_DSRNA_FROM_MDA5 AND
+  F_MDA5_RECOGNITION_LOSS_REDUCES_MAVS_IFN_SIGNALING
+
+M_RBMS1_PKR_SHIELDING_ARM =
+  F_RBMS1_SHIELDS_DSRNA_FROM_PKR AND
+  F_PKR_RECOGNITION_LOSS_REDUCES_STRESS_OR_IFN_SIGNALING
+```
+
+Claims:
+
+| ID | claim_text | participants | relation_name | polarity | context/properties |
+|---|---|---|---|---|---|
+| `P_RBMS1_DSRNA_SHIELDING` | RBMS1 binds endogenous dsRNA hairpins and shields them from MDA5 and PKR recognition, reducing antiviral interferon signaling and cell-intrinsic immune activation. | effector:`RBMS1`; substrate:`RNA-endogenous_dsRNA_hairpin`; effector:`IFIH1`; effector:`EIF2AK2`; pathway:`PATHWAY-antiviral_RNA_sensing`; phenotype:`PHENO-cell_intrinsic_immune_activation` | `suppresses` | `negative` | parent hypothesis |
+| `M_RBMS1_MDA5_SHIELDING_ARM` | RBMS1 shielding of endogenous dsRNA prevents MDA5-MAVS interferon signaling. | effector:`RBMS1`; substrate:`RNA-endogenous_dsRNA_hairpin`; effector:`IFIH1`; effector:`MAVS`; pathway:`PATHWAY-type_I_interferon` | `suppresses` | `negative` | module=true; MDA5 arm |
+| `M_RBMS1_PKR_SHIELDING_ARM` | RBMS1 shielding of endogenous dsRNA prevents PKR-dependent stress or antiviral signaling. | effector:`RBMS1`; substrate:`RNA-endogenous_dsRNA_hairpin`; effector:`EIF2AK2`; pathway:`PATHWAY-integrated_stress_response` | `suppresses` | `negative` | module=true; PKR arm |
+| `F_RBMS1_BINDS_ENDOGENOUS_DSRNA_HAIRPINS` | RBMS1 physically binds endogenous double-stranded RNA hairpins. | effector:`RBMS1`; substrate:`RNA-endogenous_dsRNA_hairpin` | `binds` | `positive` | shared substrate anchor |
+| `F_RBMS1_SHIELDS_DSRNA_FROM_MDA5` | RBMS1 occupancy on endogenous dsRNA hairpins reduces MDA5 access or recognition. | effector:`RBMS1`; substrate:`RNA-endogenous_dsRNA_hairpin`; effector:`IFIH1` | `blocks_recognition_by` | `negative` | MDA5 arm |
+| `F_MDA5_RECOGNITION_LOSS_REDUCES_MAVS_IFN_SIGNALING` | Reduced MDA5 recognition lowers MAVS-dependent type I interferon and interferon-stimulated gene signaling. | effector:`IFIH1`; effector:`MAVS`; pathway:`PATHWAY-type_I_interferon`; process:`BP-ISG_expression` | `reduces` | `negative` | MDA5 downstream |
+| `F_RBMS1_SHIELDS_DSRNA_FROM_PKR` | RBMS1 occupancy on endogenous dsRNA hairpins reduces PKR access or recognition. | effector:`RBMS1`; substrate:`RNA-endogenous_dsRNA_hairpin`; effector:`EIF2AK2` | `blocks_recognition_by` | `negative` | PKR arm |
+| `F_PKR_RECOGNITION_LOSS_REDUCES_STRESS_OR_IFN_SIGNALING` | Reduced PKR recognition lowers PKR-dependent stress signaling and antiviral immune activation. | effector:`EIF2AK2`; pathway:`PATHWAY-integrated_stress_response`; phenotype:`PHENO-antiviral_immune_activation` | `reduces` | `negative` | PKR downstream |
+| `F_RBMS1_LOSS_UNMASKS_DSRNA_SENSOR_ACTIVATION` | RBMS1 loss or depletion unmasks endogenous dsRNA hairpins and increases MDA5 and/or PKR sensor activation. | effector:`RBMS1`; substrate:`RNA-endogenous_dsRNA_hairpin`; effector:`IFIH1`; effector:`EIF2AK2` | `increases_when_lost` | `positive` | perturbation/rescue discriminator |
+| `F_SENSOR_SUPPRESSION_REDUCES_CELL_INTRINSIC_IMMUNE_ACTIVATION` | Suppression of MDA5/PKR recognition reduces cell-intrinsic antiviral interferon signaling and immune activation. | effector:`IFIH1`; effector:`EIF2AK2`; phenotype:`PHENO-cell_intrinsic_immune_activation`; pathway:`PATHWAY-antiviral_RNA_sensing` | `reduces` | `negative` | endpoint |
+
+Decomposition:
+
+| source -> target | operator | source_role | group_id |
+|---|---|---|---|
+| `F_RBMS1_BINDS_ENDOGENOUS_DSRNA_HAIRPINS -> P_RBMS1_DSRNA_SHIELDING` | `ALL_OF` | `shared_anchor` | `rbms1_parent` |
+| `M_RBMS1_MDA5_SHIELDING_ARM -> P_RBMS1_DSRNA_SHIELDING` | `ALL_OF` | `required_step` | `rbms1_parent` |
+| `M_RBMS1_PKR_SHIELDING_ARM -> P_RBMS1_DSRNA_SHIELDING` | `ALL_OF` | `required_step` | `rbms1_parent` |
+| `F_RBMS1_LOSS_UNMASKS_DSRNA_SENSOR_ACTIVATION -> P_RBMS1_DSRNA_SHIELDING` | `ALL_OF` | `required_step` | `rbms1_parent` |
+| `F_SENSOR_SUPPRESSION_REDUCES_CELL_INTRINSIC_IMMUNE_ACTIVATION -> P_RBMS1_DSRNA_SHIELDING` | `ALL_OF` | `required_step` | `rbms1_parent` |
+| `F_RBMS1_SHIELDS_DSRNA_FROM_MDA5 -> M_RBMS1_MDA5_SHIELDING_ARM` | `ALL_OF` | `required_step` | `rbms1_mda5_arm` |
+| `F_MDA5_RECOGNITION_LOSS_REDUCES_MAVS_IFN_SIGNALING -> M_RBMS1_MDA5_SHIELDING_ARM` | `ALL_OF` | `required_step` | `rbms1_mda5_arm` |
+| `F_RBMS1_SHIELDS_DSRNA_FROM_PKR -> M_RBMS1_PKR_SHIELDING_ARM` | `ALL_OF` | `required_step` | `rbms1_pkr_arm` |
+| `F_PKR_RECOGNITION_LOSS_REDUCES_STRESS_OR_IFN_SIGNALING -> M_RBMS1_PKR_SHIELDING_ARM` | `ALL_OF` | `required_step` | `rbms1_pkr_arm` |
+
+Semantic claim_relations:
+
+```text
+F_RBMS1_BINDS_ENDOGENOUS_DSRNA_HAIRPINS enables F_RBMS1_SHIELDS_DSRNA_FROM_MDA5
+F_RBMS1_BINDS_ENDOGENOUS_DSRNA_HAIRPINS enables F_RBMS1_SHIELDS_DSRNA_FROM_PKR
+F_RBMS1_SHIELDS_DSRNA_FROM_MDA5 enables F_MDA5_RECOGNITION_LOSS_REDUCES_MAVS_IFN_SIGNALING
+F_RBMS1_SHIELDS_DSRNA_FROM_PKR enables F_PKR_RECOGNITION_LOSS_REDUCES_STRESS_OR_IFN_SIGNALING
+F_MDA5_RECOGNITION_LOSS_REDUCES_MAVS_IFN_SIGNALING enables F_SENSOR_SUPPRESSION_REDUCES_CELL_INTRINSIC_IMMUNE_ACTIVATION
+F_PKR_RECOGNITION_LOSS_REDUCES_STRESS_OR_IFN_SIGNALING enables F_SENSOR_SUPPRESSION_REDUCES_CELL_INTRINSIC_IMMUNE_ACTIVATION
+F_RBMS1_LOSS_UNMASKS_DSRNA_SENSOR_ACTIVATION refines P_RBMS1_DSRNA_SHIELDING
+```
+
+```mermaid
+flowchart TD
+  P["P_RBMS1_DSRNA_SHIELDING"]
+  A["F_RBMS1_BINDS_ENDOGENOUS_DSRNA_HAIRPINS"]
+  M1["M_RBMS1_MDA5_SHIELDING_ARM"]
+  M2["M_RBMS1_PKR_SHIELDING_ARM"]
+  B1["F_RBMS1_SHIELDS_DSRNA_FROM_MDA5"]
+  B2["F_MDA5_RECOGNITION_LOSS_REDUCES_MAVS_IFN_SIGNALING"]
+  C1["F_RBMS1_SHIELDS_DSRNA_FROM_PKR"]
+  C2["F_PKR_RECOGNITION_LOSS_REDUCES_STRESS_OR_IFN_SIGNALING"]
+  D["F_RBMS1_LOSS_UNMASKS_DSRNA_SENSOR_ACTIVATION"]
+  E["F_SENSOR_SUPPRESSION_REDUCES_CELL_INTRINSIC_IMMUNE_ACTIVATION"]
+
+  A -- "ALL_OF shared_anchor" --> P
+  M1 -- "ALL_OF" --> P
+  M2 -- "ALL_OF" --> P
+  D -- "ALL_OF perturbation" --> P
+  E -- "ALL_OF endpoint" --> P
+  B1 -- "ALL_OF" --> M1
+  B2 -- "ALL_OF" --> M1
+  C1 -- "ALL_OF" --> M2
+  C2 -- "ALL_OF" --> M2
+
+  A -. "enables" .-> B1
+  A -. "enables" .-> C1
+  B1 -. "enables" .-> B2
+  C1 -. "enables" .-> C2
+  B2 -. "enables" .-> E
+  C2 -. "enables" .-> E
+  D -. "refines/perturbation test" .-> P
+```
+
+Rationale: RBMS1 was not part of the original five-hypothesis Step0 run. This
+added DAG makes the lab hypothesis concrete by separating the shared biochemical
+anchor from two sensor arms. The MDA5 arm should be proven with dsRNA occupancy,
+MDA5 access, MAVS/IFN, and ISG readouts. The PKR arm should be proven with PKR
+binding or activation, eIF2alpha/stress signaling, and antiviral activation
+readouts. The RBMS1-loss child is included as a necessary perturbation test so
+the claim is not reduced to a correlation between RBMS1 expression and low IFN
+signaling.
 
 ## Cross-Example Notes
 
