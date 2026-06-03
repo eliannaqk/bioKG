@@ -19,6 +19,9 @@ hypothesis so those mechanisms are visible in the same claim-object format.
 
 Every section includes a Mermaid graph. GitHub renders these blocks as
 boxed-arrow DAG images.
+The same DAGs are also committed as PNG and SVG files under
+`assets/claim_dags/` and embedded directly in this document, so the diagrams
+remain visible even when a Markdown viewer does not render Mermaid.
 
 ## Key
 
@@ -112,6 +115,10 @@ F_CIN_SUSTAINS_CHRONIC_STING enables F_CHRONIC_STING_REWIRES_INFLAMMATION
 F_CHRONIC_STING_REWIRES_INFLAMMATION enables F_REWIRED_INFLAMMATION_METASTASIS_BIAS
 ```
 
+Boxed-arrow DAG:
+
+![CIN cGAS-STING metastasis claim DAG](assets/claim_dags/step0_cin_sting_metastasis.png)
+
 ```mermaid
 flowchart TD
   P["P_CIN_STING_METASTASIS"]
@@ -192,6 +199,10 @@ F_TCELL_MITO_DYSFUNCTION_REDUCES_CYTOTOXICITY enables F_CYTOTOXICITY_LOSS_PERMIT
 F_TRANSFER_BLOCKADE_RESCUES_TCELL_FUNCTION refutes_if_false P_TUMOR_MITO_TRANSFER_TCELL_EVASION
 ```
 
+Boxed-arrow DAG:
+
+![Tumor-to-T-cell mitochondrial transfer claim DAG](assets/claim_dags/step0_tumor_mito_transfer_tcell_evasion.png)
+
 ```mermaid
 flowchart TD
   P["P_TUMOR_MITO_TRANSFER_TCELL_EVASION"]
@@ -268,6 +279,10 @@ F_IFN_AMPLIFICATION_INCREASES_ANTIGEN_PRESENTATION enables F_PTPN_INHIBITION_INC
 F_PTPN2_PTPN1_LOSS_AMPLIFIES_JAK_STAT enables F_PTPN_INHIBITION_INCREASES_NK_SUSCEPTIBILITY
 F_DUAL_PARALOG_INHIBITION_OUTPERFORMS_SINGLE refines P_PTPN2_PTPN1_IFN_KILLING
 ```
+
+Boxed-arrow DAG:
+
+![PTPN2 PTPN1 IFN killing claim DAG](assets/claim_dags/step0_ptpn2_ptpn1_ifn_killing.png)
 
 ```mermaid
 flowchart TD
@@ -346,6 +361,10 @@ F_CHEMOKINE_LOSS_REDUCES_DC_RECRUITMENT enables F_DC_LOSS_REDUCES_CD8_ENTRY
 F_DC_LOSS_REDUCES_CD8_ENTRY enables F_HIGH_CTNNB1_ASSOCIATES_WITH_CD8_EXCLUSION
 F_CTNNB1_INHIBITION_RESTORES_CHEMOKINES enables F_CTNNB1_INHIBITION_RESTORES_DC_AND_CD8
 ```
+
+Boxed-arrow DAG:
+
+![CTNNB1 DC CD8 exclusion claim DAG](assets/claim_dags/step0_ctnnb1_dc_cd8_exclusion.png)
 
 ```mermaid
 flowchart TD
@@ -426,6 +445,10 @@ F_LIPID_DEFENSE_LOSS_CAUSES_FERROPTOSIS enables F_IFNG_KILLING_HAS_FERROPTOSIS_C
 F_IFNG_KILLING_HAS_FERROPTOSIS_COMPONENT enables F_FERROPTOSIS_SENSITIZATION_IMPROVES_IMMUNE_KILLING
 ```
 
+Boxed-arrow DAG:
+
+![IFNg ferroptosis immune killing claim DAG](assets/claim_dags/step0_ifng_ferroptosis_immune_killing.png)
+
 ```mermaid
 flowchart TD
   P["P_IFNG_FERROPTOSIS_IMMUNE_KILLING"]
@@ -505,6 +528,10 @@ F_UNEDITED_DSRNA_ACTIVATES_PKR_AND_MDA5 enables F_PKR_INDUCES_GROWTH_INHIBITION
 F_MDA5_MAVS_INDUCES_TUMOR_INFLAMMATION enables F_ADAR1_LOSS_OVERCOMES_PD1_RESISTANCE
 F_PKR_INDUCES_GROWTH_INHIBITION enables F_ADAR1_LOSS_OVERCOMES_PD1_RESISTANCE
 ```
+
+Boxed-arrow DAG:
+
+![ADAR1 PD-1 sensitization claim DAG](assets/claim_dags/step0_adar1_pd1_sensitization.png)
 
 ```mermaid
 flowchart TD
@@ -610,6 +637,10 @@ F_MDA5_RECOGNITION_LOSS_REDUCES_MAVS_IFN_SIGNALING enables F_SENSOR_SUPPRESSION_
 F_PKR_RECOGNITION_LOSS_REDUCES_STRESS_OR_IFN_SIGNALING enables F_SENSOR_SUPPRESSION_REDUCES_CELL_INTRINSIC_IMMUNE_ACTIVATION
 F_RBMS1_LOSS_UNMASKS_DSRNA_SENSOR_ACTIVATION refines P_RBMS1_DSRNA_SHIELDING
 ```
+
+Boxed-arrow DAG:
+
+![RBMS1 dsRNA shielding claim DAG](assets/claim_dags/step0_rbms1_dsrna_shielding.png)
 
 ```mermaid
 flowchart TD

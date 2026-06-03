@@ -1,0 +1,23 @@
+digraph G {
+  graph [rankdir=LR, bgcolor="transparent", pad="0.25", nodesep="0.45", ranksep="0.9"];
+  node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=10, margin="0.10,0.08", color="#334155", penwidth=1.2];
+  edge [fontname="Helvetica", fontsize=9, color="#334155", arrowsize=0.75, penwidth=1.2];
+  "P" [label="P_IFNG_FERROPTOSIS_IMMUNE_KILLING", fillcolor="#dbeafe"];
+  "F1" [label="F_TUMOR_IFNG_SIGNAL_TRANSDUCTION", fillcolor="#ffffff"];
+  "F2" [label="F_IFNG_REPRESSES_SYSTEM_XC", fillcolor="#ffffff"];
+  "F3" [label="F_SYSTEM_XC_REPRESSION_LOWERS_GSH_DEFENSE", fillcolor="#ffffff"];
+  "F4" [label="F_LIPID_DEFENSE_LOSS_CAUSES_FERROPTOSIS", fillcolor="#ffffff"];
+  "F5" [label="F_IFNG_KILLING_HAS_FERROPTOSIS_COMPONENT", fillcolor="#ffffff"];
+  "F6" [label="F_FERROPTOSIS_SENSITIZATION_IMPROVES_IMMUNE_KILLING", fillcolor="#ffffff"];
+  "F1" -> "P" [label="ALL_OF"];
+  "F2" -> "P" [label="ALL_OF"];
+  "F3" -> "P" [label="ALL_OF"];
+  "F4" -> "P" [label="ALL_OF"];
+  "F5" -> "P" [label="ALL_OF"];
+  "F6" -> "P" [label="ALL_OF"];
+  "F1" -> "F2" [label="enables", style=dashed, color="#64748b", fontcolor="#475569"];
+  "F2" -> "F3" [label="enables", style=dashed, color="#64748b", fontcolor="#475569"];
+  "F3" -> "F4" [label="enables", style=dashed, color="#64748b", fontcolor="#475569"];
+  "F4" -> "F5" [label="enables", style=dashed, color="#64748b", fontcolor="#475569"];
+  "F5" -> "F6" [label="enables", style=dashed, color="#64748b", fontcolor="#475569"];
+}

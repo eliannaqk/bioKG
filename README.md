@@ -20,6 +20,8 @@ schema/
   schema.py             DAG-2 entry-layer dataclasses — legacy ClaimType,
                         the three orthogonal claim axes, ResearchQuestionContract,
                         CandidateNode
+assets/claim_dags/      PNG/SVG boxed-arrow diagrams used by the candidate claim
+                        DAG example documents.
 CLAIM_DECOMPOSITION_DAG_ARCHITECTURE.md
                         Target three-table claim/decomposition-DAG architecture.
 CLAIM_OBJECT_SIMPLE.md  Minimal claim-object example.

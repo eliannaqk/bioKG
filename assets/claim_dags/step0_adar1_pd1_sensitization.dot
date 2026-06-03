@@ -1,0 +1,24 @@
+digraph G {
+  graph [rankdir=LR, bgcolor="transparent", pad="0.25", nodesep="0.45", ranksep="0.9"];
+  node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=10, margin="0.10,0.08", color="#334155", penwidth=1.2];
+  edge [fontname="Helvetica", fontsize=9, color="#334155", arrowsize=0.75, penwidth=1.2];
+  "P" [label="P_ADAR1_PD1_SENSITIZATION", fillcolor="#dbeafe"];
+  "F1" [label="F_ADAR1_EDITS_ENDOGENOUS_DSRNA", fillcolor="#ffffff"];
+  "F2" [label="F_ADAR1_LOSS_ACCUMULATES_UNEDITED_DSRNA", fillcolor="#ffffff"];
+  "F3" [label="F_UNEDITED_DSRNA_ACTIVATES_PKR_AND_MDA5", fillcolor="#ffffff"];
+  "F4" [label="F_MDA5_MAVS_INDUCES_TUMOR_INFLAMMATION", fillcolor="#ffffff"];
+  "F5" [label="F_PKR_INDUCES_GROWTH_INHIBITION", fillcolor="#ffffff"];
+  "F6" [label="F_ADAR1_LOSS_OVERCOMES_PD1_RESISTANCE", fillcolor="#ffffff"];
+  "F1" -> "P" [label="ALL_OF"];
+  "F2" -> "P" [label="ALL_OF"];
+  "F3" -> "P" [label="ALL_OF"];
+  "F4" -> "P" [label="ALL_OF"];
+  "F5" -> "P" [label="ALL_OF"];
+  "F6" -> "P" [label="ALL_OF"];
+  "F1" -> "F2" [label="enables", style=dashed, color="#64748b", fontcolor="#475569"];
+  "F2" -> "F3" [label="enables", style=dashed, color="#64748b", fontcolor="#475569"];
+  "F3" -> "F4" [label="MDA5/MAVS arm", style=dashed, color="#64748b", fontcolor="#475569"];
+  "F3" -> "F5" [label="PKR arm", style=dashed, color="#64748b", fontcolor="#475569"];
+  "F4" -> "F6" [label="enables", style=dashed, color="#64748b", fontcolor="#475569"];
+  "F5" -> "F6" [label="enables", style=dashed, color="#64748b", fontcolor="#475569"];
+}

@@ -1,0 +1,31 @@
+digraph G {
+  graph [rankdir=LR, bgcolor="transparent", pad="0.25", nodesep="0.45", ranksep="0.9"];
+  node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=10, margin="0.10,0.08", color="#334155", penwidth=1.2];
+  edge [fontname="Helvetica", fontsize=9, color="#334155", arrowsize=0.75, penwidth=1.2];
+  "P" [label="P_RBMS1_DSRNA_SHIELDING", fillcolor="#dbeafe"];
+  "A" [label="F_RBMS1_BINDS_ENDOGENOUS_DSRNA_HAIRPINS", fillcolor="#ffffff"];
+  "M1" [label="M_RBMS1_MDA5_SHIELDING_ARM", fillcolor="#dcfce7"];
+  "M2" [label="M_RBMS1_PKR_SHIELDING_ARM", fillcolor="#dcfce7"];
+  "B1" [label="F_RBMS1_SHIELDS_DSRNA_FROM_MDA5", fillcolor="#ffffff"];
+  "B2" [label="F_MDA5_RECOGNITION_LOSS_REDUCES_MAVS_IFN_SIGNALING", fillcolor="#ffffff"];
+  "C1" [label="F_RBMS1_SHIELDS_DSRNA_FROM_PKR", fillcolor="#ffffff"];
+  "C2" [label="F_PKR_RECOGNITION_LOSS_REDUCES_STRESS_OR_IFN_SIGNALING", fillcolor="#ffffff"];
+  "D" [label="F_RBMS1_LOSS_UNMASKS_DSRNA_SENSOR_ACTIVATION", fillcolor="#ffffff"];
+  "E" [label="F_SENSOR_SUPPRESSION_REDUCES_CELL_INTRINSIC_IMMUNE_ACTIVATION", fillcolor="#ffffff"];
+  "A" -> "P" [label="ALL_OF shared_anchor"];
+  "M1" -> "P" [label="ALL_OF"];
+  "M2" -> "P" [label="ALL_OF"];
+  "D" -> "P" [label="ALL_OF perturbation"];
+  "E" -> "P" [label="ALL_OF endpoint"];
+  "B1" -> "M1" [label="ALL_OF"];
+  "B2" -> "M1" [label="ALL_OF"];
+  "C1" -> "M2" [label="ALL_OF"];
+  "C2" -> "M2" [label="ALL_OF"];
+  "A" -> "B1" [label="enables", style=dashed, color="#64748b", fontcolor="#475569"];
+  "A" -> "C1" [label="enables", style=dashed, color="#64748b", fontcolor="#475569"];
+  "B1" -> "B2" [label="enables", style=dashed, color="#64748b", fontcolor="#475569"];
+  "C1" -> "C2" [label="enables", style=dashed, color="#64748b", fontcolor="#475569"];
+  "B2" -> "E" [label="enables", style=dashed, color="#64748b", fontcolor="#475569"];
+  "C2" -> "E" [label="enables", style=dashed, color="#64748b", fontcolor="#475569"];
+  "D" -> "P" [label="perturbation test", style=dashed, color="#64748b", fontcolor="#475569"];
+}
