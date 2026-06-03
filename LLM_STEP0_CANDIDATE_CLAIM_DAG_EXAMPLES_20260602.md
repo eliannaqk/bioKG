@@ -37,6 +37,12 @@ PTPN correction: peptide-MHC-I presentation is treated as CD8 visibility
 evidence. It is not treated as NK killing evidence. NK claims require NK-cell
 participants and NK-specific susceptibility or killing readouts.
 
+Gene-alias correction: participants should resolve through the KG/gene-alias
+resolver before materialization, so common aliases do not create duplicate gene
+nodes. For example, `MDA5` should resolve to the canonical IFIH1 gene node,
+`PKR` to EIF2AK2, and `ADAR1` to ADAR when those are emitted as gene/protein
+participants.
+
 ### ADAR1 / dsRNA Sensing / PD-1 Sensitization
 
 Input hypothesis:
@@ -59,6 +65,35 @@ operators: `ALL_OF`, `ANY_OF`.
 | `mechanism_dsrna_to_pkr` | Accumulated endogenous dsRNA activates PKR in tumor cells. | PKR activation status | activating_ligand:`endogenous_dsRNA`; sensor_kinase:`EIF2AK2` |
 | `mechanism_pkr_to_pd1_sensitization` | PKR activation in tumor cells increases tumor sensitivity to PD-1 therapy. | incremental anti-PD-1 tumor control attributable to PKR activity | upstream_kinase:`EIF2AK2`; therapy:`PDCD1_therapy` |
 
+```mermaid
+flowchart TD
+  P["ADAR1 blockade sensitizes tumors to PD-1 therapy"]
+  M1["MDA5-MAVS inflammatory module"]
+  M2["PKR stress module"]
+  A1["ADAR1 blockade increases endogenous dsRNA"]
+  A2["dsRNA activates MDA5-MAVS"]
+  A3["MDA5-MAVS induces tumor inflammation"]
+  A4["inflammation increases PD-1 responsiveness"]
+  B1["dsRNA activates PKR"]
+  B2["PKR increases PD-1 sensitivity"]
+
+  M1 -- "ANY_OF" --> P
+  M2 -- "ANY_OF" --> P
+  A1 -- "ALL_OF" --> M1
+  A2 -- "ALL_OF" --> M1
+  A3 -- "ALL_OF" --> M1
+  A4 -- "ALL_OF" --> M1
+  A1 -- "ALL_OF shared substrate" --> M2
+  B1 -- "ALL_OF" --> M2
+  B2 -- "ALL_OF" --> M2
+
+  A1 -. "enables" .-> A2
+  A2 -. "enables" .-> A3
+  A3 -. "enables" .-> A4
+  A1 -. "enables" .-> B1
+  B1 -. "enables" .-> B2
+```
+
 ### RBMS1 / Endogenous dsRNA Shielding
 
 Input hypothesis:
@@ -79,6 +114,33 @@ operators: `ALL_OF`.
 | `mechanism_rbms1_reduces_pkr_access_to_endogenous_dsrna` | RBMS1 occupancy on endogenous dsRNA hairpins reduces PKR association with those RNAs. | PKR-associated endogenous dsRNA hairpin abundance | competitive_shield:`RBMS1`; PKR_sensor:`EIF2AK2`; shared_rna_ligand:`endogenous_dsRNA_hairpins` |
 | `mechanism_reduced_pkr_access_lowers_pkr_stress_signaling` | Reduced PKR engagement of endogenous dsRNA lowers PKR stress signaling. | phospho-eIF2alpha abundance | upstream_sensor:`EIF2AK2`; downstream_program:`PKR_stress_signaling` |
 | `mechanism_reduced_antiviral_sensor_signaling_lowers_cell_intrinsic_immune_` | Lower endogenous MDA5/MAVS interferon signaling and PKR stress signaling reduce cell-intrinsic immune activation. | basal ISG score | input_program:`type_I_interferon_program`; input_program:`PKR_stress_signaling`; cell_state_output:`cell_intrinsic_immune_activation` |
+
+```mermaid
+flowchart TD
+  P["RBMS1 reduces cell-intrinsic immune activation"]
+  M["RBMS1 dsRNA hairpin shielding module"]
+  A1["RBMS1 binds endogenous dsRNA hairpins"]
+  A2["RBMS1 reduces MDA5 access"]
+  A3["reduced MDA5 access lowers MAVS/IFN program"]
+  B2["RBMS1 reduces PKR access"]
+  B3["reduced PKR access lowers PKR stress signaling"]
+  C["sensor-signal reduction lowers immune activation"]
+
+  M -- "ALL_OF" --> P
+  A1 -- "ALL_OF" --> M
+  A2 -- "ALL_OF" --> M
+  A3 -- "ALL_OF" --> M
+  B2 -- "ALL_OF" --> M
+  B3 -- "ALL_OF" --> M
+  C -- "ALL_OF" --> M
+
+  A1 -. "enables" .-> A2
+  A2 -. "enables" .-> A3
+  A1 -. "enables" .-> B2
+  B2 -. "enables" .-> B3
+  A3 -. "enables" .-> C
+  B3 -. "enables" .-> C
+```
 
 ### PTPN2/PTPN1 / IFN, CD8, And NK Killing
 
@@ -103,6 +165,39 @@ operators: `ALL_OF`.
 | `mechanism_nk_susceptibility_module` | Dual PTPN2/PTPN1 inhibition alters tumor-cell state in a way that increases susceptibility to NK-cell attack. | NK-cell-mediated tumor lysis | inhibited_negative_regulator:`PTPN2`; inhibited_negative_regulator:`PTPN1`; immune_effector:`NK_cell`; target_cell:`tumor_cell` |
 | `mechanism_nk_killing` | Dual PTPN2/PTPN1 inhibition increases NK-cell-mediated killing of tumor cells. | NK-dependent tumor cell killing | inhibited_negative_regulator:`PTPN2`; inhibited_negative_regulator:`PTPN1`; immune_effector:`NK_cell`; target_cell:`tumor_cell` |
 
+```mermaid
+flowchart TD
+  P["PTPN2/PTPN1 inhibition amplifies IFN, antigen presentation, CD8 and NK killing"]
+  J["IFN-stimulated STAT activation"]
+  I["stronger IFN transcriptional program"]
+  G["ISG expression"]
+  AP["MHC-I antigen-presentation machinery"]
+  MHC["tumor peptide-MHC-I presentation"]
+  CD8M["CD8 killing module"]
+  CD8["CD8 T-cell-mediated killing"]
+  NKM["NK susceptibility module"]
+  NK["NK-cell-mediated killing"]
+
+  J -- "ALL_OF" --> P
+  I -- "ALL_OF" --> P
+  G -- "ALL_OF" --> P
+  AP -- "ALL_OF" --> P
+  MHC -- "ALL_OF" --> P
+  CD8M -- "ALL_OF" --> P
+  CD8 -- "ALL_OF" --> P
+  NKM -- "ALL_OF" --> P
+  NK -- "ALL_OF" --> P
+
+  J -. "enables" .-> I
+  I -. "enables" .-> G
+  I -. "enables" .-> AP
+  AP -. "enables" .-> MHC
+  MHC -. "CD8 visibility, not NK evidence" .-> CD8M
+  CD8M -. "enables" .-> CD8
+  J -. "separate NK susceptibility biology" .-> NKM
+  NKM -. "enables" .-> NK
+```
+
 ### Ferroptosis Suppression Alternatives
 
 Input hypothesis:
@@ -121,6 +216,23 @@ operators: `ALL_OF`, `ANY_OF`.
 | `mechanism_fsp1_coq_module` | An FSP1-CoQ radical-trapping antioxidant program can suppress ferroptosis independently of GPX4. | ferroptosis sensitivity | mechanism_module:`FSP1_CoQ_pathway` |
 | `mechanism_fsp1_regenerates_reduced_coq` | FSP1 activity increases the reduced CoQ pool at membranes. | reduced CoQ level | causal_regulator:`FSP1`; regulated_species:`reduced_CoQ` |
 | `mechanism_reduced_coq_traps_lipid_radicals` | Reduced CoQ decreases lipid radical abundance by radical trapping in membranes. | membrane lipid radical level | causal_regulator:`reduced_CoQ`; regulated_species:`lipid_radicals` |
+
+```mermaid
+flowchart TD
+  P["cells suppress ferroptosis"]
+  GPM["GPX4 lipid-peroxide detox module"]
+  FCM["FSP1-CoQ radical-trapping module"]
+  GPX4["GPX4 decreases phospholipid hydroperoxides"]
+  FSP1["FSP1 regenerates reduced CoQ"]
+  COQ["reduced CoQ traps lipid radicals"]
+
+  GPM -- "ANY_OF" --> P
+  FCM -- "ANY_OF" --> P
+  GPX4 -- "ALL_OF" --> GPM
+  FSP1 -- "ALL_OF" --> FCM
+  COQ -- "ALL_OF" --> FCM
+  FSP1 -. "enables" .-> COQ
+```
 
 ### Lenalidomide / del(5q) MDS / CK1alpha Degradation
 
@@ -141,6 +253,30 @@ operators: `ALL_OF`.
 | `mechanism_del5q_reduces_csnk1a1_dosage` | del(5q) MDS cells have reduced CSNK1A1 gene dosage relative to non-del(5q) MDS cells. | CSNK1A1 copy number | disease_context:`MONDO:0018881`; haploinsufficient_gene:`HGNC:2452` |
 | `mechanism_ck1a_loss_selectively_impairs_del5q_cell_fitness` | A comparable reduction in CK1alpha causes a larger loss of cell fitness in del(5q) MDS cells than in non-del(5q) hematopoietic cells. | differential cell viability or proliferation after CK1alpha reduction | causal_protein:`HGNC:2452`; sensitive_context:`MONDO:0018881` |
 | `mechanism_lenalidomide_selectively_suppresses_del5q_clone` | Lenalidomide preferentially suppresses survival or expansion of del(5q) MDS cells relative to non-del(5q) hematopoietic cells. | differential clonal abundance or cell viability under lenalidomide | perturbagen:`CHEBI:6437`; preferred_target_context:`MONDO:0018881` |
+
+```mermaid
+flowchart TD
+  P["lenalidomide creates a therapeutic window in del(5q) MDS"]
+  A["lenalidomide-bound CRBN recruits CK1alpha"]
+  B["CRL4-CRBN ubiquitinates CK1alpha"]
+  C["lenalidomide reduces CK1alpha protein"]
+  D["del(5q) reduces CSNK1A1 dosage"]
+  E["CK1alpha loss selectively impairs del(5q) cell fitness"]
+  F["lenalidomide selectively suppresses del(5q) clone"]
+
+  A -- "ALL_OF" --> P
+  B -- "ALL_OF" --> P
+  C -- "ALL_OF" --> P
+  D -- "ALL_OF" --> P
+  E -- "ALL_OF" --> P
+  F -- "ALL_OF" --> P
+
+  A -. "enables" .-> B
+  B -. "enables" .-> C
+  D -. "sensitizes context" .-> E
+  C -. "enables" .-> E
+  E -. "enables" .-> F
+```
 
 ## Key
 
