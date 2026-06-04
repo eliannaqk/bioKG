@@ -28,13 +28,17 @@ ADAR1 blockade will sensitize tumors to PD-1 therapy by allowing endogenous
 double-stranded RNA to activate antiviral sensing and tumor inflammation.
 ```
 
-Claims in mechanism order:
-- Parent: `P_ADAR_PD1_SENSITIZATION` - ADAR blockade sensitizes tumors to anti-PD-1 therapy.
-- Shared substrate anchor: `F_ADAR_BLOCKADE_INCREASES_UNEDITED_DSRNA` - ADAR loss/blockade increases unedited endogenous dsRNA.
-- Branch choice module: `M_ADAR_DSRNA_TO_VISIBILITY_BRANCH` - one complete dsRNA-to-visibility route is sufficient.
-- MDA5/MAVS route: `F_DSRNA_ACTIVATES_MDA5` -> `F_MDA5_MAVS_INDUCES_IFNB1` -> `F_IFNB1_INCREASES_TUMOR_IMMUNE_VISIBILITY`.
-- PKR route: `F_DSRNA_ACTIVATES_PKR` -> `F_PKR_DRIVES_ANTIVIRAL_STRESS_OUTPUT` -> `F_PKR_OUTPUT_INCREASES_TUMOR_IMMUNE_CONTROL`.
-- Therapeutic endpoint: `F_ADAR_BLOCKADE_SENSITIZES_TO_ANTI_PD1` - anti-PD-1 response increases in immune-competent contexts.
+Copy-paste claim bullets:
+- ADAR blockade sensitizes tumors to anti-PD-1 therapy by increasing endogenous dsRNA sensing, antiviral inflammatory output, and tumor immune visibility.
+- ADAR loss or blockade increases unedited endogenous dsRNA available for antiviral sensor recognition in tumor cells.
+- In ADAR-blocked tumor cells, either the IFIH1/MDA5-MAVS-IFNB1 arm or the EIF2AK2/PKR antiviral-stress arm links unedited endogenous dsRNA accumulation to anti-PD-1-relevant tumor immune control.
+- Unedited endogenous dsRNA activates IFIH1/MDA5 signaling in ADAR-blocked tumor cells.
+- IFIH1/MDA5 signaling requires MAVS to induce IFNB1 or type-I-interferon output in ADAR-blocked tumor cells.
+- IFNB1 or type-I-interferon output increases tumor inflammatory visibility, antigen-presentation programs, chemokine output, or CD8 T-cell recognition.
+- Unedited endogenous dsRNA activates EIF2AK2/PKR signaling in ADAR-blocked tumor cells.
+- EIF2AK2/PKR activation drives antiviral stress or growth-control output in ADAR-blocked tumor cells.
+- EIF2AK2/PKR-dependent stress output increases tumor-cell vulnerability to immune-mediated control or growth inhibition in the ADAR-blockade context.
+- ADAR loss or blockade increases anti-PD-1 response in immune-competent tumor contexts.
 
 Mechanism group colors in the DAG: parent red, shared substrate blue,
 branch-choice purple, MDA5/MAVS green, PKR amber, therapeutic endpoint gray.
@@ -44,19 +48,21 @@ chain where both MDA5 and PKR are mandatory. It also should not have a separate
 parent-level "sensor output increases immune visibility" child that restates
 the sensor module. Instead, each sufficient branch should be a complete route
 from endogenous dsRNA sensing to a downstream immune-visibility or tumor-control
-phenotype. The therapeutic PD-1 endpoint remains a separate required claim so
-that proximal sensor activation alone does not automatically prove anti-PD-1
-sensitization.
+phenotype, and the alternative bridge claim should explicitly name the
+MDA5/MAVS-IFNB1 arm and the PKR antiviral-stress arm. Generic wording such as
+"one dsRNA route reaches immune visibility" is too broad. The therapeutic PD-1
+endpoint remains a separate required claim so that proximal sensor activation
+alone does not automatically prove anti-PD-1 sensitization.
 
 Formula:
 
 ```text
 P_ADAR_PD1_SENSITIZATION =
   F_ADAR_BLOCKADE_INCREASES_UNEDITED_DSRNA AND
-  M_ADAR_DSRNA_TO_VISIBILITY_BRANCH AND
+  M_ADAR_MDA5_OR_PKR_PD1_BRIDGE AND
   F_ADAR_BLOCKADE_SENSITIZES_TO_ANTI_PD1
 
-M_ADAR_DSRNA_TO_VISIBILITY_BRANCH =
+M_ADAR_MDA5_OR_PKR_PD1_BRIDGE =
   M_MDA5_MAVS_IFN_VISIBILITY_ARM OR
   M_PKR_STRESS_VISIBILITY_ARM
 
@@ -79,7 +85,7 @@ Source context: local `ADAR1paper.pdf`; DOI reported in the earlier audit as
 | ID | claim_text | participants | relation_name | polarity | context/properties |
 |---|---|---|---|---|---|
 | `P_ADAR_PD1_SENSITIZATION` | ADAR blockade sensitizes tumors to anti-PD-1 therapy by increasing endogenous dsRNA sensing, antiviral inflammatory output, and tumor immune visibility. | target_gene:`HGNC:ADAR` (Gene); therapy_context:`PROPOSED-THR-anti_PD1` (TherapyRegimen); therapy_target_gene:`HGNC:PDCD1` (Gene); phenotype:`PROPOSED-PHENO-ICB_sensitization` (Phenotype); cell_context:`PROPOSED-TME-tumor_intrinsic` (TMECompartment) | `sensitizes_to_therapy` | `positive` | parent hypothesis; ADAR1 alias resolved to ADAR |
-| `M_ADAR_DSRNA_TO_VISIBILITY_BRANCH` | At least one endogenous-dsRNA sensor route converts ADAR-blockade-induced dsRNA exposure into tumor immune visibility or immune-control biology. | target_gene:`HGNC:ADAR` (Gene); substrate:`PROPOSED-unedited_endogenous_dsRNA` (RNAEntity); pathway:`PROPOSED-PATHWAY-antiviral_RNA_sensing` (Pathway); phenotype:`PROPOSED-PHENO-tumor_immune_visibility` (Phenotype) | `describes_mechanism` | SQL `NULL` | module=true; alternative complete routes |
+| `M_ADAR_MDA5_OR_PKR_PD1_BRIDGE` | In ADAR-blocked tumor cells, either the IFIH1/MDA5-MAVS-IFNB1 arm or the EIF2AK2/PKR antiviral-stress arm links unedited endogenous dsRNA accumulation to anti-PD-1-relevant tumor immune control. | target_gene:`HGNC:ADAR` (Gene); substrate:`PROPOSED-unedited_endogenous_dsRNA` (RNAEntity); sensor_gene:`HGNC:IFIH1` (Gene); adaptor_gene:`HGNC:MAVS` (Gene); sensor_kinase_gene:`HGNC:EIF2AK2` (Gene); output_gene:`HGNC:IFNB1` (Gene); phenotype:`PROPOSED-PHENO-immune_mediated_tumor_control` (Phenotype); therapy_context:`PROPOSED-THR-anti_PD1` (TherapyRegimen) | `describes_mechanism` | SQL `NULL` | module=true; alternative complete routes |
 | `M_MDA5_MAVS_IFN_VISIBILITY_ARM` | The IFIH1/MDA5-MAVS arm converts unedited endogenous dsRNA into IFNB1-linked tumor immune-visibility biology. | sensor_gene:`HGNC:IFIH1` (Gene); adaptor_gene:`HGNC:MAVS` (Gene); output_gene:`HGNC:IFNB1` (Gene); phenotype:`PROPOSED-PHENO-tumor_immune_visibility` (Phenotype) | `drives_phenotype` | `positive` | module=true; MDA5/MAVS route |
 | `M_PKR_STRESS_VISIBILITY_ARM` | The EIF2AK2/PKR arm converts unedited endogenous dsRNA into antiviral stress biology that increases tumor vulnerability to immune control. | sensor_kinase_gene:`HGNC:EIF2AK2` (Gene); substrate:`PROPOSED-unedited_endogenous_dsRNA` (RNAEntity); phenotype:`PROPOSED-PHENO-immune_mediated_tumor_control` (Phenotype) | `drives_phenotype` | `positive` | module=true; PKR route |
 | `F_ADAR_BLOCKADE_INCREASES_UNEDITED_DSRNA` | ADAR loss or blockade increases unedited endogenous dsRNA available for antiviral sensor recognition in tumor cells. | target_gene:`HGNC:ADAR` (Gene); substrate:`PROPOSED-unedited_endogenous_dsRNA` (RNAEntity); process:`PROPOSED-BP-antiviral_sensor_exposure` (BiologicalProcess); cell_context:`PROPOSED-TME-tumor_intrinsic` (TMECompartment) | `increases` | `positive` | shared substrate anchor |
@@ -96,10 +102,10 @@ Source context: local `ADAR1paper.pdf`; DOI reported in the earlier audit as
 | source -> target | operator | source_role | group_id |
 |---|---|---|---|
 | `F_ADAR_BLOCKADE_INCREASES_UNEDITED_DSRNA -> P_ADAR_PD1_SENSITIZATION` | `ALL_OF` | `shared_anchor` | `adar_parent` |
-| `M_ADAR_DSRNA_TO_VISIBILITY_BRANCH -> P_ADAR_PD1_SENSITIZATION` | `ALL_OF` | `required_step` | `adar_parent` |
+| `M_ADAR_MDA5_OR_PKR_PD1_BRIDGE -> P_ADAR_PD1_SENSITIZATION` | `ALL_OF` | `required_step` | `adar_parent` |
 | `F_ADAR_BLOCKADE_SENSITIZES_TO_ANTI_PD1 -> P_ADAR_PD1_SENSITIZATION` | `ALL_OF` | `context_bridge` | `adar_parent` |
-| `M_MDA5_MAVS_IFN_VISIBILITY_ARM -> M_ADAR_DSRNA_TO_VISIBILITY_BRANCH` | `ANY_OF` | `sufficient_module` | `adar_sensor_choice` |
-| `M_PKR_STRESS_VISIBILITY_ARM -> M_ADAR_DSRNA_TO_VISIBILITY_BRANCH` | `ANY_OF` | `sufficient_module` | `adar_sensor_choice` |
+| `M_MDA5_MAVS_IFN_VISIBILITY_ARM -> M_ADAR_MDA5_OR_PKR_PD1_BRIDGE` | `ANY_OF` | `sufficient_module` | `adar_sensor_choice` |
+| `M_PKR_STRESS_VISIBILITY_ARM -> M_ADAR_MDA5_OR_PKR_PD1_BRIDGE` | `ANY_OF` | `sufficient_module` | `adar_sensor_choice` |
 | `F_DSRNA_ACTIVATES_MDA5 -> M_MDA5_MAVS_IFN_VISIBILITY_ARM` | `ALL_OF` | `required_step` | `mda5_mavs_arm` |
 | `F_MDA5_MAVS_INDUCES_IFNB1 -> M_MDA5_MAVS_IFN_VISIBILITY_ARM` | `ALL_OF` | `required_step` | `mda5_mavs_arm` |
 | `F_IFNB1_INCREASES_TUMOR_IMMUNE_VISIBILITY -> M_MDA5_MAVS_IFN_VISIBILITY_ARM` | `ALL_OF` | `required_step` | `mda5_mavs_arm` |
@@ -126,7 +132,7 @@ Source context: local `ADAR1paper.pdf`; DOI reported in the earlier audit as
 ```mermaid
 flowchart TD
   P["P_ADAR_PD1_SENSITIZATION<br/>ADAR blockade sensitizes tumors to anti-PD-1"]
-  SENSOR["M_ADAR_DSRNA_TO_VISIBILITY_BRANCH<br/>One dsRNA route reaches immune visibility/control"]
+  SENSOR["M_ADAR_MDA5_OR_PKR_PD1_BRIDGE<br/>Either MDA5-MAVS-IFNB1 or PKR links dsRNA to PD-1-relevant tumor control"]
   MDA5["M_MDA5_MAVS_IFN_VISIBILITY_ARM<br/>MDA5-MAVS-IFNB1 route"]
   PKR["M_PKR_STRESS_VISIBILITY_ARM<br/>PKR stress-control route"]
   DSRNA["F_ADAR_BLOCKADE_INCREASES_UNEDITED_DSRNA<br/>ADAR blockade exposes unedited endogenous dsRNA"]
@@ -184,13 +190,17 @@ recognition, preventing activation of antiviral interferon signaling and thereby
 reducing cell-intrinsic immune activation.
 ```
 
-Claims in mechanism order:
-- Parent: `P_RBMS1_DSRNA_SHIELDING` - RBMS1 reduces endogenous dsRNA sensor activation.
-- Shared binding anchor: `F_RBMS1_BINDS_DSRNA_HAIRPINS` - RBMS1 physically binds endogenous dsRNA hairpins.
-- MDA5 arm: `F_RBMS1_REDUCES_MDA5_DSRNA_ACCESS` -> `F_MDA5_ACCESS_REDUCTION_REDUCES_MAVS_IFN`.
-- PKR arm: `F_RBMS1_REDUCES_PKR_DSRNA_ACCESS` -> `F_PKR_ACCESS_REDUCTION_REDUCES_STRESS_IFN`.
-- Endpoint bridge: `F_SENSOR_SHIELDING_REDUCES_IFN_SIGNALING` - shielding reduces antiviral signaling and cell-intrinsic immune activation.
-- Perturbation discriminator: `F_RBMS1_LOSS_UNMASKS_SENSOR_ACTIVATION` - RBMS1 loss reverses shielding and increases sensor activation.
+Copy-paste claim bullets:
+- RBMS1 shields endogenous dsRNA hairpins from MDA5 and PKR recognition, reducing antiviral interferon signaling and cell-intrinsic immune activation.
+- RBMS1 physically binds endogenous dsRNA hairpin structures.
+- RBMS1 shielding reduces MDA5/MAVS interferon signaling from endogenous dsRNA hairpins.
+- RBMS1 occupancy on endogenous dsRNA hairpins reduces IFIH1/MDA5 access or recognition.
+- Reduced MDA5 recognition lowers MAVS-dependent type-I-interferon or ISG signaling.
+- RBMS1 shielding reduces PKR-dependent stress or antiviral signaling from endogenous dsRNA hairpins.
+- RBMS1 occupancy on endogenous dsRNA hairpins reduces EIF2AK2/PKR access or recognition.
+- Reduced PKR recognition lowers PKR-dependent stress signaling or antiviral immune activation.
+- Shielding endogenous dsRNA from MDA5 and PKR reduces antiviral interferon signaling and cell-intrinsic immune activation.
+- RBMS1 loss unmasks endogenous dsRNA hairpins and increases MDA5 or PKR sensor activation.
 
 Mechanism group colors in the DAG: parent red, shared binding blue,
 MDA5/MAVS green, PKR amber, endpoint gray, loss-of-function discriminator pink.
@@ -318,13 +328,13 @@ Input hypothesis:
 PTPN2 blockade sensitizes tumors to PD-1 therapy.
 ```
 
-Claims in mechanism order:
-- Parent: `P_PTPN2_PD1_SENSITIZATION` - PTPN2 blockade sensitizes tumors to anti-PD-1 therapy.
-- Proximal phosphatase mechanism: `F_PTPN2_BLOCKADE_AMPLIFIES_IFN_JAK_STAT` - inhibiting PTPN2 phosphatase activity amplifies IFN-induced STAT/JAK-STAT output.
-- Tumor-visibility bridge: `F_IFN_JAK_STAT_UPREGULATES_MHC_I_APM` - amplified IFN signaling upregulates MHC-I/APM machinery.
-- CD8 recognition bridge: `F_MHC_I_APM_ENABLES_CD8_RECOGNITION` - MHC-I/APM enables CD8 T-cell recognition.
-- CD8 effector endpoint: `F_PTPN2_BLOCKADE_INCREASES_CD8_TUMOR_KILLING` - PTPN2 blockade increases CD8-mediated tumor killing.
-- Therapeutic endpoint: `F_PTPN2_BLOCKADE_SENSITIZES_TO_ANTI_PD1` - PTPN2 blockade increases anti-PD-1 response.
+Copy-paste claim bullets:
+- PTPN2 blockade sensitizes tumors to anti-PD-1 therapy by amplifying interferon signaling and CD8-mediated tumor recognition.
+- Loss or inhibition of PTPN2 phosphatase activity increases interferon-induced STAT/JAK-STAT signaling output in tumor cells.
+- Amplified interferon-JAK-STAT signaling after PTPN2 blockade increases tumor-cell antigen-processing and MHC-I presentation machinery.
+- Increased tumor-cell peptide-MHC-I presentation enables greater CD8 T-cell recognition.
+- PTPN2 blockade increases CD8 T-cell-mediated tumor killing in immune-competent contexts.
+- PTPN2 blockade increases tumor response to anti-PD-1 therapy.
 
 Mechanism group colors in the DAG: parent red, proximal phosphatase/JAK-STAT
 blue, MHC-I/APM visibility purple, CD8 biology green, therapeutic endpoint gray.
@@ -425,14 +435,14 @@ Input hypothesis:
 Cells suppress ferroptosis by detoxifying lipid peroxides or lipid radicals.
 ```
 
-Claims in mechanism order:
-- Parent: `P_FERROPTOSIS_LIPID_DETOX` - cells suppress ferroptosis by detoxifying lipid damage.
-- Peroxide detox module: `M_LIPID_PEROXIDE_DETOX` - lipid peroxide detoxification is sufficient.
-- GPX4 peroxide branch: `F_GPX4_REDUCES_LIPID_PEROXIDES` - GPX4 lowers lipid peroxides.
-- DHODH peroxide branch: `F_DHODH_REDUCES_MITO_LIPID_PEROXIDES` - DHODH lowers mitochondrial lipid peroxides.
-- Radical detox module: `M_LIPID_RADICAL_DETOX` - lipid radical quenching is sufficient.
-- FSP1 radical branch: `F_AIFM2_FSP1_QUENCHES_LIPID_RADICALS` - AIFM2/FSP1 quenches lipid radicals through CoQ.
-- GCH1/BH4 radical branch: `F_GCH1_BH4_QUENCHES_LIPID_RADICALS` - GCH1/BH4 quenches lipid radicals.
+Copy-paste claim bullets:
+- Cells suppress ferroptosis through detoxification of lipid peroxides or lipid radicals.
+- Lipid peroxide detoxification suppresses ferroptosis.
+- GPX4 reduces lipid peroxides and suppresses ferroptotic death.
+- DHODH reduces mitochondrial lipid peroxide accumulation and suppresses ferroptosis.
+- Lipid radical quenching suppresses ferroptosis.
+- AIFM2/FSP1 quenches lipid radicals through the CoQ axis and suppresses ferroptosis.
+- GCH1-driven BH4 production quenches lipid radicals and suppresses ferroptosis.
 
 Mechanism group colors in the DAG: parent red, peroxide-detox blue,
 radical-detox amber.
