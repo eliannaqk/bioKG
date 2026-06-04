@@ -1,0 +1,3571 @@
+{
+  "artifact": "assets/claim_dags/step0_live_edge_contract_v11.json",
+  "timestamp": "2026-06-03T21:39:24-0400",
+  "model_requested": "gpt-5.4",
+  "cases": {
+    "adar1_pd1_sensitization": {
+      "input_hypothesis": "ADAR1 blockade will sensitize tumors to PD-1 therapy by allowing endogenous double-stranded RNA to activate antiviral sensing and tumor inflammation.",
+      "claim_id": "P_ADAR1_PD1_SENSITIZATION",
+      "candidate_gene": "ADAR",
+      "literature_map": {
+        "status": "provided_bounded_step0_context",
+        "n_articles_summarized": 1,
+        "articles": [
+          {
+            "title": "Loss of ADAR1 in tumours overcomes resistance to immune checkpoint blockade",
+            "source_path": "/home/eqk3/coscientist/biologyDone/reports/papers/ADAR1paper.pdf",
+            "summary": "ADAR1 loss reduces A-to-I editing of interferon-inducible RNA species; endogenous dsRNA is sensed by PKR and MDA5. PKR supports growth-inhibition phenotypes, while MDA5/MAVS supports IFN-beta secretion and tumour inflammation. ADAR1 loss overcomes resistance to PD-1 checkpoint blockade. This context has mixed Boolean structure: ADAR1 loss/dsRNA accumulation is a shared anchor, then MDA5/MAVS and PKR are distinct named sensor branches that can independently contribute downstream biology.",
+            "key_findings": "ADAR1 loss reduces A-to-I editing of interferon-inducible RNA species; endogenous dsRNA is sensed by PKR and MDA5. PKR supports growth-inhibition phenotypes, while MDA5/MAVS supports IFN-beta secretion and tumour inflammation. ADAR1 loss overcomes resistance to PD-1 checkpoint blockade. This context has mixed Boolean structure: ADAR1 loss/dsRNA accumulation is a shared anchor, then MDA5/MAVS and PKR are distinct named sensor branches that can independently contribute downstream biology."
+          }
+        ]
+      },
+      "kg_map": {
+        "status": "provided_bounded_step0_context",
+        "known_entities": [
+          {
+            "entity_id": "HGNC:ADAR",
+            "role": "known_gene",
+            "canonical_gene_symbol": "ADAR",
+            "aliases": [
+              "ADAR",
+              "ADAR1"
+            ]
+          },
+          {
+            "entity_id": "HGNC:IFIH1",
+            "role": "known_gene",
+            "canonical_gene_symbol": "IFIH1",
+            "aliases": [
+              "IFIH1",
+              "MDA5",
+              "MDA-5"
+            ]
+          },
+          {
+            "entity_id": "HGNC:EIF2AK2",
+            "role": "known_gene",
+            "canonical_gene_symbol": "EIF2AK2",
+            "aliases": [
+              "EIF2AK2",
+              "PKR"
+            ]
+          },
+          {
+            "entity_id": "HGNC:MAVS",
+            "role": "known_gene",
+            "canonical_gene_symbol": "MAVS",
+            "aliases": [
+              "MAVS"
+            ]
+          }
+        ],
+        "related_claims": []
+      },
+      "dag2": {
+        "root_claim_id": "P_ADAR1_PD1_SENSITIZATION",
+        "root_claim_text": "ADAR1 blockade will sensitize tumors to PD-1 therapy by allowing endogenous double-stranded RNA to activate antiviral sensing and tumor inflammation.",
+        "root_claim_object": {
+          "claim_id": "P_ADAR1_PD1_SENSITIZATION",
+          "claim_text": "ADAR1 blockade will sensitize tumors to PD-1 therapy by allowing endogenous double-stranded RNA to activate antiviral sensing and tumor inflammation.",
+          "evidence_status": "unchecked",
+          "prior_art_status": "new",
+          "review_status": "draft",
+          "relation_name": "drives_phenotype",
+          "relation_polarity": "positive",
+          "context_set_json": "{}",
+          "cell_states_json": "[]",
+          "narrative": "ADAR1 blockade will sensitize tumors to PD-1 therapy by allowing endogenous double-stranded RNA to activate antiviral sensing and tumor inflammation.",
+          "participants": [
+            {
+              "entity_id": "HGNC:ADAR",
+              "role": "perturbed_regulator",
+              "properties": {
+                "stage0_node_resolution": "gene_alias_resolver",
+                "original_label": "ADAR1",
+                "canonical_gene_symbol": "ADAR",
+                "aliases": [
+                  "136 kDa double-stranded RNA-binding protein",
+                  "ADAR",
+                  "ADAR1",
+                  "AGS6",
+                  "DRADA",
+                  "DSH",
+                  "DSRAD",
+                  "G1P1",
+                  "IFI-4",
+                  "IFI4",
+                  "K88DSRBP",
+                  "P136",
+                  "adenosine deaminase acting on RNA 1-A",
+                  "double-stranded RNA-specific adenosine deaminase",
+                  "dsRNA adenosine deaminase",
+                  "dsRNA adeonosine deaminase",
+                  "interferon-induced protein 4",
+                  "interferon-inducible protein 4"
+                ],
+                "entrez_id": "103",
+                "ensembl_id": "ENSG00000160710"
+              }
+            },
+            {
+              "entity_id": "PROPOSED-PD-1_THERAPY",
+              "role": "therapy_context",
+              "properties": {
+                "stage0_node_resolution": "proposed_entity",
+                "original_label": "PD-1 therapy",
+                "proposed_entity_label": "PD-1 therapy",
+                "requires_entity_row": true
+              }
+            }
+          ],
+          "full_data": "{\"raw_claim_text\": \"ADAR1 blockade will sensitize tumors to PD-1 therapy by allowing endogenous double-stranded RNA to activate antiviral sensing and tumor inflammation.\", \"grounded_hypothesis_text\": \"ADAR1 blockade will sensitize tumors to PD-1 therapy by allowing endogenous double-stranded RNA to activate antiviral sensing and tumor inflammation.\", \"grounded_hypothesis\": {\"working_hypothesis_text\": \"ADAR1 blockade will sensitize tumors to PD-1 therapy by allowing endogenous double-stranded RNA to activate antiviral sensing and tumor inflammation.\"}, \"scientific_claim_contract\": {\"claim_type\": \"mechanism_hypothesis\"}, \"claim_object_reasoning\": {\"source\": \"hypothesis_grounding_stage0\", \"rewritten_from_raw\": false, \"storage\": \"run_local_trajectory_snapshot\", \"policy\": \"DAG2 claim objects carry the sharpened biological assertion; source/proof gaps stay in List1 and L1 proof-campaign state.\"}}"
+        },
+        "active_mechanism_claims": [],
+        "proposed_child_claims": [
+          {
+            "claim_id": "P_ADAR1_PD1_SENSITIZATION.stage0.adar_blockade_permits_endogenous_dsRNA_sensing",
+            "claim_id_suffix": "stage0.adar_blockade_permits_endogenous_dsRNA_sensing",
+            "claim_text": "ADAR blockade permits endogenous double-stranded RNA to engage antiviral RNA sensing in tumor cells.",
+            "truth_condition": "Upon ADAR perturbation, tumor cells show increased endogenous dsRNA sensing signal relative to control.",
+            "dag2_role": "mechanism_adar_dsRNA_anchor",
+            "relation_name": "permits",
+            "relation_polarity": "positive",
+            "participants": [
+              {
+                "entity_id": "HGNC:ADAR",
+                "role": "perturbed_regulator",
+                "properties": {
+                  "stage0_node_resolution": "gene_alias_resolver",
+                  "original_label": "HGNC:ADAR",
+                  "canonical_gene_symbol": "ADAR",
+                  "aliases": [
+                    "136 kDa double-stranded RNA-binding protein",
+                    "ADAR",
+                    "ADAR1",
+                    "AGS6",
+                    "DRADA",
+                    "DSH",
+                    "DSRAD",
+                    "G1P1",
+                    "HGNC:225",
+                    "IFI-4",
+                    "IFI4",
+                    "K88DSRBP",
+                    "P136",
+                    "adenosine deaminase acting on RNA 1-A",
+                    "double-stranded RNA-specific adenosine deaminase",
+                    "dsRNA adenosine deaminase",
+                    "dsRNA adeonosine deaminase",
+                    "interferon-induced protein 4",
+                    "interferon-inducible protein 4"
+                  ],
+                  "entrez_id": "103",
+                  "ensembl_id": "ENSG00000160710"
+                }
+              },
+              {
+                "entity_id": "PROPOSED-endogenous_dsRNA_sensing",
+                "role": "permitted_process",
+                "properties": {
+                  "stage0_node_resolution": "proposed_entity",
+                  "proposed_entity_label": "endogenous dsRNA sensing",
+                  "requires_entity_row": true
+                }
+              },
+              {
+                "entity_id": "PROPOSED-tumor_cell",
+                "role": "context_cell",
+                "properties": {
+                  "stage0_node_resolution": "proposed_entity",
+                  "proposed_entity_label": "tumor cell",
+                  "requires_entity_row": true
+                }
+              }
+            ],
+            "atomic_scope": "molecular_signal",
+            "primary_readout": "cellular endogenous dsRNA sensing signal",
+            "mutation_type": "mechanism_branch",
+            "source": "hypothesis_grounding_stage0",
+            "materialization_hint": "create_or_reuse_claim",
+            "source_mode": "llm_claim_specific_dag2_decomposition",
+            "why_child_is_needed": "This is the shared upstream anchor implied by the root wording and the supplied literature context."
+          },
+          {
+            "claim_id": "P_ADAR1_PD1_SENSITIZATION.stage0.endogenous_dsRNA_activates_ifih1_activity",
+            "claim_id_suffix": "stage0.endogenous_dsRNA_activates_ifih1_activity",
+            "claim_text": "Endogenous double-stranded RNA increases IFIH1 activity in tumor cells after ADAR blockade.",
+            "truth_condition": "In ADAR-perturbed tumor cells, endogenous dsRNA elevation is accompanied by increased IFIH1-dependent signaling activity.",
+            "dag2_role": "mechanism_ifih1_sensor_step",
+            "relation_name": "regulates_activity",
+            "relation_polarity": "positive",
+            "participants": [
+              {
+                "entity_id": "PROPOSED-endogenous_dsRNA",
+                "role": "upstream_signal",
+                "properties": {
+                  "stage0_node_resolution": "proposed_entity",
+                  "proposed_entity_label": "endogenous double-stranded RNA",
+                  "requires_entity_row": true
+                }
+              },
+              {
+                "entity_id": "HGNC:IFIH1",
+                "role": "target_regulator",
+                "properties": {
+                  "stage0_node_resolution": "gene_alias_resolver",
+                  "original_label": "HGNC:IFIH1",
+                  "canonical_gene_symbol": "IFIH1",
+                  "aliases": [
+                    "AGS7",
+                    "CADM-140 autoantigen",
+                    "DEAD/H (Asp-Glu-Ala-Asp/His) box polypeptide",
+                    "HGNC:18873",
+                    "Hlcd",
+                    "IDDM19",
+                    "IFIH1",
+                    "IMD95",
+                    "MDA-5",
+                    "MDA5",
+                    "RIG-I-like receptor 2",
+                    "RLR-2",
+                    "RNA helicase-DEAD box protein 116",
+                    "SGMRT1",
+                    "clinically amyopathic dermatomyositis autoantigen 140 kDa",
+                    "helicard",
+                    "helicase with 2 CARD domains",
+                    "interferon-induced helicase C domain-containing protein 1",
+                    "melanoma differentiation-associated gene 5",
+                    "melanoma differentiation-associated protein 5"
+                  ],
+                  "entrez_id": "64135",
+                  "ensembl_id": "ENSG00000115267"
+                }
+              },
+              {
+                "entity_id": "PROPOSED-tumor_cell",
+                "role": "context_cell",
+                "properties": {
+                  "stage0_node_resolution": "proposed_entity",
+                  "proposed_entity_label": "tumor cell",
+                  "requires_entity_row": true
+                }
+              }
+            ],
+            "atomic_scope": "molecular_signal",
+            "primary_readout": "IFIH1-dependent signaling activity",
+            "mutation_type": "mechanism_branch",
+            "source": "hypothesis_grounding_stage0",
+            "materialization_hint": "create_or_reuse_claim",
+            "source_mode": "llm_claim_specific_dag2_decomposition",
+            "why_child_is_needed": "This captures the specific MDA5 sensor branch named in the literature."
+          },
+          {
+            "claim_id": "P_ADAR1_PD1_SENSITIZATION.stage0.ifih1_requires_mavs_for_ifnb1_induction",
+            "claim_id_suffix": "stage0.ifih1_requires_mavs_for_ifnb1_induction",
+            "claim_text": "MAVS is required for IFIH1-driven IFNB1 induction in ADAR-blocked tumor cells.",
+            "truth_condition": "Loss of MAVS reduces IFNB1 induction triggered by the IFIH1 branch in ADAR-perturbed tumor cells.",
+            "dag2_role": "mechanism_mavs_ifnb1_step",
+            "relation_name": "requires",
+            "relation_polarity": "positive",
+            "participants": [
+              {
+                "entity_id": "HGNC:MAVS",
+                "role": "required_mediator",
+                "properties": {}
+              },
+              {
+                "entity_id": "HGNC:IFNB1",
+                "role": "downstream_readout",
+                "properties": {}
+              },
+              {
+                "entity_id": "HGNC:IFIH1",
+                "role": "upstream_regulator_context",
+                "properties": {
+                  "stage0_node_resolution": "gene_alias_resolver",
+                  "original_label": "HGNC:IFIH1",
+                  "canonical_gene_symbol": "IFIH1",
+                  "aliases": [
+                    "AGS7",
+                    "CADM-140 autoantigen",
+                    "DEAD/H (Asp-Glu-Ala-Asp/His) box polypeptide",
+                    "HGNC:18873",
+                    "Hlcd",
+                    "IDDM19",
+                    "IFIH1",
+                    "IMD95",
+                    "MDA-5",
+                    "MDA5",
+                    "RIG-I-like receptor 2",
+                    "RLR-2",
+                    "RNA helicase-DEAD box protein 116",
+                    "SGMRT1",
+                    "clinically amyopathic dermatomyositis autoantigen 140 kDa",
+                    "helicard",
+                    "helicase with 2 CARD domains",
+                    "interferon-induced helicase C domain-containing protein 1",
+                    "melanoma differentiation-associated gene 5",
+                    "melanoma differentiation-associated protein 5"
+                  ],
+                  "entrez_id": "64135",
+                  "ensembl_id": "ENSG00000115267"
+                }
+              },
+              {
+                "entity_id": "PROPOSED-tumor_cell",
+                "role": "context_cell",
+                "properties": {
+                  "stage0_node_resolution": "proposed_entity",
+                  "proposed_entity_label": "tumor cell",
+                  "requires_entity_row": true
+                }
+              }
+            ],
+            "atomic_scope": "molecular_signal",
+            "primary_readout": "IFNB1 induction",
+            "mutation_type": "mechanism_branch",
+            "source": "hypothesis_grounding_stage0",
+            "materialization_hint": "create_or_reuse_claim",
+            "source_mode": "llm_claim_specific_dag2_decomposition",
+            "why_child_is_needed": "The supplied context explicitly assigns IFN-beta secretion to the MDA5/MAVS branch."
+          },
+          {
+            "claim_id": "P_ADAR1_PD1_SENSITIZATION.stage0.ifnb1_induction_drives_tumor_inflammation",
+            "claim_id_suffix": "stage0.ifnb1_induction_drives_tumor_inflammation",
+            "claim_text": "IFNB1 induction increases inflammatory state in the tumor microenvironment.",
+            "truth_condition": "Higher IFNB1 output is accompanied by increased tumor inflammatory-state measurements.",
+            "dag2_role": "mechanism_tumor_inflammation_step",
+            "relation_name": "drives_phenotype",
+            "relation_polarity": "positive",
+            "participants": [
+              {
+                "entity_id": "HGNC:IFNB1",
+                "role": "driver",
+                "properties": {}
+              },
+              {
+                "entity_id": "PROPOSED-tumor_inflammation",
+                "role": "phenotype",
+                "properties": {
+                  "stage0_node_resolution": "proposed_entity",
+                  "proposed_entity_label": "tumor inflammation",
+                  "requires_entity_row": true
+                }
+              },
+              {
+                "entity_id": "PROPOSED-tumor_microenvironment",
+                "role": "context_compartment",
+                "properties": {
+                  "stage0_node_resolution": "proposed_entity",
+                  "proposed_entity_label": "tumor microenvironment",
+                  "requires_entity_row": true
+                }
+              }
+            ],
+            "atomic_scope": "cell_state",
+            "primary_readout": "tumor inflammation phenotype",
+            "mutation_type": "mechanism_branch",
+            "source": "hypothesis_grounding_stage0",
+            "materialization_hint": "create_or_reuse_claim",
+            "source_mode": "llm_claim_specific_dag2_decomposition",
+            "why_child_is_needed": "The root claim explicitly depends on tumor inflammation, and the literature context ties this phenotype to the MDA5/MAVS-IFNB1 axis."
+          },
+          {
+            "claim_id": "P_ADAR1_PD1_SENSITIZATION.stage0.endogenous_dsRNA_activates_eif2ak2_growth_inhibition",
+            "claim_id_suffix": "stage0.endogenous_dsRNA_activates_eif2ak2_growth_inhibition",
+            "claim_text": "Endogenous double-stranded RNA increases EIF2AK2 activity and growth-inhibition phenotypes in ADAR-blocked tumor cells.",
+            "truth_condition": "In ADAR-perturbed tumor cells, endogenous dsRNA elevation is accompanied by increased EIF2AK2-dependent growth inhibition.",
+            "dag2_role": "mechanism_pkr_growth_inhibition_step",
+            "relation_name": "perturbation_changes_phenotype",
+            "relation_polarity": "positive",
+            "participants": [
+              {
+                "entity_id": "HGNC:EIF2AK2",
+                "role": "perturbed_mediator",
+                "properties": {}
+              },
+              {
+                "entity_id": "PROPOSED-tumor_cell_growth_inhibition",
+                "role": "phenotype",
+                "properties": {
+                  "stage0_node_resolution": "proposed_entity",
+                  "proposed_entity_label": "tumor cell growth inhibition",
+                  "requires_entity_row": true
+                }
+              },
+              {
+                "entity_id": "PROPOSED-tumor_cell",
+                "role": "context_cell",
+                "properties": {
+                  "stage0_node_resolution": "proposed_entity",
+                  "proposed_entity_label": "tumor cell",
+                  "requires_entity_row": true
+                }
+              }
+            ],
+            "atomic_scope": "cell_state",
+            "primary_readout": "tumor cell growth inhibition",
+            "mutation_type": "mechanism_branch",
+            "source": "hypothesis_grounding_stage0",
+            "materialization_hint": "create_or_reuse_claim",
+            "source_mode": "llm_claim_specific_dag2_decomposition",
+            "why_child_is_needed": "The literature context names PKR as a distinct dsRNA sensor branch contributing growth-inhibition phenotypes after ADAR1 loss."
+          },
+          {
+            "claim_id": "P_ADAR1_PD1_SENSITIZATION.stage0.mda5_mavs_inflammatory_branch_module",
+            "claim_id_suffix": "stage0.mda5_mavs_inflammatory_branch_module",
+            "claim_text": "The IFIH1-MAVS signaling branch mediates inflammatory output downstream of endogenous dsRNA after ADAR blockade.",
+            "truth_condition": "The IFIH1, MAVS, and downstream tumor-inflammation steps jointly support IFNB1-linked inflammatory signaling in the ADAR-blockade context.",
+            "dag2_role": "mechanism_mda5_mavs_inflammatory_branch",
+            "relation_name": "describes_mechanism_step",
+            "relation_polarity": "",
+            "participants": [
+              {
+                "entity_id": "HGNC:IFIH1",
+                "role": "branch_sensor",
+                "properties": {
+                  "stage0_node_resolution": "gene_alias_resolver",
+                  "original_label": "HGNC:IFIH1",
+                  "canonical_gene_symbol": "IFIH1",
+                  "aliases": [
+                    "AGS7",
+                    "CADM-140 autoantigen",
+                    "DEAD/H (Asp-Glu-Ala-Asp/His) box polypeptide",
+                    "HGNC:18873",
+                    "Hlcd",
+                    "IDDM19",
+                    "IFIH1",
+                    "IMD95",
+                    "MDA-5",
+                    "MDA5",
+                    "RIG-I-like receptor 2",
+                    "RLR-2",
+                    "RNA helicase-DEAD box protein 116",
+                    "SGMRT1",
+                    "clinically amyopathic dermatomyositis autoantigen 140 kDa",
+                    "helicard",
+                    "helicase with 2 CARD domains",
+                    "interferon-induced helicase C domain-containing protein 1",
+                    "melanoma differentiation-associated gene 5",
+                    "melanoma differentiation-associated protein 5"
+                  ],
+                  "entrez_id": "64135",
+                  "ensembl_id": "ENSG00000115267"
+                }
+              },
+              {
+                "entity_id": "HGNC:MAVS",
+                "role": "branch_adaptor",
+                "properties": {
+                  "stage0_node_resolution": "gene_alias_resolver",
+                  "original_label": "HGNC:MAVS",
+                  "canonical_gene_symbol": "MAVS",
+                  "aliases": [
+                    "CARD adapter inducing interferon beta",
+                    "CARD adaptor inducing IFN-beta",
+                    "CARDIF",
+                    "IFN-B promoter stimulator 1",
+                    "IPS-1",
+                    "IPS1",
+                    "MAVS",
+                    "VISA",
+                    "interferon beta promoter stimulator protein 1",
+                    "mitochondrial antiviral-signaling protein",
+                    "putative NF-kappa-B-activating protein 031N",
+                    "virus-induced signaling adaptor",
+                    "virus-induced-signaling adapter"
+                  ],
+                  "entrez_id": "57506",
+                  "ensembl_id": "ENSG00000088888"
+                }
+              },
+              {
+                "entity_id": "HGNC:IFNB1",
+                "role": "branch_output",
+                "properties": {}
+              },
+              {
+                "entity_id": "PROPOSED-tumor_inflammation",
+                "role": "branch_phenotype",
+                "properties": {
+                  "stage0_node_resolution": "proposed_entity",
+                  "proposed_entity_label": "tumor inflammation",
+                  "requires_entity_row": true
+                }
+              }
+            ],
+            "atomic_scope": "mechanism_module",
+            "primary_readout": "IFNB1-linked inflammatory signaling",
+            "mutation_type": "mechanism_branch",
+            "source": "hypothesis_grounding_stage0",
+            "materialization_hint": "create_or_reuse_claim",
+            "source_mode": "llm_claim_specific_dag2_decomposition",
+            "why_child_is_needed": "A reified module is needed to represent the internal ALL_OF logic of the MDA5/MAVS inflammatory branch without mixing operators at the parent."
+          },
+          {
+            "claim_id": "P_ADAR1_PD1_SENSITIZATION.stage0.downstream_dsrna_sensor_contribution_module",
+            "claim_id_suffix": "stage0.downstream_dsrna_sensor_contribution_module",
+            "claim_text": "At least one endogenous-dsRNA sensor branch contributes downstream biology relevant to PD-1 sensitization after ADAR blockade.",
+            "truth_condition": "In the ADAR-blockade context, either the IFIH1-MAVS inflammatory branch or the EIF2AK2 growth-inhibition branch is activated and contributes a downstream phenotype linked to sensitization.",
+            "dag2_role": "mechanism_downstream_dsRNA_sensor_contribution",
+            "relation_name": "describes_mechanism_step",
+            "relation_polarity": "",
+            "participants": [
+              {
+                "entity_id": "PROPOSED-endogenous_dsRNA_sensing",
+                "role": "upstream_context",
+                "properties": {
+                  "stage0_node_resolution": "proposed_entity",
+                  "proposed_entity_label": "endogenous dsRNA sensing",
+                  "requires_entity_row": true
+                }
+              },
+              {
+                "entity_id": "HGNC:IFIH1",
+                "role": "alternative_branch_sensor",
+                "properties": {
+                  "stage0_node_resolution": "gene_alias_resolver",
+                  "original_label": "HGNC:IFIH1",
+                  "canonical_gene_symbol": "IFIH1",
+                  "aliases": [
+                    "AGS7",
+                    "CADM-140 autoantigen",
+                    "DEAD/H (Asp-Glu-Ala-Asp/His) box polypeptide",
+                    "HGNC:18873",
+                    "Hlcd",
+                    "IDDM19",
+                    "IFIH1",
+                    "IMD95",
+                    "MDA-5",
+                    "MDA5",
+                    "RIG-I-like receptor 2",
+                    "RLR-2",
+                    "RNA helicase-DEAD box protein 116",
+                    "SGMRT1",
+                    "clinically amyopathic dermatomyositis autoantigen 140 kDa",
+                    "helicard",
+                    "helicase with 2 CARD domains",
+                    "interferon-induced helicase C domain-containing protein 1",
+                    "melanoma differentiation-associated gene 5",
+                    "melanoma differentiation-associated protein 5"
+                  ],
+                  "entrez_id": "64135",
+                  "ensembl_id": "ENSG00000115267"
+                }
+              },
+              {
+                "entity_id": "HGNC:EIF2AK2",
+                "role": "alternative_branch_sensor",
+                "properties": {
+                  "stage0_node_resolution": "gene_alias_resolver",
+                  "original_label": "HGNC:EIF2AK2",
+                  "canonical_gene_symbol": "EIF2AK2",
+                  "aliases": [
+                    "EIF2AK2",
+                    "HGNC:9437",
+                    "P1/eIF-2A protein kinase",
+                    "PKR",
+                    "PPP1R83",
+                    "PRKR",
+                    "double stranded RNA activated protein kinase",
+                    "eIF-2A protein kinase 2",
+                    "interferon-induced, double-stranded RNA-activated protein kinase",
+                    "interferon-inducible elF2alpha kinase",
+                    "p68 kinase",
+                    "protein kinase R",
+                    "protein kinase RNA-regulated",
+                    "protein kinase, interferon-inducible double stranded RNA dependent",
+                    "protein phosphatase 1, regulatory subunit 83",
+                    "tyrosine-protein kinase EIF2AK2"
+                  ],
+                  "entrez_id": "5610",
+                  "ensembl_id": "ENSG00000055332"
+                }
+              }
+            ],
+            "atomic_scope": "mechanism_module",
+            "primary_readout": "activation of at least one downstream dsRNA sensor branch",
+            "mutation_type": "mechanism_branch",
+            "source": "hypothesis_grounding_stage0",
+            "materialization_hint": "create_or_reuse_claim",
+            "source_mode": "llm_claim_specific_dag2_decomposition",
+            "why_child_is_needed": "This reified module captures the alternative downstream branch logic implied by the context while keeping a single operator on the parent claim."
+          }
+        ],
+        "proposed_decomposition_edges": [
+          {
+            "edge_id": "stage0_edge:P_ADAR1_PD1_SENSITIZATION.stage0.endogenous_dsRNA_activates_ifih1_activity->P_ADAR1_PD1_SENSITIZATION.stage0.mda5_mavs_inflammatory_branch_module:ALL_OF",
+            "source_claim_id": "P_ADAR1_PD1_SENSITIZATION.stage0.endogenous_dsRNA_activates_ifih1_activity",
+            "target_claim_id": "P_ADAR1_PD1_SENSITIZATION.stage0.mda5_mavs_inflammatory_branch_module",
+            "support_operator": "ALL_OF",
+            "support_operator_params": {},
+            "source_role": "required_step",
+            "target_role": "mechanism_mda5_mavs_inflammatory_branch",
+            "group_id": "mda5_mavs_branch",
+            "edge_status": "proposed",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_decomposition_edge",
+              "dag2_role": "mechanism_ifih1_sensor_step",
+              "operator_policy": "No mixed active support operators at one target. Mixed logic must be reified through module claims, e.g. M_BC = ANY_OF(B, C) and parent = ALL_OF(A, M_BC). Facts required for a module should use ALL_OF edges to that module."
+            }
+          },
+          {
+            "edge_id": "stage0_edge:P_ADAR1_PD1_SENSITIZATION.stage0.ifih1_requires_mavs_for_ifnb1_induction->P_ADAR1_PD1_SENSITIZATION.stage0.mda5_mavs_inflammatory_branch_module:ALL_OF",
+            "source_claim_id": "P_ADAR1_PD1_SENSITIZATION.stage0.ifih1_requires_mavs_for_ifnb1_induction",
+            "target_claim_id": "P_ADAR1_PD1_SENSITIZATION.stage0.mda5_mavs_inflammatory_branch_module",
+            "support_operator": "ALL_OF",
+            "support_operator_params": {},
+            "source_role": "required_step",
+            "target_role": "mechanism_mda5_mavs_inflammatory_branch",
+            "group_id": "mda5_mavs_branch",
+            "edge_status": "proposed",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_decomposition_edge",
+              "dag2_role": "mechanism_mavs_ifnb1_step",
+              "operator_policy": "No mixed active support operators at one target. Mixed logic must be reified through module claims, e.g. M_BC = ANY_OF(B, C) and parent = ALL_OF(A, M_BC). Facts required for a module should use ALL_OF edges to that module."
+            }
+          },
+          {
+            "edge_id": "stage0_edge:P_ADAR1_PD1_SENSITIZATION.stage0.ifnb1_induction_drives_tumor_inflammation->P_ADAR1_PD1_SENSITIZATION.stage0.mda5_mavs_inflammatory_branch_module:ALL_OF",
+            "source_claim_id": "P_ADAR1_PD1_SENSITIZATION.stage0.ifnb1_induction_drives_tumor_inflammation",
+            "target_claim_id": "P_ADAR1_PD1_SENSITIZATION.stage0.mda5_mavs_inflammatory_branch_module",
+            "support_operator": "ALL_OF",
+            "support_operator_params": {},
+            "source_role": "required_step",
+            "target_role": "mechanism_mda5_mavs_inflammatory_branch",
+            "group_id": "mda5_mavs_branch",
+            "edge_status": "proposed",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_decomposition_edge",
+              "dag2_role": "mechanism_tumor_inflammation_step",
+              "operator_policy": "No mixed active support operators at one target. Mixed logic must be reified through module claims, e.g. M_BC = ANY_OF(B, C) and parent = ALL_OF(A, M_BC). Facts required for a module should use ALL_OF edges to that module."
+            }
+          },
+          {
+            "edge_id": "stage0_edge:P_ADAR1_PD1_SENSITIZATION.stage0.mda5_mavs_inflammatory_branch_module->P_ADAR1_PD1_SENSITIZATION.stage0.downstream_dsrna_sensor_contribution_module:ANY_OF",
+            "source_claim_id": "P_ADAR1_PD1_SENSITIZATION.stage0.mda5_mavs_inflammatory_branch_module",
+            "target_claim_id": "P_ADAR1_PD1_SENSITIZATION.stage0.downstream_dsrna_sensor_contribution_module",
+            "support_operator": "ANY_OF",
+            "support_operator_params": {},
+            "source_role": "sufficient_module",
+            "target_role": "mechanism_downstream_dsRNA_sensor_contribution",
+            "group_id": "downstream_sensor_alternatives",
+            "edge_status": "proposed",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_decomposition_edge",
+              "dag2_role": "mechanism_mda5_mavs_inflammatory_branch",
+              "operator_policy": "No mixed active support operators at one target. Mixed logic must be reified through module claims, e.g. M_BC = ANY_OF(B, C) and parent = ALL_OF(A, M_BC). Facts required for a module should use ALL_OF edges to that module."
+            }
+          },
+          {
+            "edge_id": "stage0_edge:P_ADAR1_PD1_SENSITIZATION.stage0.endogenous_dsRNA_activates_eif2ak2_growth_inhibition->P_ADAR1_PD1_SENSITIZATION.stage0.downstream_dsrna_sensor_contribution_module:ANY_OF",
+            "source_claim_id": "P_ADAR1_PD1_SENSITIZATION.stage0.endogenous_dsRNA_activates_eif2ak2_growth_inhibition",
+            "target_claim_id": "P_ADAR1_PD1_SENSITIZATION.stage0.downstream_dsrna_sensor_contribution_module",
+            "support_operator": "ANY_OF",
+            "support_operator_params": {},
+            "source_role": "sufficient_module",
+            "target_role": "mechanism_downstream_dsRNA_sensor_contribution",
+            "group_id": "downstream_sensor_alternatives",
+            "edge_status": "proposed",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_decomposition_edge",
+              "dag2_role": "mechanism_pkr_growth_inhibition_step",
+              "operator_policy": "No mixed active support operators at one target. Mixed logic must be reified through module claims, e.g. M_BC = ANY_OF(B, C) and parent = ALL_OF(A, M_BC). Facts required for a module should use ALL_OF edges to that module."
+            }
+          },
+          {
+            "edge_id": "stage0_edge:P_ADAR1_PD1_SENSITIZATION.stage0.adar_blockade_permits_endogenous_dsRNA_sensing->P_ADAR1_PD1_SENSITIZATION:ALL_OF",
+            "source_claim_id": "P_ADAR1_PD1_SENSITIZATION.stage0.adar_blockade_permits_endogenous_dsRNA_sensing",
+            "target_claim_id": "P_ADAR1_PD1_SENSITIZATION",
+            "support_operator": "ALL_OF",
+            "support_operator_params": {},
+            "source_role": "shared_anchor",
+            "target_role": "parent_claim",
+            "group_id": "adar_pd1_sensitization",
+            "edge_status": "proposed",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_decomposition_edge",
+              "dag2_role": "mechanism_adar_dsRNA_anchor",
+              "operator_policy": "No mixed active support operators at one target. Mixed logic must be reified through module claims, e.g. M_BC = ANY_OF(B, C) and parent = ALL_OF(A, M_BC). Facts required for a module should use ALL_OF edges to that module."
+            }
+          },
+          {
+            "edge_id": "stage0_edge:P_ADAR1_PD1_SENSITIZATION.stage0.downstream_dsrna_sensor_contribution_module->P_ADAR1_PD1_SENSITIZATION:ALL_OF",
+            "source_claim_id": "P_ADAR1_PD1_SENSITIZATION.stage0.downstream_dsrna_sensor_contribution_module",
+            "target_claim_id": "P_ADAR1_PD1_SENSITIZATION",
+            "support_operator": "ALL_OF",
+            "support_operator_params": {},
+            "source_role": "required_step",
+            "target_role": "parent_claim",
+            "group_id": "adar_pd1_sensitization",
+            "edge_status": "proposed",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_decomposition_edge",
+              "dag2_role": "mechanism_downstream_dsRNA_sensor_contribution",
+              "operator_policy": "No mixed active support operators at one target. Mixed logic must be reified through module claims, e.g. M_BC = ANY_OF(B, C) and parent = ALL_OF(A, M_BC). Facts required for a module should use ALL_OF edges to that module."
+            }
+          }
+        ],
+        "proposed_semantic_relations": [
+          {
+            "relation_id": "stage0_semantic:P_ADAR1_PD1_SENSITIZATION.stage0.adar_blockade_permits_endogenous_dsRNA_sensing:enables:P_ADAR1_PD1_SENSITIZATION.stage0.endogenous_dsRNA_activates_ifih1_activity",
+            "source_claim_id": "P_ADAR1_PD1_SENSITIZATION.stage0.adar_blockade_permits_endogenous_dsRNA_sensing",
+            "target_claim_id": "P_ADAR1_PD1_SENSITIZATION.stage0.endogenous_dsRNA_activates_ifih1_activity",
+            "relation_kind": "enables",
+            "relation_type": "enables",
+            "relation_strength": null,
+            "relation_status": "proposed",
+            "notes": "Shared upstream condition enables the IFIH1 sensor branch.",
+            "created_at": "",
+            "retired_at": "",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_relations_semantic_only",
+              "proof_rollup": false
+            }
+          },
+          {
+            "relation_id": "stage0_semantic:P_ADAR1_PD1_SENSITIZATION.stage0.endogenous_dsRNA_activates_ifih1_activity:enables:P_ADAR1_PD1_SENSITIZATION.stage0.ifih1_requires_mavs_for_ifnb1_induction",
+            "source_claim_id": "P_ADAR1_PD1_SENSITIZATION.stage0.endogenous_dsRNA_activates_ifih1_activity",
+            "target_claim_id": "P_ADAR1_PD1_SENSITIZATION.stage0.ifih1_requires_mavs_for_ifnb1_induction",
+            "relation_kind": "enables",
+            "relation_type": "enables",
+            "relation_strength": null,
+            "relation_status": "proposed",
+            "notes": "IFIH1 signaling feeds into the MAVS-dependent IFNB1 output step.",
+            "created_at": "",
+            "retired_at": "",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_relations_semantic_only",
+              "proof_rollup": false
+            }
+          },
+          {
+            "relation_id": "stage0_semantic:P_ADAR1_PD1_SENSITIZATION.stage0.ifih1_requires_mavs_for_ifnb1_induction:enables:P_ADAR1_PD1_SENSITIZATION.stage0.ifnb1_induction_drives_tumor_inflammation",
+            "source_claim_id": "P_ADAR1_PD1_SENSITIZATION.stage0.ifih1_requires_mavs_for_ifnb1_induction",
+            "target_claim_id": "P_ADAR1_PD1_SENSITIZATION.stage0.ifnb1_induction_drives_tumor_inflammation",
+            "relation_kind": "enables",
+            "relation_type": "enables",
+            "relation_strength": null,
+            "relation_status": "proposed",
+            "notes": "IFNB1 induction is positioned upstream of the tumor inflammation phenotype.",
+            "created_at": "",
+            "retired_at": "",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_relations_semantic_only",
+              "proof_rollup": false
+            }
+          },
+          {
+            "relation_id": "stage0_semantic:P_ADAR1_PD1_SENSITIZATION.stage0.endogenous_dsRNA_activates_eif2ak2_growth_inhibition:parallel_to:P_ADAR1_PD1_SENSITIZATION.stage0.mda5_mavs_inflammatory_branch_module",
+            "source_claim_id": "P_ADAR1_PD1_SENSITIZATION.stage0.endogenous_dsRNA_activates_eif2ak2_growth_inhibition",
+            "target_claim_id": "P_ADAR1_PD1_SENSITIZATION.stage0.mda5_mavs_inflammatory_branch_module",
+            "relation_kind": "parallel_to",
+            "relation_type": "parallel_to",
+            "relation_strength": null,
+            "relation_status": "proposed",
+            "notes": "PKR and MDA5/MAVS are distinct downstream dsRNA-sensor branches named in the literature context.",
+            "created_at": "",
+            "retired_at": "",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_relations_semantic_only",
+              "proof_rollup": false
+            }
+          },
+          {
+            "relation_id": "stage0_semantic:P_ADAR1_PD1_SENSITIZATION.stage0.adar_blockade_permits_endogenous_dsRNA_sensing:enables:P_ADAR1_PD1_SENSITIZATION.stage0.endogenous_dsRNA_activates_eif2ak2_growth_inhibition",
+            "source_claim_id": "P_ADAR1_PD1_SENSITIZATION.stage0.adar_blockade_permits_endogenous_dsRNA_sensing",
+            "target_claim_id": "P_ADAR1_PD1_SENSITIZATION.stage0.endogenous_dsRNA_activates_eif2ak2_growth_inhibition",
+            "relation_kind": "enables",
+            "relation_type": "enables",
+            "relation_strength": null,
+            "relation_status": "proposed",
+            "notes": "The shared ADAR-loss/endogenous-dsRNA context also enables the PKR branch.",
+            "created_at": "",
+            "retired_at": "",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_relations_semantic_only",
+              "proof_rollup": false
+            }
+          },
+          {
+            "relation_id": "stage0_semantic:P_ADAR1_PD1_SENSITIZATION.stage0.ifnb1_induction_drives_tumor_inflammation:candidate_mechanism_link:P_ADAR1_PD1_SENSITIZATION.stage0.endogenous_dsRNA_activates_eif2ak2_growth_inhibition",
+            "source_claim_id": "P_ADAR1_PD1_SENSITIZATION.stage0.ifnb1_induction_drives_tumor_inflammation",
+            "target_claim_id": "P_ADAR1_PD1_SENSITIZATION.stage0.endogenous_dsRNA_activates_eif2ak2_growth_inhibition",
+            "relation_kind": "candidate_mechanism_link",
+            "relation_type": "candidate_mechanism_link",
+            "relation_strength": null,
+            "relation_status": "proposed",
+            "notes": "Stage0 inferred these biological claims as related parts of the grounded mechanism; reviewer/L1 may later split, reorder, strengthen, or retire the semantic link.",
+            "created_at": "",
+            "retired_at": "",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_relations_semantic_only",
+              "proof_rollup": false
+            }
+          },
+          {
+            "relation_id": "stage0_semantic:P_ADAR1_PD1_SENSITIZATION.stage0.mda5_mavs_inflammatory_branch_module:candidate_mechanism_link:P_ADAR1_PD1_SENSITIZATION.stage0.downstream_dsrna_sensor_contribution_module",
+            "source_claim_id": "P_ADAR1_PD1_SENSITIZATION.stage0.mda5_mavs_inflammatory_branch_module",
+            "target_claim_id": "P_ADAR1_PD1_SENSITIZATION.stage0.downstream_dsrna_sensor_contribution_module",
+            "relation_kind": "candidate_mechanism_link",
+            "relation_type": "candidate_mechanism_link",
+            "relation_strength": null,
+            "relation_status": "proposed",
+            "notes": "Stage0 inferred these biological claims as related parts of the grounded mechanism; reviewer/L1 may later split, reorder, strengthen, or retire the semantic link.",
+            "created_at": "",
+            "retired_at": "",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_relations_semantic_only",
+              "proof_rollup": false
+            }
+          }
+        ],
+        "proposed_context_bridges": [
+          {
+            "context_bridge_id": "P_ADAR1_PD1_SENSITIZATION.stage0.assumption.target_engagement",
+            "label": "target_engagement_assay_prerequisite",
+            "target_claim_id": "P_ADAR1_PD1_SENSITIZATION",
+            "target_role": "parent_claim",
+            "relation_kind": "assay_prerequisite",
+            "dag2_role": "assay_prerequisite_target_engagement",
+            "claim_text": "ADAR perturbation, degradation, inhibition, or rescue must change ADAR activity in the expected direction before downstream mechanism or therapy-response endpoints are interpreted causally.",
+            "truth_condition": "Each causal evidence test using ADAR loss, inhibition, degradation, or rescue reports target engagement/activity QC appropriate to that assay.",
+            "list1_objective_ids": [
+              "loss_of_function",
+              "gain_of_function",
+              "mechanism_readout"
+            ],
+            "proof_rollup": false,
+            "materialization_hint": "context_bridge_not_claim_decomposition_edge",
+            "source": "hypothesis_grounding_stage0"
+          },
+          {
+            "context_bridge_id": "P_ADAR1_PD1_SENSITIZATION.stage0.context.human_response_endpoint",
+            "label": "human_response_endpoint",
+            "target_claim_id": "P_ADAR1_PD1_SENSITIZATION",
+            "target_role": "parent_claim",
+            "corroborates_role": "mechanism_step_immune_visibility_to_checkpoint_response",
+            "relation_kind": "corroborates",
+            "dag2_role": "endpoint_narrowing_human_response",
+            "claim_text": "ADAR state or the hypothesized upstream immune-visibility state associates with PD-1/PD-L1 resistance or checkpoint-therapy response in defined human contexts.",
+            "truth_condition": "Human anti-PD-1/PD-L1 cohorts show a context-specified state to response/survival association, with confounding and compartment caveats stated.",
+            "list1_objective_ids": [
+              "human_clinical_response"
+            ],
+            "proof_campaign_objective_suffixes": [
+              "human_anti_pd1_outcome"
+            ],
+            "proof_rollup": false,
+            "materialization_hint": "context_bridge_not_claim_decomposition_edge",
+            "source": "hypothesis_grounding_stage0"
+          }
+        ],
+        "proposed_child_claim_count": 7,
+        "proposed_context_bridge_count": 2,
+        "dag2_generation": {
+          "mode": "llm_claim_specific_dag2_decomposition",
+          "sanity": {
+            "status": "passed",
+            "warnings": [],
+            "template_term_guard": {
+              "terms_absent_from_root_but_present_in_children": [],
+              "policy": "Stage0 must not inject a target-specific mechanism unless the root hypothesis, grounded hypothesis, KG, literature, or reviewer state provided that mechanism."
+            },
+            "participant_guard": {
+              "children_missing_participants": [],
+              "policy": "Every DAG2 child claim must name the biological entities, cell types, compartments, or readout substrates whose state or interaction makes the claim true or false."
+            }
+          }
+        },
+        "structure_summary": "Root plus 7 proposed biological child claims: atomic causal assertions inferred from the grounded hypothesis rather than a fixed target template. Target engagement is stored as an assay prerequisite/test assumption, not as a mechanism claim. Human response/outcome evidence is kept as a non-load-bearing context bridge and List1/proof-campaign objective, not as a DAG2 child branch. Alternative mechanisms are reified as module claims before ANY_OF or INDEPENDENT_CAUSES edges are used; causal order is encoded with candidate mechanism relations.",
+        "materialization_status": "proposal_only_until_trajectory_initialization_materializes_or_reuses_KG_claims",
+        "allowed_biological_mutations": [
+          "context_narrowing",
+          "endpoint_narrowing",
+          "causal_mode_split",
+          "mechanism_branch"
+        ],
+        "forbidden_as_dag2_children": [
+          "source_discovery_route",
+          "tool_repair_route",
+          "evidence_gap_route",
+          "clinical_branch_without_context_or_endpoint_change",
+          "human_response_endpoint_as_load_bearing_dag2_child"
+        ],
+        "proposal_policy": "Dag2 stores biological mechanism knowledge. Evidence/source gaps belong in List1 or planning requests unless they change the biological claim object. Clinical response context can corroborate targetability, but it must not be materialized as a required biological child unless the biological claim itself is explicitly narrowed to a human endpoint association."
+      }
+    },
+    "rbms1_dsrna_shielding": {
+      "input_hypothesis": "RBMS1 binds endogenous dsRNA hairpins and shields them from MDA5 and PKR recognition, preventing activation of antiviral interferon signaling and thereby reducing cell-intrinsic immune activation.",
+      "claim_id": "P_RBMS1_DSRNA_SHIELDING",
+      "candidate_gene": "RBMS1",
+      "literature_map": {
+        "status": "provided_bounded_step0_context",
+        "n_articles_summarized": 1,
+        "articles": [
+          {
+            "title": "Lab hypothesis context: RBMS1 endogenous dsRNA shielding",
+            "source_path": "internal_lab_context",
+            "summary": "The proposed mechanism separates RBMS1 binding to endogenous dsRNA hairpins from sensor access by MDA5 and PKR, downstream antiviral IFN/PKR signaling, and cell-intrinsic immune activation. MDA5 and PKR are distinct sensor branches downstream of the same shielded dsRNA substrate.",
+            "key_findings": "The proposed mechanism separates RBMS1 binding to endogenous dsRNA hairpins from sensor access by MDA5 and PKR, downstream antiviral IFN/PKR signaling, and cell-intrinsic immune activation. MDA5 and PKR are distinct sensor branches downstream of the same shielded dsRNA substrate."
+          }
+        ]
+      },
+      "kg_map": {
+        "status": "provided_bounded_step0_context",
+        "known_entities": [
+          {
+            "entity_id": "HGNC:RBMS1",
+            "role": "known_gene",
+            "canonical_gene_symbol": "RBMS1",
+            "aliases": [
+              "RBMS1"
+            ]
+          },
+          {
+            "entity_id": "HGNC:IFIH1",
+            "role": "known_gene",
+            "canonical_gene_symbol": "IFIH1",
+            "aliases": [
+              "IFIH1",
+              "MDA5",
+              "MDA-5"
+            ]
+          },
+          {
+            "entity_id": "HGNC:EIF2AK2",
+            "role": "known_gene",
+            "canonical_gene_symbol": "EIF2AK2",
+            "aliases": [
+              "EIF2AK2",
+              "PKR"
+            ]
+          }
+        ],
+        "related_claims": []
+      },
+      "dag2": {
+        "root_claim_id": "P_RBMS1_DSRNA_SHIELDING",
+        "root_claim_text": "RBMS1 binds endogenous dsRNA hairpins and shields them from MDA5 and PKR recognition, preventing activation of antiviral interferon signaling and thereby reducing cell-intrinsic immune activation.",
+        "root_claim_object": {
+          "claim_id": "P_RBMS1_DSRNA_SHIELDING",
+          "claim_text": "RBMS1 binds endogenous dsRNA hairpins and shields them from MDA5 and PKR recognition, preventing activation of antiviral interferon signaling and thereby reducing cell-intrinsic immune activation.",
+          "evidence_status": "unchecked",
+          "prior_art_status": "new",
+          "review_status": "draft",
+          "relation_name": "drives_phenotype",
+          "relation_polarity": "positive",
+          "context_set_json": "{}",
+          "cell_states_json": "[]",
+          "narrative": "RBMS1 binds endogenous dsRNA hairpins and shields them from MDA5 and PKR recognition, preventing activation of antiviral interferon signaling and thereby reducing cell-intrinsic immune activation.",
+          "participants": [
+            {
+              "entity_id": "HGNC:RBMS1",
+              "role": "rna_binding_protein",
+              "properties": {
+                "stage0_node_resolution": "gene_alias_resolver",
+                "original_label": "RBMS1",
+                "canonical_gene_symbol": "RBMS1",
+                "aliases": [
+                  "C2orf12",
+                  "HCC-4",
+                  "HGNC:9907",
+                  "MSSP",
+                  "MSSP-1",
+                  "MSSP-2",
+                  "MSSP-3",
+                  "RBMS1",
+                  "RNA-binding motif, single-stranded-interacting protein 1",
+                  "SCR2",
+                  "YC1",
+                  "c-myc gene single strand binding protein 2",
+                  "cervical cancer oncogene 4",
+                  "single-stranded DNA-binding protein MSSP-1",
+                  "suppressor of CDC2 with RNA-binding motif 2",
+                  "suppressor of cdc 2 (cdc13) with RNA binding motif 2"
+                ],
+                "entrez_id": "5937",
+                "ensembl_id": "ENSG00000153250"
+              }
+            },
+            {
+              "entity_id": "HGNC:IFIH1",
+              "role": "sensor",
+              "properties": {
+                "stage0_node_resolution": "gene_alias_resolver",
+                "original_label": "MDA5",
+                "canonical_gene_symbol": "IFIH1",
+                "aliases": [
+                  "AGS7",
+                  "CADM-140 autoantigen",
+                  "DEAD/H (Asp-Glu-Ala-Asp/His) box polypeptide",
+                  "Hlcd",
+                  "IDDM19",
+                  "IFIH1",
+                  "IMD95",
+                  "MDA-5",
+                  "MDA5",
+                  "RIG-I-like receptor 2",
+                  "RLR-2",
+                  "RNA helicase-DEAD box protein 116",
+                  "SGMRT1",
+                  "clinically amyopathic dermatomyositis autoantigen 140 kDa",
+                  "helicard",
+                  "helicase with 2 CARD domains",
+                  "interferon-induced helicase C domain-containing protein 1",
+                  "melanoma differentiation-associated gene 5",
+                  "melanoma differentiation-associated protein 5",
+                  "murabutide down-regulated protein"
+                ],
+                "entrez_id": "64135",
+                "ensembl_id": "ENSG00000115267"
+              }
+            },
+            {
+              "entity_id": "HGNC:EIF2AK2",
+              "role": "sensor_kinase",
+              "properties": {
+                "stage0_node_resolution": "gene_alias_resolver",
+                "original_label": "PKR",
+                "canonical_gene_symbol": "EIF2AK2",
+                "aliases": [
+                  "EIF2AK2",
+                  "P1/eIF-2A protein kinase",
+                  "PKR",
+                  "PPP1R83",
+                  "PRKR",
+                  "double stranded RNA activated protein kinase",
+                  "eIF-2A protein kinase 2",
+                  "interferon-induced, double-stranded RNA-activated protein kinase",
+                  "interferon-inducible elF2alpha kinase",
+                  "p68 kinase",
+                  "protein kinase R",
+                  "protein kinase RNA-regulated",
+                  "protein kinase, interferon-inducible double stranded RNA dependent",
+                  "protein phosphatase 1, regulatory subunit 83",
+                  "tyrosine-protein kinase EIF2AK2"
+                ],
+                "entrez_id": "5610",
+                "ensembl_id": "ENSG00000055332"
+              }
+            }
+          ],
+          "full_data": "{\"raw_claim_text\": \"RBMS1 binds endogenous dsRNA hairpins and shields them from MDA5 and PKR recognition, preventing activation of antiviral interferon signaling and thereby reducing cell-intrinsic immune activation.\", \"grounded_hypothesis_text\": \"RBMS1 binds endogenous dsRNA hairpins and shields them from MDA5 and PKR recognition, preventing activation of antiviral interferon signaling and thereby reducing cell-intrinsic immune activation.\", \"grounded_hypothesis\": {\"working_hypothesis_text\": \"RBMS1 binds endogenous dsRNA hairpins and shields them from MDA5 and PKR recognition, preventing activation of antiviral interferon signaling and thereby reducing cell-intrinsic immune activation.\"}, \"scientific_claim_contract\": {\"claim_type\": \"mechanism_hypothesis\"}, \"claim_object_reasoning\": {\"source\": \"hypothesis_grounding_stage0\", \"rewritten_from_raw\": false, \"storage\": \"run_local_trajectory_snapshot\", \"policy\": \"DAG2 claim objects carry the sharpened biological assertion; source/proof gaps stay in List1 and L1 proof-campaign state.\"}}"
+        },
+        "active_mechanism_claims": [],
+        "proposed_child_claims": [
+          {
+            "claim_id": "P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_binds_endogenous_dsrna_hairpins",
+            "claim_id_suffix": "stage0.rbms1_binds_endogenous_dsrna_hairpins",
+            "claim_text": "RBMS1 binds endogenous dsRNA hairpin structures.",
+            "truth_condition": "RBMS1 is physically associated with endogenous dsRNA hairpin RNA species in cells.",
+            "dag2_role": "mechanism_rbms1_binds_endogenous_dsrna_hairpins",
+            "relation_name": "binds_rna",
+            "relation_polarity": "",
+            "participants": [
+              {
+                "entity_id": "HGNC:RBMS1",
+                "role": "binder",
+                "properties": {}
+              },
+              {
+                "entity_id": "PROPOSED-ENDOGENOUS_DSRNA_HAIRPINS",
+                "role": "rna_target",
+                "properties": {
+                  "stage0_node_resolution": "proposed_entity",
+                  "proposed_entity_label": "endogenous dsRNA hairpins",
+                  "requires_entity_row": true
+                }
+              }
+            ],
+            "atomic_scope": "molecular_signal",
+            "primary_readout": "RBMS1-associated endogenous dsRNA hairpin binding",
+            "mutation_type": "mechanism_branch",
+            "source": "hypothesis_grounding_stage0",
+            "materialization_hint": "create_or_reuse_claim",
+            "source_mode": "llm_claim_specific_dag2_decomposition",
+            "why_child_is_needed": "This is the shared upstream substrate-engagement mechanism asserted by the root and anchors both sensor branches without restating downstream outcomes."
+          },
+          {
+            "claim_id": "P_RBMS1_DSRNA_SHIELDING.stage0.mda5_or_pkr_sensor_exclusion_module",
+            "claim_id_suffix": "stage0.mda5_or_pkr_sensor_exclusion_module",
+            "claim_text": "RBMS1 shielding of endogenous dsRNA excludes access by antiviral dsRNA sensors through distinct MDA5 or PKR branches.",
+            "truth_condition": "At least one named dsRNA sensor branch shows reduced access to the shared endogenous dsRNA hairpin substrate in the presence of RBMS1.",
+            "dag2_role": "mechanism_mda5_or_pkr_sensor_exclusion_module",
+            "relation_name": "describes_mechanism_step",
+            "relation_polarity": "",
+            "participants": [
+              {
+                "entity_id": "HGNC:RBMS1",
+                "role": "upstream_regulator",
+                "properties": {
+                  "stage0_node_resolution": "gene_alias_resolver",
+                  "original_label": "HGNC:RBMS1",
+                  "canonical_gene_symbol": "RBMS1",
+                  "aliases": [
+                    "C2orf12",
+                    "HCC-4",
+                    "HGNC:9907",
+                    "MSSP",
+                    "MSSP-1",
+                    "MSSP-2",
+                    "MSSP-3",
+                    "RBMS1",
+                    "RNA-binding motif, single-stranded-interacting protein 1",
+                    "SCR2",
+                    "YC1",
+                    "c-myc gene single strand binding protein 2",
+                    "cervical cancer oncogene 4",
+                    "single-stranded DNA-binding protein MSSP-1",
+                    "suppressor of CDC2 with RNA-binding motif 2",
+                    "suppressor of cdc 2 (cdc13) with RNA binding motif 2"
+                  ],
+                  "entrez_id": "5937",
+                  "ensembl_id": "ENSG00000153250"
+                }
+              },
+              {
+                "entity_id": "PROPOSED-ENDOGENOUS_DSRNA_HAIRPINS",
+                "role": "shared_substrate",
+                "properties": {
+                  "stage0_node_resolution": "proposed_entity",
+                  "proposed_entity_label": "endogenous dsRNA hairpins",
+                  "requires_entity_row": true
+                }
+              }
+            ],
+            "atomic_scope": "mechanism_module",
+            "primary_readout": "sensor access to endogenous dsRNA hairpins",
+            "mutation_type": "mechanism_branch",
+            "source": "hypothesis_grounding_stage0",
+            "materialization_hint": "create_or_reuse_claim",
+            "source_mode": "llm_claim_specific_dag2_decomposition",
+            "why_child_is_needed": "A module is required to represent the context-supported branched logic in which MDA5 and PKR are distinct downstream sensor arms."
+          },
+          {
+            "claim_id": "P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_limits_mda5_access_to_endogenous_dsrna",
+            "claim_id_suffix": "stage0.rbms1_limits_mda5_access_to_endogenous_dsrna",
+            "claim_text": "RBMS1 reduces MDA5 access to endogenous dsRNA hairpins.",
+            "truth_condition": "Increasing RBMS1 lowers MDA5 association with endogenous dsRNA hairpin RNA species, or RBMS1 loss increases that association.",
+            "dag2_role": "mechanism_rbms1_limits_mda5_access_to_endogenous_dsrna",
+            "relation_name": "modifies_effect_of",
+            "relation_polarity": "negative",
+            "participants": [
+              {
+                "entity_id": "HGNC:RBMS1",
+                "role": "modifier",
+                "properties": {}
+              },
+              {
+                "entity_id": "HGNC:IFIH1",
+                "role": "affected_sensor",
+                "properties": {
+                  "stage0_node_resolution": "gene_alias_resolver",
+                  "original_label": "HGNC:IFIH1",
+                  "canonical_gene_symbol": "IFIH1",
+                  "aliases": [
+                    "AGS7",
+                    "CADM-140 autoantigen",
+                    "DEAD/H (Asp-Glu-Ala-Asp/His) box polypeptide",
+                    "HGNC:18873",
+                    "Hlcd",
+                    "IDDM19",
+                    "IFIH1",
+                    "IMD95",
+                    "MDA-5",
+                    "MDA5",
+                    "RIG-I-like receptor 2",
+                    "RLR-2",
+                    "RNA helicase-DEAD box protein 116",
+                    "SGMRT1",
+                    "clinically amyopathic dermatomyositis autoantigen 140 kDa",
+                    "helicard",
+                    "helicase with 2 CARD domains",
+                    "interferon-induced helicase C domain-containing protein 1",
+                    "melanoma differentiation-associated gene 5",
+                    "melanoma differentiation-associated protein 5"
+                  ],
+                  "entrez_id": "64135",
+                  "ensembl_id": "ENSG00000115267"
+                }
+              },
+              {
+                "entity_id": "PROPOSED-ENDOGENOUS_DSRNA_HAIRPINS",
+                "role": "sensor_ligand",
+                "properties": {
+                  "stage0_node_resolution": "proposed_entity",
+                  "proposed_entity_label": "endogenous dsRNA hairpins",
+                  "requires_entity_row": true
+                }
+              }
+            ],
+            "atomic_scope": "molecular_signal",
+            "primary_readout": "MDA5 association with endogenous dsRNA hairpins",
+            "mutation_type": "mechanism_branch",
+            "source": "hypothesis_grounding_stage0",
+            "materialization_hint": "create_or_reuse_claim",
+            "source_mode": "llm_claim_specific_dag2_decomposition",
+            "why_child_is_needed": "This captures one distinct sensor branch named in the root and context, without conflating sensor access with downstream interferon output."
+          },
+          {
+            "claim_id": "P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_limits_pkr_access_to_endogenous_dsrna",
+            "claim_id_suffix": "stage0.rbms1_limits_pkr_access_to_endogenous_dsrna",
+            "claim_text": "RBMS1 reduces PKR access to endogenous dsRNA hairpins.",
+            "truth_condition": "Increasing RBMS1 lowers PKR association with endogenous dsRNA hairpin RNA species, or RBMS1 loss increases that association.",
+            "dag2_role": "mechanism_rbms1_limits_pkr_access_to_endogenous_dsrna",
+            "relation_name": "modifies_effect_of",
+            "relation_polarity": "negative",
+            "participants": [
+              {
+                "entity_id": "HGNC:RBMS1",
+                "role": "modifier",
+                "properties": {}
+              },
+              {
+                "entity_id": "HGNC:EIF2AK2",
+                "role": "affected_sensor",
+                "properties": {
+                  "stage0_node_resolution": "gene_alias_resolver",
+                  "original_label": "HGNC:EIF2AK2",
+                  "canonical_gene_symbol": "EIF2AK2",
+                  "aliases": [
+                    "EIF2AK2",
+                    "HGNC:9437",
+                    "P1/eIF-2A protein kinase",
+                    "PKR",
+                    "PPP1R83",
+                    "PRKR",
+                    "double stranded RNA activated protein kinase",
+                    "eIF-2A protein kinase 2",
+                    "interferon-induced, double-stranded RNA-activated protein kinase",
+                    "interferon-inducible elF2alpha kinase",
+                    "p68 kinase",
+                    "protein kinase R",
+                    "protein kinase RNA-regulated",
+                    "protein kinase, interferon-inducible double stranded RNA dependent",
+                    "protein phosphatase 1, regulatory subunit 83",
+                    "tyrosine-protein kinase EIF2AK2"
+                  ],
+                  "entrez_id": "5610",
+                  "ensembl_id": "ENSG00000055332"
+                }
+              },
+              {
+                "entity_id": "PROPOSED-ENDOGENOUS_DSRNA_HAIRPINS",
+                "role": "sensor_ligand",
+                "properties": {
+                  "stage0_node_resolution": "proposed_entity",
+                  "proposed_entity_label": "endogenous dsRNA hairpins",
+                  "requires_entity_row": true
+                }
+              }
+            ],
+            "atomic_scope": "molecular_signal",
+            "primary_readout": "PKR association with endogenous dsRNA hairpins",
+            "mutation_type": "mechanism_branch",
+            "source": "hypothesis_grounding_stage0",
+            "materialization_hint": "create_or_reuse_claim",
+            "source_mode": "llm_claim_specific_dag2_decomposition",
+            "why_child_is_needed": "This captures the second distinct sensor branch identified in the supplied context and keeps PKR substrate access separate from downstream pathway activation."
+          },
+          {
+            "claim_id": "P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_suppresses_antiviral_interferon_signaling",
+            "claim_id_suffix": "stage0.rbms1_suppresses_antiviral_interferon_signaling",
+            "claim_text": "RBMS1 suppresses antiviral interferon signaling triggered by endogenous dsRNA sensing.",
+            "truth_condition": "RBMS1 abundance inversely changes interferon pathway activation downstream of endogenous dsRNA sensing.",
+            "dag2_role": "mechanism_rbms1_suppresses_antiviral_interferon_signaling",
+            "relation_name": "perturbation_changes_phenotype",
+            "relation_polarity": "negative",
+            "participants": [
+              {
+                "entity_id": "HGNC:RBMS1",
+                "role": "perturbed_regulator",
+                "properties": {
+                  "stage0_node_resolution": "gene_alias_resolver",
+                  "original_label": "HGNC:RBMS1",
+                  "canonical_gene_symbol": "RBMS1",
+                  "aliases": [
+                    "C2orf12",
+                    "HCC-4",
+                    "HGNC:9907",
+                    "MSSP",
+                    "MSSP-1",
+                    "MSSP-2",
+                    "MSSP-3",
+                    "RBMS1",
+                    "RNA-binding motif, single-stranded-interacting protein 1",
+                    "SCR2",
+                    "YC1",
+                    "c-myc gene single strand binding protein 2",
+                    "cervical cancer oncogene 4",
+                    "single-stranded DNA-binding protein MSSP-1",
+                    "suppressor of CDC2 with RNA-binding motif 2",
+                    "suppressor of cdc 2 (cdc13) with RNA binding motif 2"
+                  ],
+                  "entrez_id": "5937",
+                  "ensembl_id": "ENSG00000153250"
+                }
+              },
+              {
+                "entity_id": "PROPOSED-ANTIVIRAL_INTERFERON_SIGNALING",
+                "role": "phenotype",
+                "properties": {
+                  "stage0_node_resolution": "proposed_entity",
+                  "proposed_entity_label": "antiviral interferon signaling",
+                  "requires_entity_row": true
+                }
+              }
+            ],
+            "atomic_scope": "molecular_signal",
+            "primary_readout": "interferon-stimulated signaling output",
+            "mutation_type": "mechanism_branch",
+            "source": "hypothesis_grounding_stage0",
+            "materialization_hint": "create_or_reuse_claim",
+            "source_mode": "llm_claim_specific_dag2_decomposition",
+            "why_child_is_needed": "The root explicitly includes prevention of antiviral interferon signaling as a distinct downstream consequence of sensor shielding."
+          },
+          {
+            "claim_id": "P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_reduces_cell_intrinsic_immune_activation",
+            "claim_id_suffix": "stage0.rbms1_reduces_cell_intrinsic_immune_activation",
+            "claim_text": "RBMS1 reduces cell-intrinsic immune activation.",
+            "truth_condition": "RBMS1 abundance inversely changes intrinsic inflammatory or antiviral activation state within the same cell population.",
+            "dag2_role": "mechanism_rbms1_reduces_cell_intrinsic_immune_activation",
+            "relation_name": "perturbation_changes_phenotype",
+            "relation_polarity": "negative",
+            "participants": [
+              {
+                "entity_id": "HGNC:RBMS1",
+                "role": "perturbed_regulator",
+                "properties": {
+                  "stage0_node_resolution": "gene_alias_resolver",
+                  "original_label": "HGNC:RBMS1",
+                  "canonical_gene_symbol": "RBMS1",
+                  "aliases": [
+                    "C2orf12",
+                    "HCC-4",
+                    "HGNC:9907",
+                    "MSSP",
+                    "MSSP-1",
+                    "MSSP-2",
+                    "MSSP-3",
+                    "RBMS1",
+                    "RNA-binding motif, single-stranded-interacting protein 1",
+                    "SCR2",
+                    "YC1",
+                    "c-myc gene single strand binding protein 2",
+                    "cervical cancer oncogene 4",
+                    "single-stranded DNA-binding protein MSSP-1",
+                    "suppressor of CDC2 with RNA-binding motif 2",
+                    "suppressor of cdc 2 (cdc13) with RNA binding motif 2"
+                  ],
+                  "entrez_id": "5937",
+                  "ensembl_id": "ENSG00000153250"
+                }
+              },
+              {
+                "entity_id": "PROPOSED-CELL_INTRINSIC_IMMUNE_ACTIVATION",
+                "role": "phenotype",
+                "properties": {
+                  "stage0_node_resolution": "proposed_entity",
+                  "proposed_entity_label": "cell-intrinsic immune activation",
+                  "requires_entity_row": true
+                }
+              }
+            ],
+            "atomic_scope": "cell_state",
+            "primary_readout": "cell-intrinsic immune activation state",
+            "mutation_type": "mechanism_branch",
+            "source": "hypothesis_grounding_stage0",
+            "materialization_hint": "create_or_reuse_claim",
+            "source_mode": "llm_claim_specific_dag2_decomposition",
+            "why_child_is_needed": "The root ends in a cell-state consequence downstream of antiviral signaling, so this claim preserves the final mechanistic endpoint as a distinct nonredundant downstream state."
+          }
+        ],
+        "proposed_decomposition_edges": [
+          {
+            "edge_id": "stage0_edge:P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_limits_mda5_access_to_endogenous_dsrna->P_RBMS1_DSRNA_SHIELDING.stage0.mda5_or_pkr_sensor_exclusion_module:INDEPENDENT_CAUSES",
+            "source_claim_id": "P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_limits_mda5_access_to_endogenous_dsrna",
+            "target_claim_id": "P_RBMS1_DSRNA_SHIELDING.stage0.mda5_or_pkr_sensor_exclusion_module",
+            "support_operator": "INDEPENDENT_CAUSES",
+            "support_operator_params": {},
+            "source_role": "ordinary_child",
+            "target_role": "mechanism_mda5_or_pkr_sensor_exclusion_module",
+            "group_id": "sensor_exclusion_branches",
+            "edge_status": "proposed",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_decomposition_edge",
+              "dag2_role": "mechanism_rbms1_limits_mda5_access_to_endogenous_dsrna",
+              "operator_policy": "No mixed active support operators at one target. Mixed logic must be reified through module claims, e.g. M_BC = ANY_OF(B, C) and parent = ALL_OF(A, M_BC). Facts required for a module should use ALL_OF edges to that module."
+            }
+          },
+          {
+            "edge_id": "stage0_edge:P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_limits_pkr_access_to_endogenous_dsrna->P_RBMS1_DSRNA_SHIELDING.stage0.mda5_or_pkr_sensor_exclusion_module:INDEPENDENT_CAUSES",
+            "source_claim_id": "P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_limits_pkr_access_to_endogenous_dsrna",
+            "target_claim_id": "P_RBMS1_DSRNA_SHIELDING.stage0.mda5_or_pkr_sensor_exclusion_module",
+            "support_operator": "INDEPENDENT_CAUSES",
+            "support_operator_params": {},
+            "source_role": "ordinary_child",
+            "target_role": "mechanism_mda5_or_pkr_sensor_exclusion_module",
+            "group_id": "sensor_exclusion_branches",
+            "edge_status": "proposed",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_decomposition_edge",
+              "dag2_role": "mechanism_rbms1_limits_pkr_access_to_endogenous_dsrna",
+              "operator_policy": "No mixed active support operators at one target. Mixed logic must be reified through module claims, e.g. M_BC = ANY_OF(B, C) and parent = ALL_OF(A, M_BC). Facts required for a module should use ALL_OF edges to that module."
+            }
+          },
+          {
+            "edge_id": "stage0_edge:P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_binds_endogenous_dsrna_hairpins->P_RBMS1_DSRNA_SHIELDING:ALL_OF",
+            "source_claim_id": "P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_binds_endogenous_dsrna_hairpins",
+            "target_claim_id": "P_RBMS1_DSRNA_SHIELDING",
+            "support_operator": "ALL_OF",
+            "support_operator_params": {},
+            "source_role": "shared_anchor",
+            "target_role": "parent_claim",
+            "group_id": "rbms1_dsrna_shielding",
+            "edge_status": "proposed",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_decomposition_edge",
+              "dag2_role": "mechanism_rbms1_binds_endogenous_dsrna_hairpins",
+              "operator_policy": "No mixed active support operators at one target. Mixed logic must be reified through module claims, e.g. M_BC = ANY_OF(B, C) and parent = ALL_OF(A, M_BC). Facts required for a module should use ALL_OF edges to that module."
+            }
+          },
+          {
+            "edge_id": "stage0_edge:P_RBMS1_DSRNA_SHIELDING.stage0.mda5_or_pkr_sensor_exclusion_module->P_RBMS1_DSRNA_SHIELDING:ALL_OF",
+            "source_claim_id": "P_RBMS1_DSRNA_SHIELDING.stage0.mda5_or_pkr_sensor_exclusion_module",
+            "target_claim_id": "P_RBMS1_DSRNA_SHIELDING",
+            "support_operator": "ALL_OF",
+            "support_operator_params": {},
+            "source_role": "required_step",
+            "target_role": "parent_claim",
+            "group_id": "rbms1_dsrna_shielding",
+            "edge_status": "proposed",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_decomposition_edge",
+              "dag2_role": "mechanism_mda5_or_pkr_sensor_exclusion_module",
+              "operator_policy": "No mixed active support operators at one target. Mixed logic must be reified through module claims, e.g. M_BC = ANY_OF(B, C) and parent = ALL_OF(A, M_BC). Facts required for a module should use ALL_OF edges to that module."
+            }
+          },
+          {
+            "edge_id": "stage0_edge:P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_suppresses_antiviral_interferon_signaling->P_RBMS1_DSRNA_SHIELDING:ALL_OF",
+            "source_claim_id": "P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_suppresses_antiviral_interferon_signaling",
+            "target_claim_id": "P_RBMS1_DSRNA_SHIELDING",
+            "support_operator": "ALL_OF",
+            "support_operator_params": {},
+            "source_role": "required_step",
+            "target_role": "parent_claim",
+            "group_id": "rbms1_dsrna_shielding",
+            "edge_status": "proposed",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_decomposition_edge",
+              "dag2_role": "mechanism_rbms1_suppresses_antiviral_interferon_signaling",
+              "operator_policy": "No mixed active support operators at one target. Mixed logic must be reified through module claims, e.g. M_BC = ANY_OF(B, C) and parent = ALL_OF(A, M_BC). Facts required for a module should use ALL_OF edges to that module."
+            }
+          },
+          {
+            "edge_id": "stage0_edge:P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_reduces_cell_intrinsic_immune_activation->P_RBMS1_DSRNA_SHIELDING:ALL_OF",
+            "source_claim_id": "P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_reduces_cell_intrinsic_immune_activation",
+            "target_claim_id": "P_RBMS1_DSRNA_SHIELDING",
+            "support_operator": "ALL_OF",
+            "support_operator_params": {},
+            "source_role": "required_step",
+            "target_role": "parent_claim",
+            "group_id": "rbms1_dsrna_shielding",
+            "edge_status": "proposed",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_decomposition_edge",
+              "dag2_role": "mechanism_rbms1_reduces_cell_intrinsic_immune_activation",
+              "operator_policy": "No mixed active support operators at one target. Mixed logic must be reified through module claims, e.g. M_BC = ANY_OF(B, C) and parent = ALL_OF(A, M_BC). Facts required for a module should use ALL_OF edges to that module."
+            }
+          }
+        ],
+        "proposed_semantic_relations": [
+          {
+            "relation_id": "stage0_semantic:P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_binds_endogenous_dsrna_hairpins:enables:P_RBMS1_DSRNA_SHIELDING.stage0.mda5_or_pkr_sensor_exclusion_module",
+            "source_claim_id": "P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_binds_endogenous_dsrna_hairpins",
+            "target_claim_id": "P_RBMS1_DSRNA_SHIELDING.stage0.mda5_or_pkr_sensor_exclusion_module",
+            "relation_kind": "enables",
+            "relation_type": "enables",
+            "relation_strength": null,
+            "relation_status": "proposed",
+            "notes": "RBMS1 occupancy of endogenous dsRNA hairpins is the proposed upstream basis for shielding the shared substrate from sensor access.",
+            "created_at": "",
+            "retired_at": "",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_relations_semantic_only",
+              "proof_rollup": false
+            }
+          },
+          {
+            "relation_id": "stage0_semantic:P_RBMS1_DSRNA_SHIELDING.stage0.mda5_or_pkr_sensor_exclusion_module:candidate_mechanism_link:P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_suppresses_antiviral_interferon_signaling",
+            "source_claim_id": "P_RBMS1_DSRNA_SHIELDING.stage0.mda5_or_pkr_sensor_exclusion_module",
+            "target_claim_id": "P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_suppresses_antiviral_interferon_signaling",
+            "relation_kind": "candidate_mechanism_link",
+            "relation_type": "candidate_mechanism_link",
+            "relation_strength": null,
+            "relation_status": "proposed",
+            "notes": "Reduced dsRNA sensor access is proposed to lower downstream antiviral interferon signaling.",
+            "created_at": "",
+            "retired_at": "",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_relations_semantic_only",
+              "proof_rollup": false
+            }
+          },
+          {
+            "relation_id": "stage0_semantic:P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_suppresses_antiviral_interferon_signaling:enables:P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_reduces_cell_intrinsic_immune_activation",
+            "source_claim_id": "P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_suppresses_antiviral_interferon_signaling",
+            "target_claim_id": "P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_reduces_cell_intrinsic_immune_activation",
+            "relation_kind": "enables",
+            "relation_type": "enables",
+            "relation_strength": null,
+            "relation_status": "proposed",
+            "notes": "Suppression of antiviral interferon signaling is the immediate upstream explanation for reduced cell-intrinsic immune activation.",
+            "created_at": "",
+            "retired_at": "",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_relations_semantic_only",
+              "proof_rollup": false
+            }
+          },
+          {
+            "relation_id": "stage0_semantic:P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_limits_mda5_access_to_endogenous_dsrna:parallel_to:P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_limits_pkr_access_to_endogenous_dsrna",
+            "source_claim_id": "P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_limits_mda5_access_to_endogenous_dsrna",
+            "target_claim_id": "P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_limits_pkr_access_to_endogenous_dsrna",
+            "relation_kind": "parallel_to",
+            "relation_type": "parallel_to",
+            "relation_strength": null,
+            "relation_status": "proposed",
+            "notes": "These are distinct parallel sensor branches acting on the same endogenous dsRNA substrate.",
+            "created_at": "",
+            "retired_at": "",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_relations_semantic_only",
+              "proof_rollup": false
+            }
+          },
+          {
+            "relation_id": "stage0_semantic:P_RBMS1_DSRNA_SHIELDING.stage0.mda5_or_pkr_sensor_exclusion_module:candidate_mechanism_link:P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_limits_mda5_access_to_endogenous_dsrna",
+            "source_claim_id": "P_RBMS1_DSRNA_SHIELDING.stage0.mda5_or_pkr_sensor_exclusion_module",
+            "target_claim_id": "P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_limits_mda5_access_to_endogenous_dsrna",
+            "relation_kind": "candidate_mechanism_link",
+            "relation_type": "candidate_mechanism_link",
+            "relation_strength": null,
+            "relation_status": "proposed",
+            "notes": "Stage0 inferred these biological claims as related parts of the grounded mechanism; reviewer/L1 may later split, reorder, strengthen, or retire the semantic link.",
+            "created_at": "",
+            "retired_at": "",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_relations_semantic_only",
+              "proof_rollup": false
+            }
+          },
+          {
+            "relation_id": "stage0_semantic:P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_limits_pkr_access_to_endogenous_dsrna:candidate_mechanism_link:P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_suppresses_antiviral_interferon_signaling",
+            "source_claim_id": "P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_limits_pkr_access_to_endogenous_dsrna",
+            "target_claim_id": "P_RBMS1_DSRNA_SHIELDING.stage0.rbms1_suppresses_antiviral_interferon_signaling",
+            "relation_kind": "candidate_mechanism_link",
+            "relation_type": "candidate_mechanism_link",
+            "relation_strength": null,
+            "relation_status": "proposed",
+            "notes": "Stage0 inferred these biological claims as related parts of the grounded mechanism; reviewer/L1 may later split, reorder, strengthen, or retire the semantic link.",
+            "created_at": "",
+            "retired_at": "",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_relations_semantic_only",
+              "proof_rollup": false
+            }
+          }
+        ],
+        "proposed_context_bridges": [],
+        "proposed_child_claim_count": 6,
+        "proposed_context_bridge_count": 0,
+        "dag2_generation": {
+          "mode": "llm_claim_specific_dag2_decomposition",
+          "sanity": {
+            "status": "warning",
+            "warnings": [
+              "DAG2 child claims contain mechanism/template terms absent from the root hypothesis: repeat_or_erv"
+            ],
+            "template_term_guard": {
+              "terms_absent_from_root_but_present_in_children": [
+                "repeat_or_erv"
+              ],
+              "policy": "Stage0 must not inject a target-specific mechanism unless the root hypothesis, grounded hypothesis, KG, literature, or reviewer state provided that mechanism."
+            },
+            "participant_guard": {
+              "children_missing_participants": [],
+              "policy": "Every DAG2 child claim must name the biological entities, cell types, compartments, or readout substrates whose state or interaction makes the claim true or false."
+            }
+          }
+        },
+        "structure_summary": "Root plus 6 proposed biological child claims: atomic causal assertions inferred from the grounded hypothesis rather than a fixed target template. Target engagement is stored as an assay prerequisite/test assumption, not as a mechanism claim. Human response/outcome evidence is kept as a non-load-bearing context bridge and List1/proof-campaign objective, not as a DAG2 child branch. Alternative mechanisms are reified as module claims before ANY_OF or INDEPENDENT_CAUSES edges are used; causal order is encoded with candidate mechanism relations.",
+        "materialization_status": "proposal_only_until_trajectory_initialization_materializes_or_reuses_KG_claims",
+        "allowed_biological_mutations": [
+          "context_narrowing",
+          "endpoint_narrowing",
+          "causal_mode_split",
+          "mechanism_branch"
+        ],
+        "forbidden_as_dag2_children": [
+          "source_discovery_route",
+          "tool_repair_route",
+          "evidence_gap_route",
+          "clinical_branch_without_context_or_endpoint_change",
+          "human_response_endpoint_as_load_bearing_dag2_child"
+        ],
+        "proposal_policy": "Dag2 stores biological mechanism knowledge. Evidence/source gaps belong in List1 or planning requests unless they change the biological claim object. Clinical response context can corroborate targetability, but it must not be materialized as a required biological child unless the biological claim itself is explicitly narrowed to a human endpoint association."
+      }
+    },
+    "ptpn2_ptpn1_ifn_killing": {
+      "input_hypothesis": "PTPN2/PTPN1 act as brakes on JAK-STAT interferon signaling, so dual inhibition should amplify IFN response, antigen presentation, and NK/CD8 killing.",
+      "claim_id": "P_PTPN2_PTPN1_IFN_KILLING",
+      "candidate_gene": "PTPN2",
+      "literature_map": {
+        "status": "provided_bounded_step0_context",
+        "n_articles_summarized": 1,
+        "articles": [
+          {
+            "title": "PTPN2/PTPN1 dual inhibition immune-sensitization context",
+            "source_path": "retrieved_literature_context",
+            "summary": "PTPN2 and PTPN1 are phosphatase brakes on JAK-STAT interferon signaling. Dual inhibition should be decomposed into IFN/JAK-STAT amplification, tumor antigen-processing/MHC-I presentation, and distinct CD8 and NK effector-readout claims; MHC-I supports CD8 recognition but is not by itself NK killing evidence.",
+            "key_findings": "PTPN2 and PTPN1 are phosphatase brakes on JAK-STAT interferon signaling. Dual inhibition should be decomposed into IFN/JAK-STAT amplification, tumor antigen-processing/MHC-I presentation, and distinct CD8 and NK effector-readout claims; MHC-I supports CD8 recognition but is not by itself NK killing evidence."
+          }
+        ]
+      },
+      "kg_map": {
+        "status": "provided_bounded_step0_context",
+        "known_entities": [
+          {
+            "entity_id": "HGNC:PTPN2",
+            "role": "known_gene",
+            "canonical_gene_symbol": "PTPN2",
+            "aliases": [
+              "PTPN2",
+              "TCPTP"
+            ]
+          },
+          {
+            "entity_id": "HGNC:PTPN1",
+            "role": "known_gene",
+            "canonical_gene_symbol": "PTPN1",
+            "aliases": [
+              "PTPN1",
+              "PTP1B"
+            ]
+          },
+          {
+            "entity_id": "HGNC:STAT1",
+            "role": "known_gene",
+            "canonical_gene_symbol": "STAT1",
+            "aliases": [
+              "STAT1"
+            ]
+          },
+          {
+            "entity_id": "HGNC:JAK1",
+            "role": "known_gene",
+            "canonical_gene_symbol": "JAK1",
+            "aliases": [
+              "JAK1"
+            ]
+          },
+          {
+            "entity_id": "HGNC:TAP1",
+            "role": "known_gene",
+            "canonical_gene_symbol": "TAP1",
+            "aliases": [
+              "TAP1"
+            ]
+          },
+          {
+            "entity_id": "HGNC:B2M",
+            "role": "known_gene",
+            "canonical_gene_symbol": "B2M",
+            "aliases": [
+              "B2M"
+            ]
+          }
+        ],
+        "related_claims": []
+      },
+      "dag2": {
+        "root_claim_id": "P_PTPN2_PTPN1_IFN_KILLING",
+        "root_claim_text": "PTPN2/PTPN1 act as brakes on JAK-STAT interferon signaling, so dual inhibition should amplify IFN response, antigen presentation, and NK/CD8 killing.",
+        "root_claim_object": {
+          "claim_id": "P_PTPN2_PTPN1_IFN_KILLING",
+          "claim_text": "PTPN2/PTPN1 act as brakes on JAK-STAT interferon signaling, so dual inhibition should amplify IFN response, antigen presentation, and NK/CD8 killing.",
+          "evidence_status": "unchecked",
+          "prior_art_status": "new",
+          "review_status": "draft",
+          "relation_name": "drives_phenotype",
+          "relation_polarity": "positive",
+          "context_set_json": "{}",
+          "cell_states_json": "[]",
+          "narrative": "PTPN2/PTPN1 act as brakes on JAK-STAT interferon signaling, so dual inhibition should amplify IFN response, antigen presentation, and NK/CD8 killing.",
+          "participants": [
+            {
+              "entity_id": "HGNC:PTPN2",
+              "role": "negative_regulator",
+              "properties": {
+                "stage0_node_resolution": "gene_alias_resolver",
+                "original_label": "PTPN2",
+                "canonical_gene_symbol": "PTPN2",
+                "aliases": [
+                  "PTN2",
+                  "PTPN2",
+                  "PTPT",
+                  "T-cell protein tyrosine phosphatase",
+                  "TC-PTP",
+                  "TC45",
+                  "TC48",
+                  "TCELLPTP",
+                  "TCPTP",
+                  "tyrosine-protein phosphatase non-receptor type 2"
+                ],
+                "entrez_id": "5771",
+                "ensembl_id": "ENSG00000175354"
+              }
+            },
+            {
+              "entity_id": "HGNC:PTPN1",
+              "role": "negative_regulator",
+              "properties": {
+                "stage0_node_resolution": "gene_alias_resolver",
+                "original_label": "PTPN1",
+                "canonical_gene_symbol": "PTPN1",
+                "aliases": [
+                  "PTP1B",
+                  "PTPN1",
+                  "protein tyrosine phosphatase, placental",
+                  "protein-tyrosine phosphatase 1B",
+                  "tyrosine-protein phosphatase non-receptor type 1"
+                ],
+                "entrez_id": "5770",
+                "ensembl_id": "ENSG00000196396"
+              }
+            },
+            {
+              "entity_id": "PROPOSED-CD8_T_CELL",
+              "role": "immune_effector_cell",
+              "properties": {
+                "stage0_node_resolution": "proposed_entity",
+                "original_label": "CD8 T cell",
+                "proposed_entity_label": "CD8 T cell",
+                "requires_entity_row": true
+              }
+            },
+            {
+              "entity_id": "PROPOSED-NK_CELL",
+              "role": "immune_effector_cell",
+              "properties": {
+                "stage0_node_resolution": "proposed_entity",
+                "original_label": "NK cell",
+                "proposed_entity_label": "NK cell",
+                "requires_entity_row": true
+              }
+            }
+          ],
+          "full_data": "{\"raw_claim_text\": \"PTPN2/PTPN1 act as brakes on JAK-STAT interferon signaling, so dual inhibition should amplify IFN response, antigen presentation, and NK/CD8 killing.\", \"grounded_hypothesis_text\": \"PTPN2/PTPN1 act as brakes on JAK-STAT interferon signaling, so dual inhibition should amplify IFN response, antigen presentation, and NK/CD8 killing.\", \"grounded_hypothesis\": {\"working_hypothesis_text\": \"PTPN2/PTPN1 act as brakes on JAK-STAT interferon signaling, so dual inhibition should amplify IFN response, antigen presentation, and NK/CD8 killing.\"}, \"scientific_claim_contract\": {\"claim_type\": \"mechanism_hypothesis\"}, \"claim_object_reasoning\": {\"source\": \"hypothesis_grounding_stage0\", \"rewritten_from_raw\": false, \"storage\": \"run_local_trajectory_snapshot\", \"policy\": \"DAG2 claim objects carry the sharpened biological assertion; source/proof gaps stay in List1 and L1 proof-campaign state.\"}}"
+        },
+        "active_mechanism_claims": [],
+        "proposed_child_claims": [
+          {
+            "claim_id": "P_PTPN2_PTPN1_IFN_KILLING.stage0.dual_ptpn_inhibition_amplifies_stat1_phosphorylation",
+            "claim_id_suffix": "stage0.dual_ptpn_inhibition_amplifies_stat1_phosphorylation",
+            "claim_text": "Dual inhibition of PTPN2 and PTPN1 increases interferon-stimulated STAT1 phosphorylation.",
+            "truth_condition": "Compared with control, combined PTPN2/PTPN1 inhibition produces a higher phospho-STAT1 level after interferon stimulation.",
+            "dag2_role": "mechanism_ifn_jak_stat_amplification",
+            "relation_name": "regulates_phosphorylation_state",
+            "relation_polarity": "positive",
+            "participants": [
+              {
+                "entity_id": "HGNC:PTPN2",
+                "role": "perturbed_regulator_1",
+                "properties": {
+                  "stage0_node_resolution": "gene_alias_resolver",
+                  "original_label": "HGNC:PTPN2",
+                  "canonical_gene_symbol": "PTPN2",
+                  "aliases": [
+                    "PTN2",
+                    "PTPN2",
+                    "PTPT",
+                    "T-cell protein tyrosine phosphatase",
+                    "TC-PTP",
+                    "TC45",
+                    "TC48",
+                    "TCELLPTP",
+                    "TCPTP",
+                    "tyrosine-protein phosphatase non-receptor type 2"
+                  ],
+                  "entrez_id": "5771",
+                  "ensembl_id": "ENSG00000175354"
+                }
+              },
+              {
+                "entity_id": "HGNC:PTPN1",
+                "role": "perturbed_regulator_2",
+                "properties": {
+                  "stage0_node_resolution": "gene_alias_resolver",
+                  "original_label": "HGNC:PTPN1",
+                  "canonical_gene_symbol": "PTPN1",
+                  "aliases": [
+                    "PTP1B",
+                    "PTPN1",
+                    "protein tyrosine phosphatase, placental",
+                    "protein-tyrosine phosphatase 1B",
+                    "tyrosine-protein phosphatase non-receptor type 1"
+                  ],
+                  "entrez_id": "5770",
+                  "ensembl_id": "ENSG00000196396"
+                }
+              },
+              {
+                "entity_id": "HGNC:STAT1",
+                "role": "phosphorylation_target",
+                "properties": {
+                  "stage0_node_resolution": "gene_alias_resolver",
+                  "original_label": "HGNC:STAT1",
+                  "canonical_gene_symbol": "STAT1",
+                  "aliases": [
+                    "CANDF7",
+                    "IMD31A",
+                    "IMD31B",
+                    "IMD31C",
+                    "ISGF-3",
+                    "STAT1",
+                    "STAT91",
+                    "signal transducer and activator of transcription 1, 91kD",
+                    "signal transducer and activator of transcription 1, 91kDa",
+                    "signal transducer and activator of transcription 1-alpha/beta",
+                    "transcription factor ISGF-3 components p91/p84"
+                  ],
+                  "entrez_id": "6772",
+                  "ensembl_id": "ENSG00000115415"
+                }
+              }
+            ],
+            "atomic_scope": "molecular_signal",
+            "primary_readout": "phospho-STAT1 abundance",
+            "mutation_type": "mechanism_branch",
+            "source": "hypothesis_grounding_stage0",
+            "materialization_hint": "create_or_reuse_claim",
+            "source_mode": "llm_claim_specific_dag2_decomposition",
+            "why_child_is_needed": "This is the proximal signaling step that operationalizes the claim that PTPN2/PTPN1 are brakes on interferon JAK-STAT signaling."
+          },
+          {
+            "claim_id": "P_PTPN2_PTPN1_IFN_KILLING.stage0.dual_ptpn_inhibition_induces_tap1_expression",
+            "claim_id_suffix": "stage0.dual_ptpn_inhibition_induces_tap1_expression",
+            "claim_text": "Dual inhibition of PTPN2 and PTPN1 increases TAP1 expression in tumor cells.",
+            "truth_condition": "Compared with control, combined PTPN2/PTPN1 inhibition increases TAP1 mRNA or protein abundance in tumor cells under interferon-responsive conditions.",
+            "dag2_role": "mechanism_antigen_processing_program",
+            "relation_name": "transcriptionally_regulates",
+            "relation_polarity": "positive",
+            "participants": [
+              {
+                "entity_id": "HGNC:PTPN2",
+                "role": "perturbed_regulator_1",
+                "properties": {
+                  "stage0_node_resolution": "gene_alias_resolver",
+                  "original_label": "HGNC:PTPN2",
+                  "canonical_gene_symbol": "PTPN2",
+                  "aliases": [
+                    "PTN2",
+                    "PTPN2",
+                    "PTPT",
+                    "T-cell protein tyrosine phosphatase",
+                    "TC-PTP",
+                    "TC45",
+                    "TC48",
+                    "TCELLPTP",
+                    "TCPTP",
+                    "tyrosine-protein phosphatase non-receptor type 2"
+                  ],
+                  "entrez_id": "5771",
+                  "ensembl_id": "ENSG00000175354"
+                }
+              },
+              {
+                "entity_id": "HGNC:PTPN1",
+                "role": "perturbed_regulator_2",
+                "properties": {
+                  "stage0_node_resolution": "gene_alias_resolver",
+                  "original_label": "HGNC:PTPN1",
+                  "canonical_gene_symbol": "PTPN1",
+                  "aliases": [
+                    "PTP1B",
+                    "PTPN1",
+                    "protein tyrosine phosphatase, placental",
+                    "protein-tyrosine phosphatase 1B",
+                    "tyrosine-protein phosphatase non-receptor type 1"
+                  ],
+                  "entrez_id": "5770",
+                  "ensembl_id": "ENSG00000196396"
+                }
+              },
+              {
+                "entity_id": "HGNC:TAP1",
+                "role": "transcriptional_target",
+                "properties": {
+                  "stage0_node_resolution": "gene_alias_resolver",
+                  "original_label": "HGNC:TAP1",
+                  "canonical_gene_symbol": "TAP1",
+                  "aliases": [
+                    "ABC transporter, MHC 1",
+                    "ABC17",
+                    "ABCB2",
+                    "APT1",
+                    "ATP-binding cassette sub-family B member 2",
+                    "ATP-binding cassette, sub-family B (MDR/TAP), member 2",
+                    "D6S114E",
+                    "MHC1D1",
+                    "PSF-1",
+                    "PSF1",
+                    "RING4",
+                    "TAP1",
+                    "TAP1*0102N",
+                    "TAP1N",
+                    "antigen peptide transporter 1",
+                    "peptide supply factor 1",
+                    "peptide transporter PSF1",
+                    "peptide transporter TAP1",
+                    "peptide transporter involved in antigen processing 1",
+                    "really interesting new gene 4 protein"
+                  ],
+                  "entrez_id": "6890",
+                  "ensembl_id": "ENSG00000168394"
+                }
+              },
+              {
+                "entity_id": "PROPOSED-TUMOR_CELL",
+                "role": "cell_context",
+                "properties": {
+                  "stage0_node_resolution": "proposed_entity",
+                  "proposed_entity_label": "tumor cell",
+                  "requires_entity_row": true
+                }
+              }
+            ],
+            "atomic_scope": "cell_state",
+            "primary_readout": "TAP1 mRNA abundance",
+            "mutation_type": "mechanism_branch",
+            "source": "hypothesis_grounding_stage0",
+            "materialization_hint": "create_or_reuse_claim",
+            "source_mode": "llm_claim_specific_dag2_decomposition",
+            "why_child_is_needed": "This captures induction of the antigen-processing machinery downstream of amplified IFN signaling without collapsing it into the final immune-killing endpoints."
+          },
+          {
+            "claim_id": "P_PTPN2_PTPN1_IFN_KILLING.stage0.dual_ptpn_inhibition_increases_b2m_surface_pmhc1",
+            "claim_id_suffix": "stage0.dual_ptpn_inhibition_increases_b2m_surface_pmhc1",
+            "claim_text": "Dual inhibition of PTPN2 and PTPN1 increases B2M-dependent surface peptide-MHC-I presentation on tumor cells.",
+            "truth_condition": "Compared with control, combined PTPN2/PTPN1 inhibition increases surface B2M-associated MHC-I on tumor cells.",
+            "dag2_role": "mechanism_mhc_i_presentation",
+            "relation_name": "regulates_protein_abundance",
+            "relation_polarity": "positive",
+            "participants": [
+              {
+                "entity_id": "HGNC:PTPN2",
+                "role": "perturbed_regulator_1",
+                "properties": {
+                  "stage0_node_resolution": "gene_alias_resolver",
+                  "original_label": "HGNC:PTPN2",
+                  "canonical_gene_symbol": "PTPN2",
+                  "aliases": [
+                    "PTN2",
+                    "PTPN2",
+                    "PTPT",
+                    "T-cell protein tyrosine phosphatase",
+                    "TC-PTP",
+                    "TC45",
+                    "TC48",
+                    "TCELLPTP",
+                    "TCPTP",
+                    "tyrosine-protein phosphatase non-receptor type 2"
+                  ],
+                  "entrez_id": "5771",
+                  "ensembl_id": "ENSG00000175354"
+                }
+              },
+              {
+                "entity_id": "HGNC:PTPN1",
+                "role": "perturbed_regulator_2",
+                "properties": {
+                  "stage0_node_resolution": "gene_alias_resolver",
+                  "original_label": "HGNC:PTPN1",
+                  "canonical_gene_symbol": "PTPN1",
+                  "aliases": [
+                    "PTP1B",
+                    "PTPN1",
+                    "protein tyrosine phosphatase, placental",
+                    "protein-tyrosine phosphatase 1B",
+                    "tyrosine-protein phosphatase non-receptor type 1"
+                  ],
+                  "entrez_id": "5770",
+                  "ensembl_id": "ENSG00000196396"
+                }
+              },
+              {
+                "entity_id": "HGNC:B2M",
+                "role": "presentation_component",
+                "properties": {}
+              },
+              {
+                "entity_id": "PROPOSED-PEPTIDE_MHC_I_COMPLEX",
+                "role": "surface_presented_complex",
+                "properties": {
+                  "stage0_node_resolution": "proposed_entity",
+                  "proposed_entity_label": "surface peptide-MHC-I complex",
+                  "requires_entity_row": true
+                }
+              },
+              {
+                "entity_id": "PROPOSED-TUMOR_CELL",
+                "role": "cell_context",
+                "properties": {
+                  "stage0_node_resolution": "proposed_entity",
+                  "proposed_entity_label": "tumor cell",
+                  "requires_entity_row": true
+                }
+              }
+            ],
+            "atomic_scope": "cell_state",
+            "primary_readout": "surface peptide-MHC-I level",
+            "mutation_type": "mechanism_branch",
+            "source": "hypothesis_grounding_stage0",
+            "materialization_hint": "create_or_reuse_claim",
+            "source_mode": "llm_claim_specific_dag2_decomposition",
+            "why_child_is_needed": "This separates antigen presentation from upstream TAP1 induction and provides the CD8-relevant visibility step that should not be conflated with NK evidence."
+          },
+          {
+            "claim_id": "P_PTPN2_PTPN1_IFN_KILLING.stage0.mhc_i_presentation_permits_cd8_tumor_killing",
+            "claim_id_suffix": "stage0.mhc_i_presentation_permits_cd8_tumor_killing",
+            "claim_text": "Increased tumor-cell peptide-MHC-I presentation permits greater CD8 T-cell-mediated tumor killing.",
+            "truth_condition": "Tumor cells with higher surface peptide-MHC-I show increased killing by CD8 T cells relative to lower-presentation controls.",
+            "dag2_role": "mechanism_cd8_killing",
+            "relation_name": "permits",
+            "relation_polarity": "positive",
+            "participants": [
+              {
+                "entity_id": "PROPOSED-PEPTIDE_MHC_I_COMPLEX",
+                "role": "permissive_signal",
+                "properties": {
+                  "stage0_node_resolution": "proposed_entity",
+                  "proposed_entity_label": "surface peptide-MHC-I complex",
+                  "requires_entity_row": true
+                }
+              },
+              {
+                "entity_id": "PROPOSED-CD8_T_CELL",
+                "role": "immune_effector_cell",
+                "properties": {
+                  "stage0_node_resolution": "proposed_entity",
+                  "proposed_entity_label": "CD8 T cell",
+                  "requires_entity_row": true
+                }
+              },
+              {
+                "entity_id": "PROPOSED-TUMOR_CELL",
+                "role": "target_cell",
+                "properties": {
+                  "stage0_node_resolution": "proposed_entity",
+                  "proposed_entity_label": "tumor cell",
+                  "requires_entity_row": true
+                }
+              }
+            ],
+            "atomic_scope": "immune_effector",
+            "primary_readout": "CD8 T-cell-mediated tumor-cell killing",
+            "mutation_type": "mechanism_branch",
+            "source": "hypothesis_grounding_stage0",
+            "materialization_hint": "create_or_reuse_claim",
+            "source_mode": "llm_claim_specific_dag2_decomposition",
+            "why_child_is_needed": "This gives the distinct CD8 effector outcome supported by, but not identical to, antigen presentation."
+          },
+          {
+            "claim_id": "P_PTPN2_PTPN1_IFN_KILLING.stage0.dual_ptpn_inhibition_increases_nk_tumor_killing",
+            "claim_id_suffix": "stage0.dual_ptpn_inhibition_increases_nk_tumor_killing",
+            "claim_text": "Dual inhibition of PTPN2 and PTPN1 increases NK-cell-mediated tumor killing.",
+            "truth_condition": "Compared with control, combined PTPN2/PTPN1 inhibition increases tumor-cell lysis in NK:tumor co-culture.",
+            "dag2_role": "mechanism_nk_killing",
+            "relation_name": "perturbation_changes_phenotype",
+            "relation_polarity": "positive",
+            "participants": [
+              {
+                "entity_id": "HGNC:PTPN2",
+                "role": "perturbed_regulator_1",
+                "properties": {
+                  "stage0_node_resolution": "gene_alias_resolver",
+                  "original_label": "HGNC:PTPN2",
+                  "canonical_gene_symbol": "PTPN2",
+                  "aliases": [
+                    "PTN2",
+                    "PTPN2",
+                    "PTPT",
+                    "T-cell protein tyrosine phosphatase",
+                    "TC-PTP",
+                    "TC45",
+                    "TC48",
+                    "TCELLPTP",
+                    "TCPTP",
+                    "tyrosine-protein phosphatase non-receptor type 2"
+                  ],
+                  "entrez_id": "5771",
+                  "ensembl_id": "ENSG00000175354"
+                }
+              },
+              {
+                "entity_id": "HGNC:PTPN1",
+                "role": "perturbed_regulator_2",
+                "properties": {
+                  "stage0_node_resolution": "gene_alias_resolver",
+                  "original_label": "HGNC:PTPN1",
+                  "canonical_gene_symbol": "PTPN1",
+                  "aliases": [
+                    "PTP1B",
+                    "PTPN1",
+                    "protein tyrosine phosphatase, placental",
+                    "protein-tyrosine phosphatase 1B",
+                    "tyrosine-protein phosphatase non-receptor type 1"
+                  ],
+                  "entrez_id": "5770",
+                  "ensembl_id": "ENSG00000196396"
+                }
+              },
+              {
+                "entity_id": "PROPOSED-NK_CELL",
+                "role": "immune_effector_cell",
+                "properties": {
+                  "stage0_node_resolution": "proposed_entity",
+                  "proposed_entity_label": "NK cell",
+                  "requires_entity_row": true
+                }
+              },
+              {
+                "entity_id": "PROPOSED-TUMOR_CELL",
+                "role": "target_cell",
+                "properties": {
+                  "stage0_node_resolution": "proposed_entity",
+                  "proposed_entity_label": "tumor cell",
+                  "requires_entity_row": true
+                }
+              },
+              {
+                "entity_id": "PROPOSED-NK_MEDIATED_TUMOR_KILLING",
+                "role": "phenotype",
+                "properties": {
+                  "stage0_node_resolution": "proposed_entity",
+                  "proposed_entity_label": "NK-cell-mediated tumor killing",
+                  "requires_entity_row": true
+                }
+              }
+            ],
+            "atomic_scope": "immune_effector",
+            "primary_readout": "NK-cell-mediated tumor-cell killing",
+            "mutation_type": "mechanism_branch",
+            "source": "hypothesis_grounding_stage0",
+            "materialization_hint": "create_or_reuse_claim",
+            "source_mode": "llm_claim_specific_dag2_decomposition",
+            "why_child_is_needed": "The context explicitly requires a distinct NK effector-readout claim and cautions that MHC-I presentation is not itself evidence for NK killing."
+          }
+        ],
+        "proposed_decomposition_edges": [
+          {
+            "edge_id": "stage0_edge:P_PTPN2_PTPN1_IFN_KILLING.stage0.dual_ptpn_inhibition_amplifies_stat1_phosphorylation->P_PTPN2_PTPN1_IFN_KILLING:ALL_OF",
+            "source_claim_id": "P_PTPN2_PTPN1_IFN_KILLING.stage0.dual_ptpn_inhibition_amplifies_stat1_phosphorylation",
+            "target_claim_id": "P_PTPN2_PTPN1_IFN_KILLING",
+            "support_operator": "ALL_OF",
+            "support_operator_params": {},
+            "source_role": "required_step",
+            "target_role": "parent_claim",
+            "group_id": "ptpn_ifn_killing",
+            "edge_status": "proposed",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_decomposition_edge",
+              "dag2_role": "mechanism_ifn_jak_stat_amplification",
+              "operator_policy": "No mixed active support operators at one target. Mixed logic must be reified through module claims, e.g. M_BC = ANY_OF(B, C) and parent = ALL_OF(A, M_BC). Facts required for a module should use ALL_OF edges to that module."
+            }
+          },
+          {
+            "edge_id": "stage0_edge:P_PTPN2_PTPN1_IFN_KILLING.stage0.dual_ptpn_inhibition_induces_tap1_expression->P_PTPN2_PTPN1_IFN_KILLING:ALL_OF",
+            "source_claim_id": "P_PTPN2_PTPN1_IFN_KILLING.stage0.dual_ptpn_inhibition_induces_tap1_expression",
+            "target_claim_id": "P_PTPN2_PTPN1_IFN_KILLING",
+            "support_operator": "ALL_OF",
+            "support_operator_params": {},
+            "source_role": "required_step",
+            "target_role": "parent_claim",
+            "group_id": "ptpn_ifn_killing",
+            "edge_status": "proposed",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_decomposition_edge",
+              "dag2_role": "mechanism_antigen_processing_program",
+              "operator_policy": "No mixed active support operators at one target. Mixed logic must be reified through module claims, e.g. M_BC = ANY_OF(B, C) and parent = ALL_OF(A, M_BC). Facts required for a module should use ALL_OF edges to that module."
+            }
+          },
+          {
+            "edge_id": "stage0_edge:P_PTPN2_PTPN1_IFN_KILLING.stage0.dual_ptpn_inhibition_increases_b2m_surface_pmhc1->P_PTPN2_PTPN1_IFN_KILLING:ALL_OF",
+            "source_claim_id": "P_PTPN2_PTPN1_IFN_KILLING.stage0.dual_ptpn_inhibition_increases_b2m_surface_pmhc1",
+            "target_claim_id": "P_PTPN2_PTPN1_IFN_KILLING",
+            "support_operator": "ALL_OF",
+            "support_operator_params": {},
+            "source_role": "required_step",
+            "target_role": "parent_claim",
+            "group_id": "ptpn_ifn_killing",
+            "edge_status": "proposed",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_decomposition_edge",
+              "dag2_role": "mechanism_mhc_i_presentation",
+              "operator_policy": "No mixed active support operators at one target. Mixed logic must be reified through module claims, e.g. M_BC = ANY_OF(B, C) and parent = ALL_OF(A, M_BC). Facts required for a module should use ALL_OF edges to that module."
+            }
+          },
+          {
+            "edge_id": "stage0_edge:P_PTPN2_PTPN1_IFN_KILLING.stage0.mhc_i_presentation_permits_cd8_tumor_killing->P_PTPN2_PTPN1_IFN_KILLING:ALL_OF",
+            "source_claim_id": "P_PTPN2_PTPN1_IFN_KILLING.stage0.mhc_i_presentation_permits_cd8_tumor_killing",
+            "target_claim_id": "P_PTPN2_PTPN1_IFN_KILLING",
+            "support_operator": "ALL_OF",
+            "support_operator_params": {},
+            "source_role": "ordinary_child",
+            "target_role": "parent_claim",
+            "group_id": "ptpn_ifn_killing",
+            "edge_status": "proposed",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_decomposition_edge",
+              "dag2_role": "mechanism_cd8_killing",
+              "operator_policy": "No mixed active support operators at one target. Mixed logic must be reified through module claims, e.g. M_BC = ANY_OF(B, C) and parent = ALL_OF(A, M_BC). Facts required for a module should use ALL_OF edges to that module."
+            }
+          },
+          {
+            "edge_id": "stage0_edge:P_PTPN2_PTPN1_IFN_KILLING.stage0.dual_ptpn_inhibition_increases_nk_tumor_killing->P_PTPN2_PTPN1_IFN_KILLING:ALL_OF",
+            "source_claim_id": "P_PTPN2_PTPN1_IFN_KILLING.stage0.dual_ptpn_inhibition_increases_nk_tumor_killing",
+            "target_claim_id": "P_PTPN2_PTPN1_IFN_KILLING",
+            "support_operator": "ALL_OF",
+            "support_operator_params": {},
+            "source_role": "ordinary_child",
+            "target_role": "parent_claim",
+            "group_id": "ptpn_ifn_killing",
+            "edge_status": "proposed",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_decomposition_edge",
+              "dag2_role": "mechanism_nk_killing",
+              "operator_policy": "No mixed active support operators at one target. Mixed logic must be reified through module claims, e.g. M_BC = ANY_OF(B, C) and parent = ALL_OF(A, M_BC). Facts required for a module should use ALL_OF edges to that module."
+            }
+          }
+        ],
+        "proposed_semantic_relations": [
+          {
+            "relation_id": "stage0_semantic:P_PTPN2_PTPN1_IFN_KILLING.stage0.dual_ptpn_inhibition_amplifies_stat1_phosphorylation:enables:P_PTPN2_PTPN1_IFN_KILLING.stage0.dual_ptpn_inhibition_induces_tap1_expression",
+            "source_claim_id": "P_PTPN2_PTPN1_IFN_KILLING.stage0.dual_ptpn_inhibition_amplifies_stat1_phosphorylation",
+            "target_claim_id": "P_PTPN2_PTPN1_IFN_KILLING.stage0.dual_ptpn_inhibition_induces_tap1_expression",
+            "relation_kind": "enables",
+            "relation_type": "enables",
+            "relation_strength": null,
+            "relation_status": "proposed",
+            "notes": "Amplified interferon-STAT signaling is the upstream driver of antigen-processing gene induction.",
+            "created_at": "",
+            "retired_at": "",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_relations_semantic_only",
+              "proof_rollup": false
+            }
+          },
+          {
+            "relation_id": "stage0_semantic:P_PTPN2_PTPN1_IFN_KILLING.stage0.dual_ptpn_inhibition_induces_tap1_expression:enables:P_PTPN2_PTPN1_IFN_KILLING.stage0.dual_ptpn_inhibition_increases_b2m_surface_pmhc1",
+            "source_claim_id": "P_PTPN2_PTPN1_IFN_KILLING.stage0.dual_ptpn_inhibition_induces_tap1_expression",
+            "target_claim_id": "P_PTPN2_PTPN1_IFN_KILLING.stage0.dual_ptpn_inhibition_increases_b2m_surface_pmhc1",
+            "relation_kind": "enables",
+            "relation_type": "enables",
+            "relation_strength": null,
+            "relation_status": "proposed",
+            "notes": "Antigen-processing machinery induction supports increased surface peptide-MHC-I presentation.",
+            "created_at": "",
+            "retired_at": "",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_relations_semantic_only",
+              "proof_rollup": false
+            }
+          },
+          {
+            "relation_id": "stage0_semantic:P_PTPN2_PTPN1_IFN_KILLING.stage0.dual_ptpn_inhibition_increases_b2m_surface_pmhc1:enables:P_PTPN2_PTPN1_IFN_KILLING.stage0.mhc_i_presentation_permits_cd8_tumor_killing",
+            "source_claim_id": "P_PTPN2_PTPN1_IFN_KILLING.stage0.dual_ptpn_inhibition_increases_b2m_surface_pmhc1",
+            "target_claim_id": "P_PTPN2_PTPN1_IFN_KILLING.stage0.mhc_i_presentation_permits_cd8_tumor_killing",
+            "relation_kind": "enables",
+            "relation_type": "enables",
+            "relation_strength": null,
+            "relation_status": "proposed",
+            "notes": "Tumor peptide-MHC-I presentation supports CD8 T-cell recognition and killing.",
+            "created_at": "",
+            "retired_at": "",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_relations_semantic_only",
+              "proof_rollup": false
+            }
+          },
+          {
+            "relation_id": "stage0_semantic:P_PTPN2_PTPN1_IFN_KILLING.stage0.mhc_i_presentation_permits_cd8_tumor_killing:parallel_to:P_PTPN2_PTPN1_IFN_KILLING.stage0.dual_ptpn_inhibition_increases_nk_tumor_killing",
+            "source_claim_id": "P_PTPN2_PTPN1_IFN_KILLING.stage0.mhc_i_presentation_permits_cd8_tumor_killing",
+            "target_claim_id": "P_PTPN2_PTPN1_IFN_KILLING.stage0.dual_ptpn_inhibition_increases_nk_tumor_killing",
+            "relation_kind": "parallel_to",
+            "relation_type": "parallel_to",
+            "relation_strength": null,
+            "relation_status": "proposed",
+            "notes": "CD8 and NK killing are distinct effector outcomes; neither should be treated as evidence for the other.",
+            "created_at": "",
+            "retired_at": "",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_relations_semantic_only",
+              "proof_rollup": false
+            }
+          }
+        ],
+        "proposed_context_bridges": [
+          {
+            "context_bridge_id": "P_PTPN2_PTPN1_IFN_KILLING.stage0.assumption.target_engagement",
+            "label": "target_engagement_assay_prerequisite",
+            "target_claim_id": "P_PTPN2_PTPN1_IFN_KILLING",
+            "target_role": "parent_claim",
+            "relation_kind": "assay_prerequisite",
+            "dag2_role": "assay_prerequisite_target_engagement",
+            "claim_text": "PTPN2 perturbation, degradation, inhibition, or rescue must change PTPN2 activity in the expected direction before downstream mechanism or therapy-response endpoints are interpreted causally.",
+            "truth_condition": "Each causal evidence test using PTPN2 loss, inhibition, degradation, or rescue reports target engagement/activity QC appropriate to that assay.",
+            "list1_objective_ids": [
+              "loss_of_function",
+              "gain_of_function",
+              "mechanism_readout"
+            ],
+            "proof_rollup": false,
+            "materialization_hint": "context_bridge_not_claim_decomposition_edge",
+            "source": "hypothesis_grounding_stage0"
+          }
+        ],
+        "proposed_child_claim_count": 5,
+        "proposed_context_bridge_count": 1,
+        "dag2_generation": {
+          "mode": "llm_claim_specific_dag2_decomposition",
+          "sanity": {
+            "status": "passed",
+            "warnings": [],
+            "template_term_guard": {
+              "terms_absent_from_root_but_present_in_children": [],
+              "policy": "Stage0 must not inject a target-specific mechanism unless the root hypothesis, grounded hypothesis, KG, literature, or reviewer state provided that mechanism."
+            },
+            "participant_guard": {
+              "children_missing_participants": [],
+              "policy": "Every DAG2 child claim must name the biological entities, cell types, compartments, or readout substrates whose state or interaction makes the claim true or false."
+            }
+          }
+        },
+        "structure_summary": "Root plus 5 proposed biological child claims: atomic causal assertions inferred from the grounded hypothesis rather than a fixed target template. Target engagement is stored as an assay prerequisite/test assumption, not as a mechanism claim. Human response/outcome evidence is kept as a non-load-bearing context bridge and List1/proof-campaign objective, not as a DAG2 child branch. Alternative mechanisms are reified as module claims before ANY_OF or INDEPENDENT_CAUSES edges are used; causal order is encoded with candidate mechanism relations.",
+        "materialization_status": "proposal_only_until_trajectory_initialization_materializes_or_reuses_KG_claims",
+        "allowed_biological_mutations": [
+          "context_narrowing",
+          "endpoint_narrowing",
+          "causal_mode_split",
+          "mechanism_branch"
+        ],
+        "forbidden_as_dag2_children": [
+          "source_discovery_route",
+          "tool_repair_route",
+          "evidence_gap_route",
+          "clinical_branch_without_context_or_endpoint_change",
+          "human_response_endpoint_as_load_bearing_dag2_child"
+        ],
+        "proposal_policy": "Dag2 stores biological mechanism knowledge. Evidence/source gaps belong in List1 or planning requests unless they change the biological claim object. Clinical response context can corroborate targetability, but it must not be materialized as a required biological child unless the biological claim itself is explicitly narrowed to a human endpoint association."
+      }
+    },
+    "ferroptosis_lipid_detox": {
+      "input_hypothesis": "Cells suppress ferroptosis by detoxifying lipid peroxides or lipid radicals.",
+      "claim_id": "P_FERROPTOSIS_LIPID_DETOX",
+      "candidate_gene": "",
+      "literature_map": {
+        "status": "provided_bounded_step0_context",
+        "n_articles_summarized": 1,
+        "articles": [
+          {
+            "title": "Ferroptosis lipid peroxide and radical detoxification context",
+            "source_path": "retrieved_literature_context",
+            "summary": "Ferroptosis is driven by iron-dependent accumulation of toxic lipid peroxides/radicals. Cells can suppress ferroptosis through GPX4/glutathione lipid peroxide reduction and parallel radical-trapping or mitochondrial/ubiquinone systems such as FSP1/CoQ, DHODH, or GCH1-derived BH4.",
+            "key_findings": "Ferroptosis is driven by iron-dependent accumulation of toxic lipid peroxides/radicals. Cells can suppress ferroptosis through GPX4/glutathione lipid peroxide reduction and parallel radical-trapping or mitochondrial/ubiquinone systems such as FSP1/CoQ, DHODH, or GCH1-derived BH4."
+          }
+        ]
+      },
+      "kg_map": {
+        "status": "provided_bounded_step0_context",
+        "known_entities": [
+          {
+            "entity_id": "HGNC:GPX4",
+            "role": "known_gene",
+            "canonical_gene_symbol": "GPX4",
+            "aliases": [
+              "GPX4"
+            ]
+          },
+          {
+            "entity_id": "HGNC:AIFM2",
+            "role": "known_gene",
+            "canonical_gene_symbol": "AIFM2",
+            "aliases": [
+              "AIFM2",
+              "FSP1"
+            ]
+          },
+          {
+            "entity_id": "HGNC:DHODH",
+            "role": "known_gene",
+            "canonical_gene_symbol": "DHODH",
+            "aliases": [
+              "DHODH"
+            ]
+          },
+          {
+            "entity_id": "HGNC:GCH1",
+            "role": "known_gene",
+            "canonical_gene_symbol": "GCH1",
+            "aliases": [
+              "GCH1"
+            ]
+          }
+        ],
+        "related_claims": []
+      },
+      "dag2": {
+        "root_claim_id": "P_FERROPTOSIS_LIPID_DETOX",
+        "root_claim_text": "Cells suppress ferroptosis by detoxifying lipid peroxides or lipid radicals.",
+        "root_claim_object": {
+          "claim_id": "P_FERROPTOSIS_LIPID_DETOX",
+          "claim_text": "Cells suppress ferroptosis by detoxifying lipid peroxides or lipid radicals.",
+          "evidence_status": "unchecked",
+          "prior_art_status": "new",
+          "review_status": "draft",
+          "relation_name": "drives_phenotype",
+          "relation_polarity": "positive",
+          "context_set_json": "{}",
+          "cell_states_json": "[]",
+          "narrative": "Cells suppress ferroptosis by detoxifying lipid peroxides or lipid radicals.",
+          "participants": [
+            {
+              "entity_id": "PROPOSED-LIPID_PEROXIDES",
+              "role": "substrate",
+              "properties": {
+                "stage0_node_resolution": "proposed_entity",
+                "original_label": "lipid peroxides",
+                "proposed_entity_label": "lipid peroxides",
+                "requires_entity_row": true
+              }
+            },
+            {
+              "entity_id": "PROPOSED-LIPID_RADICALS",
+              "role": "substrate",
+              "properties": {
+                "stage0_node_resolution": "proposed_entity",
+                "original_label": "lipid radicals",
+                "proposed_entity_label": "lipid radicals",
+                "requires_entity_row": true
+              }
+            },
+            {
+              "entity_id": "PROPOSED-FERROPTOSIS",
+              "role": "cell_death_phenotype",
+              "properties": {
+                "stage0_node_resolution": "proposed_entity",
+                "original_label": "ferroptosis",
+                "proposed_entity_label": "ferroptosis",
+                "requires_entity_row": true
+              }
+            }
+          ],
+          "full_data": "{\"raw_claim_text\": \"Cells suppress ferroptosis by detoxifying lipid peroxides or lipid radicals.\", \"grounded_hypothesis_text\": \"Cells suppress ferroptosis by detoxifying lipid peroxides or lipid radicals.\", \"grounded_hypothesis\": {\"working_hypothesis_text\": \"Cells suppress ferroptosis by detoxifying lipid peroxides or lipid radicals.\"}, \"scientific_claim_contract\": {\"claim_type\": \"mechanism_hypothesis\"}, \"claim_object_reasoning\": {\"source\": \"hypothesis_grounding_stage0\", \"rewritten_from_raw\": false, \"storage\": \"run_local_trajectory_snapshot\", \"policy\": \"DAG2 claim objects carry the sharpened biological assertion; source/proof gaps stay in List1 and L1 proof-campaign state.\"}}"
+        },
+        "active_mechanism_claims": [],
+        "proposed_child_claims": [
+          {
+            "claim_id": "P_FERROPTOSIS_LIPID_DETOX.stage0.lipid_detox_mechanisms_module",
+            "claim_id_suffix": "stage0.lipid_detox_mechanisms_module",
+            "claim_text": "Cells can suppress ferroptosis through any one of several lipid peroxide or lipid radical detoxification mechanisms.",
+            "truth_condition": "At least one named detoxification branch is active and sufficient to reduce ferroptotic death in the cellular context.",
+            "dag2_role": "mechanism_lipid_detox_mechanisms_module",
+            "relation_name": "describes_mechanism",
+            "relation_polarity": "",
+            "participants": [
+              {
+                "entity_id": "PROPOSED-FERROPTOSIS",
+                "role": "target_phenotype",
+                "properties": {
+                  "stage0_node_resolution": "proposed_entity",
+                  "proposed_entity_label": "FERROPTOSIS",
+                  "requires_entity_row": true
+                }
+              }
+            ],
+            "atomic_scope": "mechanism_module",
+            "primary_readout": "ferroptosis rate",
+            "mutation_type": "mechanism_branch",
+            "source": "hypothesis_grounding_stage0",
+            "materialization_hint": "create_or_reuse_claim",
+            "source_mode": "llm_claim_specific_dag2_decomposition",
+            "why_child_is_needed": "A reified module is required to represent the alternative sufficient branches without mixing support operators directly on the parent."
+          },
+          {
+            "claim_id": "P_FERROPTOSIS_LIPID_DETOX.stage0.gpx4_reduces_lipid_peroxides",
+            "claim_id_suffix": "stage0.gpx4_reduces_lipid_peroxides",
+            "claim_text": "GPX4 suppresses lipid peroxide accumulation by reducing lipid peroxides.",
+            "truth_condition": "Increasing or preserving GPX4 function lowers cellular lipid peroxide levels.",
+            "dag2_role": "mechanism_gpx4_reduces_lipid_peroxides",
+            "relation_name": "perturbation_changes_phenotype",
+            "relation_polarity": "negative",
+            "participants": [
+              {
+                "entity_id": "HGNC:GPX4",
+                "role": "perturbed_regulator",
+                "properties": {
+                  "stage0_node_resolution": "gene_alias_resolver",
+                  "original_label": "HGNC:GPX4",
+                  "canonical_gene_symbol": "GPX4",
+                  "aliases": [
+                    "GPX4",
+                    "GPx-4",
+                    "GSHPx-4",
+                    "MCSP",
+                    "PHGPx",
+                    "SMDS",
+                    "epididymis secretory sperm binding protein",
+                    "phospholipid hydroperoxidase",
+                    "phospholipid hydroperoxide glutathione peroxidase GPX4",
+                    "phospholipid hydroperoxide glutathione peroxidase, mitochondrial",
+                    "selenoprotein GPX4",
+                    "snGPx",
+                    "snPHGPx",
+                    "sperm nucleus glutathione peroxidase"
+                  ],
+                  "entrez_id": "2879",
+                  "ensembl_id": "ENSG00000167468"
+                }
+              },
+              {
+                "entity_id": "PROPOSED-LIPID_PEROXIDES",
+                "role": "measured_phenotype",
+                "properties": {
+                  "stage0_node_resolution": "proposed_entity",
+                  "proposed_entity_label": "lipid peroxides",
+                  "requires_entity_row": true
+                }
+              }
+            ],
+            "atomic_scope": "molecular_signal",
+            "primary_readout": "lipid peroxide level",
+            "mutation_type": "mechanism_branch",
+            "source": "hypothesis_grounding_stage0",
+            "materialization_hint": "create_or_reuse_claim",
+            "source_mode": "llm_claim_specific_dag2_decomposition",
+            "why_child_is_needed": "This is the canonical lipid peroxide detoxification branch explicitly supported by the provided ferroptosis context."
+          },
+          {
+            "claim_id": "P_FERROPTOSIS_LIPID_DETOX.stage0.fsp1_suppresses_lipid_radicals",
+            "claim_id_suffix": "stage0.fsp1_suppresses_lipid_radicals",
+            "claim_text": "AIFM2/FSP1 suppresses lipid radical accumulation.",
+            "truth_condition": "Increasing or preserving AIFM2/FSP1 function lowers cellular lipid radical burden.",
+            "dag2_role": "mechanism_fsp1_suppresses_lipid_radicals",
+            "relation_name": "perturbation_changes_phenotype",
+            "relation_polarity": "negative",
+            "participants": [
+              {
+                "entity_id": "HGNC:AIFM2",
+                "role": "perturbed_regulator",
+                "properties": {
+                  "stage0_node_resolution": "gene_alias_resolver",
+                  "original_label": "HGNC:AIFM2",
+                  "canonical_gene_symbol": "AIFM2",
+                  "aliases": [
+                    "AIF family member 2",
+                    "AIFM2",
+                    "AMID",
+                    "FSP1",
+                    "PRG3",
+                    "apoptosis inducing factor mitochondria associated 2",
+                    "apoptosis-inducing factor (AIF)-like mitochondrion-associated inducer of death",
+                    "apoptosis-inducing factor 2",
+                    "apoptosis-inducing factor, mitochondrion-associated, 2",
+                    "ferroptosis suppressor 1",
+                    "ferroptosis suppressor protein 1",
+                    "p53-responsive gene 3 protein"
+                  ],
+                  "entrez_id": "84883",
+                  "ensembl_id": "ENSG00000042286"
+                }
+              },
+              {
+                "entity_id": "PROPOSED-LIPID_RADICALS",
+                "role": "measured_phenotype",
+                "properties": {
+                  "stage0_node_resolution": "proposed_entity",
+                  "proposed_entity_label": "lipid radicals",
+                  "requires_entity_row": true
+                }
+              }
+            ],
+            "atomic_scope": "molecular_signal",
+            "primary_readout": "lipid radical level",
+            "mutation_type": "mechanism_branch",
+            "source": "hypothesis_grounding_stage0",
+            "materialization_hint": "create_or_reuse_claim",
+            "source_mode": "llm_claim_specific_dag2_decomposition",
+            "why_child_is_needed": "The context explicitly cites FSP1/CoQ as a parallel radical-trapping system, providing a distinct alternative mechanism from GPX4."
+          },
+          {
+            "claim_id": "P_FERROPTOSIS_LIPID_DETOX.stage0.dhodh_suppresses_lipid_peroxides",
+            "claim_id_suffix": "stage0.dhodh_suppresses_lipid_peroxides",
+            "claim_text": "DHODH suppresses mitochondrial lipid peroxide accumulation.",
+            "truth_condition": "Increasing or preserving DHODH function lowers mitochondrial lipid peroxide levels.",
+            "dag2_role": "mechanism_dhodh_suppresses_lipid_peroxides",
+            "relation_name": "perturbation_changes_phenotype",
+            "relation_polarity": "negative",
+            "participants": [
+              {
+                "entity_id": "HGNC:DHODH",
+                "role": "perturbed_regulator",
+                "properties": {
+                  "stage0_node_resolution": "gene_alias_resolver",
+                  "original_label": "HGNC:DHODH",
+                  "canonical_gene_symbol": "DHODH",
+                  "aliases": [
+                    "DHODH",
+                    "DHOdehase",
+                    "POADS",
+                    "URA1",
+                    "dihydroorotate dehydrogenase (quinone), mitochondrial",
+                    "dihydroorotate oxidase",
+                    "human complement of yeast URA1"
+                  ],
+                  "entrez_id": "1723",
+                  "ensembl_id": "ENSG00000102967"
+                }
+              },
+              {
+                "entity_id": "PROPOSED-LIPID_PEROXIDES",
+                "role": "measured_phenotype",
+                "properties": {
+                  "stage0_node_resolution": "proposed_entity",
+                  "proposed_entity_label": "lipid peroxides",
+                  "requires_entity_row": true
+                }
+              }
+            ],
+            "atomic_scope": "molecular_signal",
+            "primary_readout": "mitochondrial lipid peroxide level",
+            "mutation_type": "mechanism_branch",
+            "source": "hypothesis_grounding_stage0",
+            "materialization_hint": "create_or_reuse_claim",
+            "source_mode": "llm_claim_specific_dag2_decomposition",
+            "why_child_is_needed": "The literature context identifies DHODH as a parallel mitochondrial/ubiquinone ferroptosis-suppressive system, distinct from GPX4 and FSP1."
+          },
+          {
+            "claim_id": "P_FERROPTOSIS_LIPID_DETOX.stage0.gch1_suppresses_lipid_radicals",
+            "claim_id_suffix": "stage0.gch1_suppresses_lipid_radicals",
+            "claim_text": "GCH1 suppresses lipid radical accumulation via BH4-dependent radical trapping.",
+            "truth_condition": "Increasing or preserving GCH1 function lowers cellular lipid radical burden.",
+            "dag2_role": "mechanism_gch1_suppresses_lipid_radicals",
+            "relation_name": "perturbation_changes_phenotype",
+            "relation_polarity": "negative",
+            "participants": [
+              {
+                "entity_id": "HGNC:GCH1",
+                "role": "perturbed_regulator",
+                "properties": {
+                  "stage0_node_resolution": "gene_alias_resolver",
+                  "original_label": "HGNC:GCH1",
+                  "canonical_gene_symbol": "GCH1",
+                  "aliases": [
+                    "DYT14",
+                    "DYT5",
+                    "DYT5a",
+                    "GCH",
+                    "GCH1",
+                    "GTP cyclohydrolase 1",
+                    "GTP cyclohydrolase I",
+                    "GTP-CH-1",
+                    "GTP-CH-I",
+                    "GTPCH1",
+                    "HPABH4B",
+                    "dystonia 14",
+                    "guanosine 5'-triphosphate cyclohydrolase I"
+                  ],
+                  "entrez_id": "2643",
+                  "ensembl_id": "ENSG00000131979"
+                }
+              },
+              {
+                "entity_id": "PROPOSED-LIPID_RADICALS",
+                "role": "measured_phenotype",
+                "properties": {
+                  "stage0_node_resolution": "proposed_entity",
+                  "proposed_entity_label": "lipid radicals",
+                  "requires_entity_row": true
+                }
+              }
+            ],
+            "atomic_scope": "molecular_signal",
+            "primary_readout": "lipid radical level",
+            "mutation_type": "mechanism_branch",
+            "source": "hypothesis_grounding_stage0",
+            "materialization_hint": "create_or_reuse_claim",
+            "source_mode": "llm_claim_specific_dag2_decomposition",
+            "why_child_is_needed": "The context explicitly names GCH1-derived BH4 as a parallel radical-trapping route, supporting an additional alternative branch."
+          }
+        ],
+        "proposed_decomposition_edges": [
+          {
+            "edge_id": "stage0_edge:P_FERROPTOSIS_LIPID_DETOX.stage0.gpx4_reduces_lipid_peroxides->P_FERROPTOSIS_LIPID_DETOX.stage0.lipid_detox_mechanisms_module:INDEPENDENT_CAUSES",
+            "source_claim_id": "P_FERROPTOSIS_LIPID_DETOX.stage0.gpx4_reduces_lipid_peroxides",
+            "target_claim_id": "P_FERROPTOSIS_LIPID_DETOX.stage0.lipid_detox_mechanisms_module",
+            "support_operator": "INDEPENDENT_CAUSES",
+            "support_operator_params": {},
+            "source_role": "ordinary_child",
+            "target_role": "mechanism_lipid_detox_mechanisms_module",
+            "group_id": "lipid_detox_alternatives",
+            "edge_status": "proposed",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_decomposition_edge",
+              "dag2_role": "mechanism_gpx4_reduces_lipid_peroxides",
+              "operator_policy": "No mixed active support operators at one target. Mixed logic must be reified through module claims, e.g. M_BC = ANY_OF(B, C) and parent = ALL_OF(A, M_BC). Facts required for a module should use ALL_OF edges to that module."
+            }
+          },
+          {
+            "edge_id": "stage0_edge:P_FERROPTOSIS_LIPID_DETOX.stage0.fsp1_suppresses_lipid_radicals->P_FERROPTOSIS_LIPID_DETOX.stage0.lipid_detox_mechanisms_module:INDEPENDENT_CAUSES",
+            "source_claim_id": "P_FERROPTOSIS_LIPID_DETOX.stage0.fsp1_suppresses_lipid_radicals",
+            "target_claim_id": "P_FERROPTOSIS_LIPID_DETOX.stage0.lipid_detox_mechanisms_module",
+            "support_operator": "INDEPENDENT_CAUSES",
+            "support_operator_params": {},
+            "source_role": "ordinary_child",
+            "target_role": "mechanism_lipid_detox_mechanisms_module",
+            "group_id": "lipid_detox_alternatives",
+            "edge_status": "proposed",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_decomposition_edge",
+              "dag2_role": "mechanism_fsp1_suppresses_lipid_radicals",
+              "operator_policy": "No mixed active support operators at one target. Mixed logic must be reified through module claims, e.g. M_BC = ANY_OF(B, C) and parent = ALL_OF(A, M_BC). Facts required for a module should use ALL_OF edges to that module."
+            }
+          },
+          {
+            "edge_id": "stage0_edge:P_FERROPTOSIS_LIPID_DETOX.stage0.dhodh_suppresses_lipid_peroxides->P_FERROPTOSIS_LIPID_DETOX.stage0.lipid_detox_mechanisms_module:INDEPENDENT_CAUSES",
+            "source_claim_id": "P_FERROPTOSIS_LIPID_DETOX.stage0.dhodh_suppresses_lipid_peroxides",
+            "target_claim_id": "P_FERROPTOSIS_LIPID_DETOX.stage0.lipid_detox_mechanisms_module",
+            "support_operator": "INDEPENDENT_CAUSES",
+            "support_operator_params": {},
+            "source_role": "ordinary_child",
+            "target_role": "mechanism_lipid_detox_mechanisms_module",
+            "group_id": "lipid_detox_alternatives",
+            "edge_status": "proposed",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_decomposition_edge",
+              "dag2_role": "mechanism_dhodh_suppresses_lipid_peroxides",
+              "operator_policy": "No mixed active support operators at one target. Mixed logic must be reified through module claims, e.g. M_BC = ANY_OF(B, C) and parent = ALL_OF(A, M_BC). Facts required for a module should use ALL_OF edges to that module."
+            }
+          },
+          {
+            "edge_id": "stage0_edge:P_FERROPTOSIS_LIPID_DETOX.stage0.gch1_suppresses_lipid_radicals->P_FERROPTOSIS_LIPID_DETOX.stage0.lipid_detox_mechanisms_module:INDEPENDENT_CAUSES",
+            "source_claim_id": "P_FERROPTOSIS_LIPID_DETOX.stage0.gch1_suppresses_lipid_radicals",
+            "target_claim_id": "P_FERROPTOSIS_LIPID_DETOX.stage0.lipid_detox_mechanisms_module",
+            "support_operator": "INDEPENDENT_CAUSES",
+            "support_operator_params": {},
+            "source_role": "ordinary_child",
+            "target_role": "mechanism_lipid_detox_mechanisms_module",
+            "group_id": "lipid_detox_alternatives",
+            "edge_status": "proposed",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_decomposition_edge",
+              "dag2_role": "mechanism_gch1_suppresses_lipid_radicals",
+              "operator_policy": "No mixed active support operators at one target. Mixed logic must be reified through module claims, e.g. M_BC = ANY_OF(B, C) and parent = ALL_OF(A, M_BC). Facts required for a module should use ALL_OF edges to that module."
+            }
+          },
+          {
+            "edge_id": "stage0_edge:P_FERROPTOSIS_LIPID_DETOX.stage0.lipid_detox_mechanisms_module->P_FERROPTOSIS_LIPID_DETOX:ALL_OF",
+            "source_claim_id": "P_FERROPTOSIS_LIPID_DETOX.stage0.lipid_detox_mechanisms_module",
+            "target_claim_id": "P_FERROPTOSIS_LIPID_DETOX",
+            "support_operator": "ALL_OF",
+            "support_operator_params": {},
+            "source_role": "sufficient_module",
+            "target_role": "parent_claim",
+            "group_id": "lipid_detox_parent_link",
+            "edge_status": "proposed",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_decomposition_edge",
+              "dag2_role": "mechanism_lipid_detox_mechanisms_module",
+              "operator_policy": "No mixed active support operators at one target. Mixed logic must be reified through module claims, e.g. M_BC = ANY_OF(B, C) and parent = ALL_OF(A, M_BC). Facts required for a module should use ALL_OF edges to that module."
+            }
+          }
+        ],
+        "proposed_semantic_relations": [
+          {
+            "relation_id": "stage0_semantic:P_FERROPTOSIS_LIPID_DETOX.stage0.gpx4_reduces_lipid_peroxides:parallel_to:P_FERROPTOSIS_LIPID_DETOX.stage0.fsp1_suppresses_lipid_radicals",
+            "source_claim_id": "P_FERROPTOSIS_LIPID_DETOX.stage0.gpx4_reduces_lipid_peroxides",
+            "target_claim_id": "P_FERROPTOSIS_LIPID_DETOX.stage0.fsp1_suppresses_lipid_radicals",
+            "relation_kind": "parallel_to",
+            "relation_type": "parallel_to",
+            "relation_strength": null,
+            "relation_status": "proposed",
+            "notes": "Distinct non-redundant anti-ferroptotic detoxification branches.",
+            "created_at": "",
+            "retired_at": "",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_relations_semantic_only",
+              "proof_rollup": false
+            }
+          },
+          {
+            "relation_id": "stage0_semantic:P_FERROPTOSIS_LIPID_DETOX.stage0.gpx4_reduces_lipid_peroxides:parallel_to:P_FERROPTOSIS_LIPID_DETOX.stage0.dhodh_suppresses_lipid_peroxides",
+            "source_claim_id": "P_FERROPTOSIS_LIPID_DETOX.stage0.gpx4_reduces_lipid_peroxides",
+            "target_claim_id": "P_FERROPTOSIS_LIPID_DETOX.stage0.dhodh_suppresses_lipid_peroxides",
+            "relation_kind": "parallel_to",
+            "relation_type": "parallel_to",
+            "relation_strength": null,
+            "relation_status": "proposed",
+            "notes": "Both lower lipid peroxide burden through distinct systems.",
+            "created_at": "",
+            "retired_at": "",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_relations_semantic_only",
+              "proof_rollup": false
+            }
+          },
+          {
+            "relation_id": "stage0_semantic:P_FERROPTOSIS_LIPID_DETOX.stage0.fsp1_suppresses_lipid_radicals:parallel_to:P_FERROPTOSIS_LIPID_DETOX.stage0.gch1_suppresses_lipid_radicals",
+            "source_claim_id": "P_FERROPTOSIS_LIPID_DETOX.stage0.fsp1_suppresses_lipid_radicals",
+            "target_claim_id": "P_FERROPTOSIS_LIPID_DETOX.stage0.gch1_suppresses_lipid_radicals",
+            "relation_kind": "parallel_to",
+            "relation_type": "parallel_to",
+            "relation_strength": null,
+            "relation_status": "proposed",
+            "notes": "Both represent radical-trapping branches supported by the provided context.",
+            "created_at": "",
+            "retired_at": "",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_relations_semantic_only",
+              "proof_rollup": false
+            }
+          },
+          {
+            "relation_id": "stage0_semantic:P_FERROPTOSIS_LIPID_DETOX.stage0.lipid_detox_mechanisms_module:candidate_mechanism_link:P_FERROPTOSIS_LIPID_DETOX.stage0.gpx4_reduces_lipid_peroxides",
+            "source_claim_id": "P_FERROPTOSIS_LIPID_DETOX.stage0.lipid_detox_mechanisms_module",
+            "target_claim_id": "P_FERROPTOSIS_LIPID_DETOX.stage0.gpx4_reduces_lipid_peroxides",
+            "relation_kind": "candidate_mechanism_link",
+            "relation_type": "candidate_mechanism_link",
+            "relation_strength": null,
+            "relation_status": "proposed",
+            "notes": "Stage0 inferred these biological claims as related parts of the grounded mechanism; reviewer/L1 may later split, reorder, strengthen, or retire the semantic link.",
+            "created_at": "",
+            "retired_at": "",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_relations_semantic_only",
+              "proof_rollup": false
+            }
+          },
+          {
+            "relation_id": "stage0_semantic:P_FERROPTOSIS_LIPID_DETOX.stage0.fsp1_suppresses_lipid_radicals:candidate_mechanism_link:P_FERROPTOSIS_LIPID_DETOX.stage0.dhodh_suppresses_lipid_peroxides",
+            "source_claim_id": "P_FERROPTOSIS_LIPID_DETOX.stage0.fsp1_suppresses_lipid_radicals",
+            "target_claim_id": "P_FERROPTOSIS_LIPID_DETOX.stage0.dhodh_suppresses_lipid_peroxides",
+            "relation_kind": "candidate_mechanism_link",
+            "relation_type": "candidate_mechanism_link",
+            "relation_strength": null,
+            "relation_status": "proposed",
+            "notes": "Stage0 inferred these biological claims as related parts of the grounded mechanism; reviewer/L1 may later split, reorder, strengthen, or retire the semantic link.",
+            "created_at": "",
+            "retired_at": "",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_relations_semantic_only",
+              "proof_rollup": false
+            }
+          },
+          {
+            "relation_id": "stage0_semantic:P_FERROPTOSIS_LIPID_DETOX.stage0.dhodh_suppresses_lipid_peroxides:candidate_mechanism_link:P_FERROPTOSIS_LIPID_DETOX.stage0.gch1_suppresses_lipid_radicals",
+            "source_claim_id": "P_FERROPTOSIS_LIPID_DETOX.stage0.dhodh_suppresses_lipid_peroxides",
+            "target_claim_id": "P_FERROPTOSIS_LIPID_DETOX.stage0.gch1_suppresses_lipid_radicals",
+            "relation_kind": "candidate_mechanism_link",
+            "relation_type": "candidate_mechanism_link",
+            "relation_strength": null,
+            "relation_status": "proposed",
+            "notes": "Stage0 inferred these biological claims as related parts of the grounded mechanism; reviewer/L1 may later split, reorder, strengthen, or retire the semantic link.",
+            "created_at": "",
+            "retired_at": "",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_relations_semantic_only",
+              "proof_rollup": false
+            }
+          }
+        ],
+        "proposed_context_bridges": [],
+        "proposed_child_claim_count": 5,
+        "proposed_context_bridge_count": 0,
+        "dag2_generation": {
+          "mode": "llm_claim_specific_dag2_decomposition",
+          "sanity": {
+            "status": "warning",
+            "warnings": [
+              "DAG2 child claims contain mechanism/template terms absent from the root hypothesis: repeat_or_erv"
+            ],
+            "template_term_guard": {
+              "terms_absent_from_root_but_present_in_children": [
+                "repeat_or_erv"
+              ],
+              "policy": "Stage0 must not inject a target-specific mechanism unless the root hypothesis, grounded hypothesis, KG, literature, or reviewer state provided that mechanism."
+            },
+            "participant_guard": {
+              "children_missing_participants": [],
+              "policy": "Every DAG2 child claim must name the biological entities, cell types, compartments, or readout substrates whose state or interaction makes the claim true or false."
+            }
+          }
+        },
+        "structure_summary": "Root plus 5 proposed biological child claims: atomic causal assertions inferred from the grounded hypothesis rather than a fixed target template. Target engagement is stored as an assay prerequisite/test assumption, not as a mechanism claim. Human response/outcome evidence is kept as a non-load-bearing context bridge and List1/proof-campaign objective, not as a DAG2 child branch. Alternative mechanisms are reified as module claims before ANY_OF or INDEPENDENT_CAUSES edges are used; causal order is encoded with candidate mechanism relations.",
+        "materialization_status": "proposal_only_until_trajectory_initialization_materializes_or_reuses_KG_claims",
+        "allowed_biological_mutations": [
+          "context_narrowing",
+          "endpoint_narrowing",
+          "causal_mode_split",
+          "mechanism_branch"
+        ],
+        "forbidden_as_dag2_children": [
+          "source_discovery_route",
+          "tool_repair_route",
+          "evidence_gap_route",
+          "clinical_branch_without_context_or_endpoint_change",
+          "human_response_endpoint_as_load_bearing_dag2_child"
+        ],
+        "proposal_policy": "Dag2 stores biological mechanism knowledge. Evidence/source gaps belong in List1 or planning requests unless they change the biological claim object. Clinical response context can corroborate targetability, but it must not be materialized as a required biological child unless the biological claim itself is explicitly narrowed to a human endpoint association."
+      }
+    },
+    "lenalidomide_del5q_ck1a": {
+      "input_hypothesis": "Lenalidomide creates a therapeutic window in del(5q) MDS by degrading CK1alpha.",
+      "claim_id": "P_LENALIDOMIDE_DEL5Q_CK1A",
+      "candidate_gene": "CSNK1A1",
+      "literature_map": {
+        "status": "provided_bounded_step0_context",
+        "n_articles_summarized": 1,
+        "articles": [
+          {
+            "title": "Lenalidomide induces degradation of CK1alpha in del(5q) MDS",
+            "source_path": "retrieved_literature_context",
+            "summary": "In del(5q) myelodysplastic syndrome, CSNK1A1/CK1alpha is haploinsufficient and becomes a lenalidomide-sensitive substrate through cereblon/CRL4CRBN-mediated degradation, creating selective vulnerability and a therapeutic window.",
+            "key_findings": "In del(5q) myelodysplastic syndrome, CSNK1A1/CK1alpha is haploinsufficient and becomes a lenalidomide-sensitive substrate through cereblon/CRL4CRBN-mediated degradation, creating selective vulnerability and a therapeutic window."
+          }
+        ]
+      },
+      "kg_map": {
+        "status": "provided_bounded_step0_context",
+        "known_entities": [
+          {
+            "entity_id": "HGNC:CSNK1A1",
+            "role": "known_gene",
+            "canonical_gene_symbol": "CSNK1A1",
+            "aliases": [
+              "CSNK1A1",
+              "CK1alpha",
+              "CK1-alpha",
+              "casein kinase 1 alpha"
+            ]
+          },
+          {
+            "entity_id": "HGNC:CRBN",
+            "role": "known_gene",
+            "canonical_gene_symbol": "CRBN",
+            "aliases": [
+              "CRBN",
+              "cereblon"
+            ]
+          }
+        ],
+        "related_claims": []
+      },
+      "dag2": {
+        "root_claim_id": "P_LENALIDOMIDE_DEL5Q_CK1A",
+        "root_claim_text": "Lenalidomide creates a therapeutic window in del(5q) MDS by degrading CK1alpha.",
+        "root_claim_object": {
+          "claim_id": "P_LENALIDOMIDE_DEL5Q_CK1A",
+          "claim_text": "Lenalidomide creates a therapeutic window in del(5q) MDS by degrading CK1alpha.",
+          "evidence_status": "unchecked",
+          "prior_art_status": "new",
+          "review_status": "draft",
+          "relation_name": "drives_phenotype",
+          "relation_polarity": "positive",
+          "context_set_json": "{}",
+          "cell_states_json": "[]",
+          "narrative": "Lenalidomide creates a therapeutic window in del(5q) MDS by degrading CK1alpha.",
+          "participants": [
+            {
+              "entity_id": "PROPOSED-LENALIDOMIDE",
+              "role": "perturbagen",
+              "properties": {
+                "stage0_node_resolution": "proposed_entity",
+                "original_label": "lenalidomide",
+                "proposed_entity_label": "lenalidomide",
+                "requires_entity_row": true
+              }
+            },
+            {
+              "entity_id": "CSNK1A1",
+              "role": "degraded_substrate",
+              "properties": {}
+            },
+            {
+              "entity_id": "PROPOSED-DEL_5Q_MDS",
+              "role": "disease_context",
+              "properties": {
+                "stage0_node_resolution": "proposed_entity",
+                "original_label": "del(5q) MDS",
+                "proposed_entity_label": "del(5q) MDS",
+                "requires_entity_row": true
+              }
+            }
+          ],
+          "full_data": "{\"raw_claim_text\": \"Lenalidomide creates a therapeutic window in del(5q) MDS by degrading CK1alpha.\", \"grounded_hypothesis_text\": \"Lenalidomide creates a therapeutic window in del(5q) MDS by degrading CK1alpha.\", \"grounded_hypothesis\": {\"working_hypothesis_text\": \"Lenalidomide creates a therapeutic window in del(5q) MDS by degrading CK1alpha.\"}, \"scientific_claim_contract\": {\"claim_type\": \"mechanism_hypothesis\"}, \"claim_object_reasoning\": {\"source\": \"hypothesis_grounding_stage0\", \"rewritten_from_raw\": false, \"storage\": \"run_local_trajectory_snapshot\", \"policy\": \"DAG2 claim objects carry the sharpened biological assertion; source/proof gaps stay in List1 and L1 proof-campaign state.\"}}"
+        },
+        "active_mechanism_claims": [],
+        "proposed_child_claims": [
+          {
+            "claim_id": "P_LENALIDOMIDE_DEL5Q_CK1A.stage0.del5q_reduces_csnk1a1_copy_number",
+            "claim_id_suffix": "stage0.del5q_reduces_csnk1a1_copy_number",
+            "claim_text": "del(5q) MDS reduces CSNK1A1 copy number.",
+            "truth_condition": "In del(5q) MDS samples, CSNK1A1 shows copy loss relative to non-del(5q) MDS.",
+            "dag2_role": "mechanism_del5q_reduces_csnk1a1_copy_number",
+            "relation_name": "changes_copy_number",
+            "relation_polarity": "negative",
+            "participants": [
+              {
+                "entity_id": "PROPOSED-DEL_5Q_MDS",
+                "role": "disease_context",
+                "properties": {
+                  "stage0_node_resolution": "proposed_entity",
+                  "proposed_entity_label": "del(5q) MDS",
+                  "requires_entity_row": true,
+                  "original_label": "del(5q) MDS"
+                }
+              },
+              {
+                "entity_id": "HGNC:CSNK1A1",
+                "role": "target_gene",
+                "properties": {
+                  "stage0_node_resolution": "gene_alias_resolver",
+                  "original_label": "HGNC:CSNK1A1",
+                  "canonical_gene_symbol": "CSNK1A1",
+                  "aliases": [
+                    "CK1",
+                    "CK1a",
+                    "CKI-alpha",
+                    "CKIa",
+                    "CSNK1A1",
+                    "HEL-S-77p",
+                    "HLCDGP1",
+                    "PRO2975",
+                    "casein kinase I isoform alpha",
+                    "clock regulator kinase",
+                    "down-regulated in lung cancer",
+                    "epididymis secretory sperm binding protein Li 77p"
+                  ],
+                  "entrez_id": "1452",
+                  "ensembl_id": "ENSG00000113712"
+                }
+              }
+            ],
+            "atomic_scope": "molecular_signal",
+            "primary_readout": "CSNK1A1 DNA copy number",
+            "mutation_type": "mechanism_branch",
+            "source": "hypothesis_grounding_stage0",
+            "materialization_hint": "create_or_reuse_claim",
+            "source_mode": "llm_claim_specific_dag2_decomposition",
+            "why_child_is_needed": "The therapeutic window in the supplied context is based on CSNK1A1 haploinsufficiency in del(5q), so the disease context must be explicitly linked to reduced CSNK1A1 dosage."
+          },
+          {
+            "claim_id": "P_LENALIDOMIDE_DEL5Q_CK1A.stage0.del5q_strengthens_ck1alpha_dependency",
+            "claim_id_suffix": "stage0.del5q_strengthens_ck1alpha_dependency",
+            "claim_text": "del(5q) MDS has a stronger dependency on CSNK1A1 than non-del(5q) MDS.",
+            "truth_condition": "CSNK1A1 perturbation causes a larger viability defect in del(5q) MDS cells than in non-del(5q) MDS cells.",
+            "dag2_role": "mechanism_del5q_strengthens_ck1alpha_dependency",
+            "relation_name": "has_selective_dependency",
+            "relation_polarity": "positive",
+            "participants": [
+              {
+                "entity_id": "HGNC:CSNK1A1",
+                "role": "dependency_gene",
+                "properties": {
+                  "stage0_node_resolution": "gene_alias_resolver",
+                  "original_label": "HGNC:CSNK1A1",
+                  "canonical_gene_symbol": "CSNK1A1",
+                  "aliases": [
+                    "CK1",
+                    "CK1a",
+                    "CKI-alpha",
+                    "CKIa",
+                    "CSNK1A1",
+                    "HEL-S-77p",
+                    "HLCDGP1",
+                    "PRO2975",
+                    "casein kinase I isoform alpha",
+                    "clock regulator kinase",
+                    "down-regulated in lung cancer",
+                    "epididymis secretory sperm binding protein Li 77p"
+                  ],
+                  "entrez_id": "1452",
+                  "ensembl_id": "ENSG00000113712"
+                }
+              },
+              {
+                "entity_id": "PROPOSED-DEL_5Q_MDS",
+                "role": "selective_context",
+                "properties": {
+                  "stage0_node_resolution": "proposed_entity",
+                  "proposed_entity_label": "del(5q) MDS",
+                  "requires_entity_row": true,
+                  "original_label": "del(5q) MDS"
+                }
+              }
+            ],
+            "atomic_scope": "therapy_endpoint",
+            "primary_readout": "differential cell viability after CSNK1A1 perturbation",
+            "mutation_type": "mechanism_branch",
+            "source": "hypothesis_grounding_stage0",
+            "materialization_hint": "create_or_reuse_claim",
+            "source_mode": "llm_claim_specific_dag2_decomposition",
+            "why_child_is_needed": "The parent claims a therapeutic window, which requires selective vulnerability of the del(5q) context to further CK1alpha loss rather than merely CK1alpha degradation in all cells."
+          },
+          {
+            "claim_id": "P_LENALIDOMIDE_DEL5Q_CK1A.stage0.lenalidomide_reduces_ck1alpha_stability_via_crbn",
+            "claim_id_suffix": "stage0.lenalidomide_reduces_ck1alpha_stability_via_crbn",
+            "claim_text": "Lenalidomide reduces CK1alpha protein stability in a CRBN-dependent manner.",
+            "truth_condition": "Lenalidomide shortens CK1alpha protein half-life, and this effect is lost when CRBN is absent or impaired.",
+            "dag2_role": "mechanism_lenalidomide_reduces_ck1alpha_stability_via_crbn",
+            "relation_name": "modifies_effect_of",
+            "relation_polarity": "positive",
+            "participants": [
+              {
+                "entity_id": "HGNC:CRBN",
+                "role": "modifier",
+                "properties": {}
+              },
+              {
+                "entity_id": "PROPOSED-LENALIDOMIDE",
+                "role": "perturbagen",
+                "properties": {
+                  "stage0_node_resolution": "proposed_entity",
+                  "proposed_entity_label": "lenalidomide",
+                  "requires_entity_row": true,
+                  "original_label": "lenalidomide"
+                }
+              },
+              {
+                "entity_id": "HGNC:CSNK1A1",
+                "role": "target_protein",
+                "properties": {
+                  "stage0_node_resolution": "gene_alias_resolver",
+                  "original_label": "HGNC:CSNK1A1",
+                  "canonical_gene_symbol": "CSNK1A1",
+                  "aliases": [
+                    "CK1",
+                    "CK1a",
+                    "CKI-alpha",
+                    "CKIa",
+                    "CSNK1A1",
+                    "HEL-S-77p",
+                    "HLCDGP1",
+                    "PRO2975",
+                    "casein kinase I isoform alpha",
+                    "clock regulator kinase",
+                    "down-regulated in lung cancer",
+                    "epididymis secretory sperm binding protein Li 77p"
+                  ],
+                  "entrez_id": "1452",
+                  "ensembl_id": "ENSG00000113712"
+                }
+              }
+            ],
+            "atomic_scope": "molecular_signal",
+            "primary_readout": "CK1alpha protein half-life",
+            "mutation_type": "mechanism_branch",
+            "source": "hypothesis_grounding_stage0",
+            "materialization_hint": "create_or_reuse_claim",
+            "source_mode": "llm_claim_specific_dag2_decomposition",
+            "why_child_is_needed": "This captures the core drug mechanism from the provided literature context without using assay-QC target engagement language."
+          },
+          {
+            "claim_id": "P_LENALIDOMIDE_DEL5Q_CK1A.stage0.lenalidomide_lowers_ck1alpha_protein_abundance",
+            "claim_id_suffix": "stage0.lenalidomide_lowers_ck1alpha_protein_abundance",
+            "claim_text": "Lenalidomide lowers CK1alpha protein abundance.",
+            "truth_condition": "Lenalidomide treatment decreases steady-state CK1alpha protein level relative to untreated cells.",
+            "dag2_role": "mechanism_lenalidomide_lowers_ck1alpha_protein_abundance",
+            "relation_name": "regulates_protein_abundance",
+            "relation_polarity": "negative",
+            "participants": [
+              {
+                "entity_id": "PROPOSED-LENALIDOMIDE",
+                "role": "perturbagen",
+                "properties": {
+                  "stage0_node_resolution": "proposed_entity",
+                  "proposed_entity_label": "lenalidomide",
+                  "requires_entity_row": true,
+                  "original_label": "lenalidomide"
+                }
+              },
+              {
+                "entity_id": "HGNC:CSNK1A1",
+                "role": "target_protein",
+                "properties": {
+                  "stage0_node_resolution": "gene_alias_resolver",
+                  "original_label": "HGNC:CSNK1A1",
+                  "canonical_gene_symbol": "CSNK1A1",
+                  "aliases": [
+                    "CK1",
+                    "CK1a",
+                    "CKI-alpha",
+                    "CKIa",
+                    "CSNK1A1",
+                    "HEL-S-77p",
+                    "HLCDGP1",
+                    "PRO2975",
+                    "casein kinase I isoform alpha",
+                    "clock regulator kinase",
+                    "down-regulated in lung cancer",
+                    "epididymis secretory sperm binding protein Li 77p"
+                  ],
+                  "entrez_id": "1452",
+                  "ensembl_id": "ENSG00000113712"
+                }
+              }
+            ],
+            "atomic_scope": "molecular_signal",
+            "primary_readout": "CK1alpha protein abundance",
+            "mutation_type": "mechanism_branch",
+            "source": "hypothesis_grounding_stage0",
+            "materialization_hint": "create_or_reuse_claim",
+            "source_mode": "llm_claim_specific_dag2_decomposition",
+            "why_child_is_needed": "The root specifically states that lenalidomide acts by degrading CK1alpha; reduced CK1alpha abundance is the direct substrate-level consequence that links destabilization to phenotype."
+          },
+          {
+            "claim_id": "P_LENALIDOMIDE_DEL5Q_CK1A.stage0.lenalidomide_selectively_decreases_del5q_mds_viability",
+            "claim_id_suffix": "stage0.lenalidomide_selectively_decreases_del5q_mds_viability",
+            "claim_text": "Lenalidomide decreases viability of del(5q) MDS cells more than non-del(5q) cells.",
+            "truth_condition": "Under lenalidomide treatment, del(5q) MDS cells show a larger reduction in viability or expansion than comparator non-del(5q) cells.",
+            "dag2_role": "mechanism_lenalidomide_selectively_decreases_del5q_mds_viability",
+            "relation_name": "perturbation_changes_phenotype",
+            "relation_polarity": "negative",
+            "participants": [
+              {
+                "entity_id": "PROPOSED-LENALIDOMIDE",
+                "role": "perturbagen",
+                "properties": {
+                  "stage0_node_resolution": "proposed_entity",
+                  "proposed_entity_label": "lenalidomide",
+                  "requires_entity_row": true,
+                  "original_label": "lenalidomide"
+                }
+              },
+              {
+                "entity_id": "PROPOSED-DEL_5Q_MDS",
+                "role": "target_context",
+                "properties": {
+                  "stage0_node_resolution": "proposed_entity",
+                  "proposed_entity_label": "del(5q) MDS",
+                  "requires_entity_row": true,
+                  "original_label": "del(5q) MDS"
+                }
+              },
+              {
+                "entity_id": "PROPOSED-MDS_CELL_VIABILITY",
+                "role": "phenotype",
+                "properties": {
+                  "stage0_node_resolution": "proposed_entity",
+                  "proposed_entity_label": "MDS cell viability",
+                  "requires_entity_row": true,
+                  "original_label": "MDS cell viability"
+                }
+              }
+            ],
+            "atomic_scope": "therapy_endpoint",
+            "primary_readout": "relative viability of del(5q) versus non-del(5q) MDS cells after lenalidomide",
+            "mutation_type": "mechanism_branch",
+            "source": "hypothesis_grounding_stage0",
+            "materialization_hint": "create_or_reuse_claim",
+            "source_mode": "llm_claim_specific_dag2_decomposition",
+            "why_child_is_needed": "A therapeutic window requires a selective cellular response in the disease context; this is the endpoint consequence of the upstream CK1alpha mechanism."
+          }
+        ],
+        "proposed_decomposition_edges": [
+          {
+            "edge_id": "stage0_edge:P_LENALIDOMIDE_DEL5Q_CK1A.stage0.del5q_reduces_csnk1a1_copy_number->P_LENALIDOMIDE_DEL5Q_CK1A:ALL_OF",
+            "source_claim_id": "P_LENALIDOMIDE_DEL5Q_CK1A.stage0.del5q_reduces_csnk1a1_copy_number",
+            "target_claim_id": "P_LENALIDOMIDE_DEL5Q_CK1A",
+            "support_operator": "ALL_OF",
+            "support_operator_params": {},
+            "source_role": "context_bridge",
+            "target_role": "parent_claim",
+            "group_id": "lenalidomide_del5q_ck1a_mechanism",
+            "edge_status": "proposed",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_decomposition_edge",
+              "dag2_role": "mechanism_del5q_reduces_csnk1a1_copy_number",
+              "operator_policy": "No mixed active support operators at one target. Mixed logic must be reified through module claims, e.g. M_BC = ANY_OF(B, C) and parent = ALL_OF(A, M_BC). Facts required for a module should use ALL_OF edges to that module."
+            }
+          },
+          {
+            "edge_id": "stage0_edge:P_LENALIDOMIDE_DEL5Q_CK1A.stage0.del5q_strengthens_ck1alpha_dependency->P_LENALIDOMIDE_DEL5Q_CK1A:ALL_OF",
+            "source_claim_id": "P_LENALIDOMIDE_DEL5Q_CK1A.stage0.del5q_strengthens_ck1alpha_dependency",
+            "target_claim_id": "P_LENALIDOMIDE_DEL5Q_CK1A",
+            "support_operator": "ALL_OF",
+            "support_operator_params": {},
+            "source_role": "required_step",
+            "target_role": "parent_claim",
+            "group_id": "lenalidomide_del5q_ck1a_mechanism",
+            "edge_status": "proposed",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_decomposition_edge",
+              "dag2_role": "mechanism_del5q_strengthens_ck1alpha_dependency",
+              "operator_policy": "No mixed active support operators at one target. Mixed logic must be reified through module claims, e.g. M_BC = ANY_OF(B, C) and parent = ALL_OF(A, M_BC). Facts required for a module should use ALL_OF edges to that module."
+            }
+          },
+          {
+            "edge_id": "stage0_edge:P_LENALIDOMIDE_DEL5Q_CK1A.stage0.lenalidomide_reduces_ck1alpha_stability_via_crbn->P_LENALIDOMIDE_DEL5Q_CK1A:ALL_OF",
+            "source_claim_id": "P_LENALIDOMIDE_DEL5Q_CK1A.stage0.lenalidomide_reduces_ck1alpha_stability_via_crbn",
+            "target_claim_id": "P_LENALIDOMIDE_DEL5Q_CK1A",
+            "support_operator": "ALL_OF",
+            "support_operator_params": {},
+            "source_role": "required_step",
+            "target_role": "parent_claim",
+            "group_id": "lenalidomide_del5q_ck1a_mechanism",
+            "edge_status": "proposed",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_decomposition_edge",
+              "dag2_role": "mechanism_lenalidomide_reduces_ck1alpha_stability_via_crbn",
+              "operator_policy": "No mixed active support operators at one target. Mixed logic must be reified through module claims, e.g. M_BC = ANY_OF(B, C) and parent = ALL_OF(A, M_BC). Facts required for a module should use ALL_OF edges to that module."
+            }
+          },
+          {
+            "edge_id": "stage0_edge:P_LENALIDOMIDE_DEL5Q_CK1A.stage0.lenalidomide_lowers_ck1alpha_protein_abundance->P_LENALIDOMIDE_DEL5Q_CK1A:ALL_OF",
+            "source_claim_id": "P_LENALIDOMIDE_DEL5Q_CK1A.stage0.lenalidomide_lowers_ck1alpha_protein_abundance",
+            "target_claim_id": "P_LENALIDOMIDE_DEL5Q_CK1A",
+            "support_operator": "ALL_OF",
+            "support_operator_params": {},
+            "source_role": "required_step",
+            "target_role": "parent_claim",
+            "group_id": "lenalidomide_del5q_ck1a_mechanism",
+            "edge_status": "proposed",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_decomposition_edge",
+              "dag2_role": "mechanism_lenalidomide_lowers_ck1alpha_protein_abundance",
+              "operator_policy": "No mixed active support operators at one target. Mixed logic must be reified through module claims, e.g. M_BC = ANY_OF(B, C) and parent = ALL_OF(A, M_BC). Facts required for a module should use ALL_OF edges to that module."
+            }
+          },
+          {
+            "edge_id": "stage0_edge:P_LENALIDOMIDE_DEL5Q_CK1A.stage0.lenalidomide_selectively_decreases_del5q_mds_viability->P_LENALIDOMIDE_DEL5Q_CK1A:ALL_OF",
+            "source_claim_id": "P_LENALIDOMIDE_DEL5Q_CK1A.stage0.lenalidomide_selectively_decreases_del5q_mds_viability",
+            "target_claim_id": "P_LENALIDOMIDE_DEL5Q_CK1A",
+            "support_operator": "ALL_OF",
+            "support_operator_params": {},
+            "source_role": "ordinary_child",
+            "target_role": "parent_claim",
+            "group_id": "lenalidomide_del5q_ck1a_mechanism",
+            "edge_status": "proposed",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_decomposition_edge",
+              "dag2_role": "mechanism_lenalidomide_selectively_decreases_del5q_mds_viability",
+              "operator_policy": "No mixed active support operators at one target. Mixed logic must be reified through module claims, e.g. M_BC = ANY_OF(B, C) and parent = ALL_OF(A, M_BC). Facts required for a module should use ALL_OF edges to that module."
+            }
+          }
+        ],
+        "proposed_semantic_relations": [
+          {
+            "relation_id": "stage0_semantic:P_LENALIDOMIDE_DEL5Q_CK1A.stage0.del5q_reduces_csnk1a1_copy_number:enables:P_LENALIDOMIDE_DEL5Q_CK1A.stage0.del5q_strengthens_ck1alpha_dependency",
+            "source_claim_id": "P_LENALIDOMIDE_DEL5Q_CK1A.stage0.del5q_reduces_csnk1a1_copy_number",
+            "target_claim_id": "P_LENALIDOMIDE_DEL5Q_CK1A.stage0.del5q_strengthens_ck1alpha_dependency",
+            "relation_kind": "enables",
+            "relation_type": "enables",
+            "relation_strength": null,
+            "relation_status": "proposed",
+            "notes": "Reduced CSNK1A1 dosage explains the stronger dependency on remaining CK1alpha in del(5q) cells.",
+            "created_at": "",
+            "retired_at": "",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_relations_semantic_only",
+              "proof_rollup": false
+            }
+          },
+          {
+            "relation_id": "stage0_semantic:P_LENALIDOMIDE_DEL5Q_CK1A.stage0.lenalidomide_reduces_ck1alpha_stability_via_crbn:enables:P_LENALIDOMIDE_DEL5Q_CK1A.stage0.lenalidomide_lowers_ck1alpha_protein_abundance",
+            "source_claim_id": "P_LENALIDOMIDE_DEL5Q_CK1A.stage0.lenalidomide_reduces_ck1alpha_stability_via_crbn",
+            "target_claim_id": "P_LENALIDOMIDE_DEL5Q_CK1A.stage0.lenalidomide_lowers_ck1alpha_protein_abundance",
+            "relation_kind": "enables",
+            "relation_type": "enables",
+            "relation_strength": null,
+            "relation_status": "proposed",
+            "notes": "Reduced protein stability is an upstream cause of lower steady-state CK1alpha abundance.",
+            "created_at": "",
+            "retired_at": "",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_relations_semantic_only",
+              "proof_rollup": false
+            }
+          },
+          {
+            "relation_id": "stage0_semantic:P_LENALIDOMIDE_DEL5Q_CK1A.stage0.del5q_strengthens_ck1alpha_dependency:enables:P_LENALIDOMIDE_DEL5Q_CK1A.stage0.lenalidomide_selectively_decreases_del5q_mds_viability",
+            "source_claim_id": "P_LENALIDOMIDE_DEL5Q_CK1A.stage0.del5q_strengthens_ck1alpha_dependency",
+            "target_claim_id": "P_LENALIDOMIDE_DEL5Q_CK1A.stage0.lenalidomide_selectively_decreases_del5q_mds_viability",
+            "relation_kind": "enables",
+            "relation_type": "enables",
+            "relation_strength": null,
+            "relation_status": "proposed",
+            "notes": "Selective dependency provides the context for stronger viability loss after drug-induced CK1alpha reduction.",
+            "created_at": "",
+            "retired_at": "",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_relations_semantic_only",
+              "proof_rollup": false
+            }
+          },
+          {
+            "relation_id": "stage0_semantic:P_LENALIDOMIDE_DEL5Q_CK1A.stage0.lenalidomide_lowers_ck1alpha_protein_abundance:enables:P_LENALIDOMIDE_DEL5Q_CK1A.stage0.lenalidomide_selectively_decreases_del5q_mds_viability",
+            "source_claim_id": "P_LENALIDOMIDE_DEL5Q_CK1A.stage0.lenalidomide_lowers_ck1alpha_protein_abundance",
+            "target_claim_id": "P_LENALIDOMIDE_DEL5Q_CK1A.stage0.lenalidomide_selectively_decreases_del5q_mds_viability",
+            "relation_kind": "enables",
+            "relation_type": "enables",
+            "relation_strength": null,
+            "relation_status": "proposed",
+            "notes": "Lower CK1alpha abundance is the immediate molecular change linking lenalidomide to selective viability loss.",
+            "created_at": "",
+            "retired_at": "",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_relations_semantic_only",
+              "proof_rollup": false
+            }
+          },
+          {
+            "relation_id": "stage0_semantic:P_LENALIDOMIDE_DEL5Q_CK1A.stage0.del5q_strengthens_ck1alpha_dependency:candidate_mechanism_link:P_LENALIDOMIDE_DEL5Q_CK1A.stage0.lenalidomide_reduces_ck1alpha_stability_via_crbn",
+            "source_claim_id": "P_LENALIDOMIDE_DEL5Q_CK1A.stage0.del5q_strengthens_ck1alpha_dependency",
+            "target_claim_id": "P_LENALIDOMIDE_DEL5Q_CK1A.stage0.lenalidomide_reduces_ck1alpha_stability_via_crbn",
+            "relation_kind": "candidate_mechanism_link",
+            "relation_type": "candidate_mechanism_link",
+            "relation_strength": null,
+            "relation_status": "proposed",
+            "notes": "Stage0 inferred these biological claims as related parts of the grounded mechanism; reviewer/L1 may later split, reorder, strengthen, or retire the semantic link.",
+            "created_at": "",
+            "retired_at": "",
+            "properties": {
+              "source": "hypothesis_grounding_stage0",
+              "materialization_hint": "claim_relations_semantic_only",
+              "proof_rollup": false
+            }
+          }
+        ],
+        "proposed_context_bridges": [
+          {
+            "context_bridge_id": "P_LENALIDOMIDE_DEL5Q_CK1A.stage0.assumption.target_engagement",
+            "label": "target_engagement_assay_prerequisite",
+            "target_claim_id": "P_LENALIDOMIDE_DEL5Q_CK1A",
+            "target_role": "parent_claim",
+            "relation_kind": "assay_prerequisite",
+            "dag2_role": "assay_prerequisite_target_engagement",
+            "claim_text": "CSNK1A1 perturbation, degradation, inhibition, or rescue must change CSNK1A1 activity in the expected direction before downstream mechanism or therapy-response endpoints are interpreted causally.",
+            "truth_condition": "Each causal evidence test using CSNK1A1 loss, inhibition, degradation, or rescue reports target engagement/activity QC appropriate to that assay.",
+            "list1_objective_ids": [
+              "loss_of_function",
+              "gain_of_function",
+              "mechanism_readout"
+            ],
+            "proof_rollup": false,
+            "materialization_hint": "context_bridge_not_claim_decomposition_edge",
+            "source": "hypothesis_grounding_stage0"
+          }
+        ],
+        "proposed_child_claim_count": 5,
+        "proposed_context_bridge_count": 1,
+        "dag2_generation": {
+          "mode": "llm_claim_specific_dag2_decomposition",
+          "sanity": {
+            "status": "passed",
+            "warnings": [],
+            "template_term_guard": {
+              "terms_absent_from_root_but_present_in_children": [],
+              "policy": "Stage0 must not inject a target-specific mechanism unless the root hypothesis, grounded hypothesis, KG, literature, or reviewer state provided that mechanism."
+            },
+            "participant_guard": {
+              "children_missing_participants": [],
+              "policy": "Every DAG2 child claim must name the biological entities, cell types, compartments, or readout substrates whose state or interaction makes the claim true or false."
+            }
+          }
+        },
+        "structure_summary": "Root plus 5 proposed biological child claims: atomic causal assertions inferred from the grounded hypothesis rather than a fixed target template. Target engagement is stored as an assay prerequisite/test assumption, not as a mechanism claim. Human response/outcome evidence is kept as a non-load-bearing context bridge and List1/proof-campaign objective, not as a DAG2 child branch. Alternative mechanisms are reified as module claims before ANY_OF or INDEPENDENT_CAUSES edges are used; causal order is encoded with candidate mechanism relations.",
+        "materialization_status": "proposal_only_until_trajectory_initialization_materializes_or_reuses_KG_claims",
+        "allowed_biological_mutations": [
+          "context_narrowing",
+          "endpoint_narrowing",
+          "causal_mode_split",
+          "mechanism_branch"
+        ],
+        "forbidden_as_dag2_children": [
+          "source_discovery_route",
+          "tool_repair_route",
+          "evidence_gap_route",
+          "clinical_branch_without_context_or_endpoint_change",
+          "human_response_endpoint_as_load_bearing_dag2_child"
+        ],
+        "proposal_policy": "Dag2 stores biological mechanism knowledge. Evidence/source gaps belong in List1 or planning requests unless they change the biological claim object. Clinical response context can corroborate targetability, but it must not be materialized as a required biological child unless the biological claim itself is explicitly narrowed to a human endpoint association."
+      }
+    }
+  },
+  "models_used": [
+    "gpt-5.4",
+    "gpt-5.4",
+    "gpt-5.4",
+    "gpt-5.4",
+    "gpt-5.4",
+    "gpt-5.4",
+    "gpt-5.4"
+  ]
+}

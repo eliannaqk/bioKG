@@ -8,6 +8,8 @@ __pycache__/
 *.db-wal
 .ipynb_checkpoints/
 scripts/
+ingest/
+schema/
 schema/schema_private.py
 versions.lock
 CLAIM_OBJECT.md

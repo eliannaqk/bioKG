@@ -1,43 +1,16 @@
 digraph G {
-  graph [rankdir=TB, bgcolor="white", pad="0.25", nodesep="0.45", ranksep="0.75", splines=true];
-  node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=10, margin="0.10,0.08", color="#475569", fillcolor="#f8fafc"];
-  edge [fontname="Helvetica", fontsize=9, color="#334155", arrowsize=0.7];
-  P [label="Parent: Lenalidomide creates a therapeutic
-window in del(5q) MDS by degrading CK1alpha.", fillcolor="#e0f2fe", color="#0284c7", penwidth=1.4];
-  N1 [label="ck1a_abundance_step
-Lenalidomide decreases CK1alpha protein
-abundance in del(5q) MDS cells.", fillcolor="#f8fafc"];
-  N2 [label="del5q_selective_dependency_step
-del(5q) MDS cells have stronger dependency
-on residual CSNK1A1 dosage than matched
-non-del(5q) hematopoietic cells.", fillcolor="#f8fafc"];
-  N3 [label="therapeutic_window_step
-Lenalidomide preferentially decreases
-survival of del(5q) MDS cells relative to
-non-del(5q) hematopoietic cells.", fillcolor="#f8fafc"];
-  N4 [label="ck1a_sufficiency_step
-Direct reduction of CSNK1A1 is sufficient to
-preferentially impair del(5q) MDS cell
-survival.", fillcolor="#f8fafc"];
-  N5 [label="ck1a_necessity_step
-Maintaining CSNK1A1 abundance buffers the
-selective cytotoxic effect of lenalidomide
-in del(5q) MDS cells.", fillcolor="#f8fafc"];
-  N1 -> P [label="ALL_OF
-ordinary_child", color="#334155", penwidth=1.1];
-  N2 -> P [label="ALL_OF
-ordinary_child", color="#334155", penwidth=1.1];
-  N3 -> P [label="ALL_OF
-ordinary_child", color="#334155", penwidth=1.1];
-  N4 -> P [label="ALL_OF
-ordinary_child", color="#334155", penwidth=1.1];
-  N5 -> P [label="ALL_OF
-ordinary_child", color="#334155", penwidth=1.1];
-  N1 -> N3 [label="candidate_mechanism_link", style=dashed, color="#2563eb", fontcolor="#2563eb", constraint=false];
-  N2 -> N3 [label="enables", style=dashed, color="#2563eb", fontcolor="#2563eb", constraint=false];
-  N4 -> N3 [label="refines", style=dashed, color="#2563eb", fontcolor="#2563eb", constraint=false];
-  N5 -> N3 [label="refines", style=dashed, color="#2563eb", fontcolor="#2563eb", constraint=false];
-  N1 -> N2 [label="candidate_mechanism_link", style=dashed, color="#2563eb", fontcolor="#2563eb", constraint=false];
-  N3 -> N4 [label="candidate_mechanism_link", style=dashed, color="#2563eb", fontcolor="#2563eb", constraint=false];
-  N4 -> N5 [label="candidate_mechanism_link", style=dashed, color="#2563eb", fontcolor="#2563eb", constraint=false];
+  graph [rankdir=TB, bgcolor="white", pad="0.2", nodesep="0.45", ranksep="0.55"];
+  node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=10, margin="0.08,0.06", color="#2f3a45", fillcolor="#f8fafc"];
+  edge [fontname="Helvetica", fontsize=9, color="#46515f", arrowsize=0.7];
+  PARENT [label="PARENT\nLenalidomide creates a therapeutic window\nin del(5q) MDS by degrading CK1alpha.", fillcolor="#eef6ff", color="#24527a", penwidth=1.4];
+  N1 [label="mechanism_del5q_reduces_csnk1a1_copy_number\ndel(5q) MDS reduces CSNK1A1 copy number.", fillcolor="#f8fafc"];
+  N2 [label="mechanism_del5q_strengthens_ck1alpha_dependency\ndel(5q) MDS has a stronger dependency on\nCSNK1A1 than non-del(5q) MDS.", fillcolor="#f8fafc"];
+  N3 [label="mechanism_lenalidomide_reduces_ck1alpha_stability_via_crbn\nLenalidomide reduces CK1alpha protein\nstability in a CRBN-dependent manner.", fillcolor="#f8fafc"];
+  N4 [label="mechanism_lenalidomide_lowers_ck1alpha_protein_abundance\nLenalidomide lowers CK1alpha protein\nabundance.", fillcolor="#f8fafc"];
+  N5 [label="mechanism_lenalidomide_selectively_decreases_del5q_mds_viability\nLenalidomide decreases viability of del(5q)\nMDS cells more than non-del(5q) cells.", fillcolor="#f8fafc"];
+  N1 -> PARENT [label="ALL_OF / context_bridge", color="#46515f"];
+  N2 -> PARENT [label="ALL_OF / required_step", color="#46515f"];
+  N3 -> PARENT [label="ALL_OF / required_step", color="#46515f"];
+  N4 -> PARENT [label="ALL_OF / required_step", color="#46515f"];
+  N5 -> PARENT [label="ALL_OF / ordinary_child", color="#46515f"];
 }
