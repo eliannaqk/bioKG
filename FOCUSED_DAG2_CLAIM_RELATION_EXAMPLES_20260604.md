@@ -28,9 +28,12 @@ double-stranded RNA to activate antiviral sensing and tumor inflammation.
 ```
 
 Corrected construction note: the sensor branch should not be a flat ALL_OF
-chain where both MDA5 and PKR are mandatory. MDA5/MAVS and PKR are alternative
-dsRNA-sensor routes. The therapeutic PD-1 endpoint remains a separate required
-claim so that "PKR activation" alone does not automatically prove anti-PD-1
+chain where both MDA5 and PKR are mandatory. It also should not have a separate
+parent-level "sensor output increases immune visibility" child that restates
+the sensor module. Instead, each sufficient branch should be a complete route
+from endogenous dsRNA sensing to a downstream immune-visibility or tumor-control
+phenotype. The therapeutic PD-1 endpoint remains a separate required claim so
+that proximal sensor activation alone does not automatically prove anti-PD-1
 sensitization.
 
 Formula:
@@ -38,21 +41,22 @@ Formula:
 ```text
 P_ADAR_PD1_SENSITIZATION =
   F_ADAR_BLOCKADE_INCREASES_UNEDITED_DSRNA AND
-  M_ADAR_DSRNA_SENSOR_BRANCH AND
-  F_SENSOR_OUTPUT_INCREASES_IMMUNE_VISIBILITY AND
+  M_ADAR_DSRNA_TO_VISIBILITY_BRANCH AND
   F_ADAR_BLOCKADE_SENSITIZES_TO_ANTI_PD1
 
-M_ADAR_DSRNA_SENSOR_BRANCH =
-  M_MDA5_MAVS_IFN_ARM OR
-  M_PKR_STRESS_IFN_ARM
+M_ADAR_DSRNA_TO_VISIBILITY_BRANCH =
+  M_MDA5_MAVS_IFN_VISIBILITY_ARM OR
+  M_PKR_STRESS_VISIBILITY_ARM
 
-M_MDA5_MAVS_IFN_ARM =
+M_MDA5_MAVS_IFN_VISIBILITY_ARM =
   F_DSRNA_ACTIVATES_MDA5 AND
-  F_MDA5_MAVS_INDUCES_IFNB1
+  F_MDA5_MAVS_INDUCES_IFNB1 AND
+  F_IFNB1_INCREASES_TUMOR_IMMUNE_VISIBILITY
 
-M_PKR_STRESS_IFN_ARM =
+M_PKR_STRESS_VISIBILITY_ARM =
   F_DSRNA_ACTIVATES_PKR AND
-  F_PKR_DRIVES_ANTIVIRAL_STRESS_OUTPUT
+  F_PKR_DRIVES_ANTIVIRAL_STRESS_OUTPUT AND
+  F_PKR_OUTPUT_INCREASES_TUMOR_IMMUNE_CONTROL
 ```
 
 Source context: local `ADAR1paper.pdf`; DOI reported in the earlier audit as
@@ -63,15 +67,16 @@ Source context: local `ADAR1paper.pdf`; DOI reported in the earlier audit as
 | ID | claim_text | participants | relation_name | polarity | context/properties |
 |---|---|---|---|---|---|
 | `P_ADAR_PD1_SENSITIZATION` | ADAR blockade sensitizes tumors to anti-PD-1 therapy by increasing endogenous dsRNA sensing, antiviral inflammatory output, and tumor immune visibility. | target:`HGNC:ADAR`; therapy_context:`THR-anti_PD1`; therapy_target:`HGNC:PDCD1`; phenotype:`PHENO-ICB_sensitization`; cell_context:`TME-tumor_intrinsic` | `sensitizes_to_therapy` | `positive` | parent hypothesis; ADAR1 alias resolved to ADAR |
-| `M_ADAR_DSRNA_SENSOR_BRANCH` | At least one endogenous-dsRNA sensor branch is activated after ADAR blockade. | target:`HGNC:ADAR`; substrate:`PROPOSED-unedited_endogenous_dsRNA`; pathway:`PATHWAY-antiviral_RNA_sensing` | `describes_mechanism` | SQL `NULL` | module=true; alternative sensor routes |
-| `M_MDA5_MAVS_IFN_ARM` | The IFIH1/MDA5-MAVS arm converts unedited endogenous dsRNA into IFNB1-linked inflammatory signaling. | sensor:`HGNC:IFIH1`; adaptor:`HGNC:MAVS`; output:`HGNC:IFNB1`; pathway:`PATHWAY-type_I_interferon` | `drives_pathway_output` | `positive` | module=true; MDA5/MAVS route |
-| `M_PKR_STRESS_IFN_ARM` | The EIF2AK2/PKR arm converts unedited endogenous dsRNA into antiviral stress or inflammatory output. | sensor_kinase:`HGNC:EIF2AK2`; substrate:`PROPOSED-unedited_endogenous_dsRNA`; pathway:`PATHWAY-integrated_stress_response` | `drives_pathway_output` | `positive` | module=true; PKR route |
+| `M_ADAR_DSRNA_TO_VISIBILITY_BRANCH` | At least one endogenous-dsRNA sensor route converts ADAR-blockade-induced dsRNA exposure into tumor immune visibility or immune-control biology. | target:`HGNC:ADAR`; substrate:`PROPOSED-unedited_endogenous_dsRNA`; pathway:`PATHWAY-antiviral_RNA_sensing`; phenotype:`PHENO-tumor_immune_visibility` | `describes_mechanism` | SQL `NULL` | module=true; alternative complete routes |
+| `M_MDA5_MAVS_IFN_VISIBILITY_ARM` | The IFIH1/MDA5-MAVS arm converts unedited endogenous dsRNA into IFNB1-linked tumor immune-visibility biology. | sensor:`HGNC:IFIH1`; adaptor:`HGNC:MAVS`; output:`HGNC:IFNB1`; phenotype:`PHENO-tumor_immune_visibility` | `drives_phenotype` | `positive` | module=true; MDA5/MAVS route |
+| `M_PKR_STRESS_VISIBILITY_ARM` | The EIF2AK2/PKR arm converts unedited endogenous dsRNA into antiviral stress biology that increases tumor vulnerability to immune control. | sensor_kinase:`HGNC:EIF2AK2`; substrate:`PROPOSED-unedited_endogenous_dsRNA`; phenotype:`PHENO-immune_mediated_tumor_control` | `drives_phenotype` | `positive` | module=true; PKR route |
 | `F_ADAR_BLOCKADE_INCREASES_UNEDITED_DSRNA` | ADAR loss or blockade increases unedited endogenous dsRNA available for antiviral sensor recognition in tumor cells. | target:`HGNC:ADAR`; substrate:`PROPOSED-unedited_endogenous_dsRNA`; process:`BP-antiviral_sensor_exposure`; cell_context:`TME-tumor_intrinsic` | `increases` | `positive` | shared substrate anchor |
 | `F_DSRNA_ACTIVATES_MDA5` | Unedited endogenous dsRNA activates IFIH1/MDA5 signaling in ADAR-blocked tumor cells. | substrate:`PROPOSED-unedited_endogenous_dsRNA`; sensor:`HGNC:IFIH1`; cell_context:`TME-tumor_intrinsic` | `activates` | `positive` | MDA5 branch |
 | `F_MDA5_MAVS_INDUCES_IFNB1` | IFIH1/MDA5 signaling requires MAVS to induce IFNB1 or type-I-interferon output in ADAR-blocked tumor cells. | sensor:`HGNC:IFIH1`; adaptor:`HGNC:MAVS`; output:`HGNC:IFNB1`; cell_context:`TME-tumor_intrinsic` | `requires` | `positive` | MDA5/MAVS output |
+| `F_IFNB1_INCREASES_TUMOR_IMMUNE_VISIBILITY` | IFNB1 or type-I-interferon output increases tumor inflammatory visibility, antigen-presentation programs, chemokine output, or CD8 T-cell recognition. | output:`HGNC:IFNB1`; phenotype:`PHENO-tumor_immune_visibility`; immune_cell:`CT-CD8_TCELL`; cell_context:`TME-tumor_intrinsic` | `increases` | `positive` | MDA5/MAVS downstream visibility bridge |
 | `F_DSRNA_ACTIVATES_PKR` | Unedited endogenous dsRNA activates EIF2AK2/PKR signaling in ADAR-blocked tumor cells. | substrate:`PROPOSED-unedited_endogenous_dsRNA`; sensor_kinase:`HGNC:EIF2AK2`; cell_context:`TME-tumor_intrinsic` | `activates` | `positive` | PKR branch |
 | `F_PKR_DRIVES_ANTIVIRAL_STRESS_OUTPUT` | EIF2AK2/PKR activation drives antiviral stress or growth-control output in ADAR-blocked tumor cells. | sensor_kinase:`HGNC:EIF2AK2`; pathway:`PATHWAY-integrated_stress_response`; phenotype:`PHENO-antiviral_stress_output`; cell_context:`TME-tumor_intrinsic` | `drives_phenotype` | `positive` | PKR output |
-| `F_SENSOR_OUTPUT_INCREASES_IMMUNE_VISIBILITY` | Antiviral sensor output after ADAR blockade increases tumor inflammation, immune visibility, or T-cell-recognition programs. | pathway:`PATHWAY-antiviral_RNA_sensing`; phenotype:`PHENO-tumor_immune_visibility`; immune_cell:`CT-CD8_TCELL`; cell_context:`TME-tumor_intrinsic` | `increases` | `positive` | immune-visibility bridge |
+| `F_PKR_OUTPUT_INCREASES_TUMOR_IMMUNE_CONTROL` | EIF2AK2/PKR-dependent stress output increases tumor-cell vulnerability to immune-mediated control or growth inhibition in the ADAR-blockade context. | sensor_kinase:`HGNC:EIF2AK2`; phenotype:`PHENO-tumor_cell_growth_inhibition`; phenotype:`PHENO-immune_mediated_tumor_control`; cell_context:`TME-tumor_intrinsic` | `increases` | `positive` | PKR downstream tumor-control bridge |
 | `F_ADAR_BLOCKADE_SENSITIZES_TO_ANTI_PD1` | ADAR loss or blockade increases anti-PD-1 response in immune-competent tumor contexts. | target:`HGNC:ADAR`; therapy_context:`THR-anti_PD1`; therapy_target:`HGNC:PDCD1`; phenotype:`PHENO-ICB_sensitization` | `sensitizes_to_therapy` | `positive` | therapeutic endpoint |
 
 ### Decomposition Edges
@@ -79,15 +84,16 @@ Source context: local `ADAR1paper.pdf`; DOI reported in the earlier audit as
 | source -> target | operator | source_role | group_id |
 |---|---|---|---|
 | `F_ADAR_BLOCKADE_INCREASES_UNEDITED_DSRNA -> P_ADAR_PD1_SENSITIZATION` | `ALL_OF` | `shared_anchor` | `adar_parent` |
-| `M_ADAR_DSRNA_SENSOR_BRANCH -> P_ADAR_PD1_SENSITIZATION` | `ALL_OF` | `required_step` | `adar_parent` |
-| `F_SENSOR_OUTPUT_INCREASES_IMMUNE_VISIBILITY -> P_ADAR_PD1_SENSITIZATION` | `ALL_OF` | `required_step` | `adar_parent` |
+| `M_ADAR_DSRNA_TO_VISIBILITY_BRANCH -> P_ADAR_PD1_SENSITIZATION` | `ALL_OF` | `required_step` | `adar_parent` |
 | `F_ADAR_BLOCKADE_SENSITIZES_TO_ANTI_PD1 -> P_ADAR_PD1_SENSITIZATION` | `ALL_OF` | `context_bridge` | `adar_parent` |
-| `M_MDA5_MAVS_IFN_ARM -> M_ADAR_DSRNA_SENSOR_BRANCH` | `ANY_OF` | `sufficient_module` | `adar_sensor_choice` |
-| `M_PKR_STRESS_IFN_ARM -> M_ADAR_DSRNA_SENSOR_BRANCH` | `ANY_OF` | `sufficient_module` | `adar_sensor_choice` |
-| `F_DSRNA_ACTIVATES_MDA5 -> M_MDA5_MAVS_IFN_ARM` | `ALL_OF` | `required_step` | `mda5_mavs_arm` |
-| `F_MDA5_MAVS_INDUCES_IFNB1 -> M_MDA5_MAVS_IFN_ARM` | `ALL_OF` | `required_step` | `mda5_mavs_arm` |
-| `F_DSRNA_ACTIVATES_PKR -> M_PKR_STRESS_IFN_ARM` | `ALL_OF` | `required_step` | `pkr_arm` |
-| `F_PKR_DRIVES_ANTIVIRAL_STRESS_OUTPUT -> M_PKR_STRESS_IFN_ARM` | `ALL_OF` | `required_step` | `pkr_arm` |
+| `M_MDA5_MAVS_IFN_VISIBILITY_ARM -> M_ADAR_DSRNA_TO_VISIBILITY_BRANCH` | `ANY_OF` | `sufficient_module` | `adar_sensor_choice` |
+| `M_PKR_STRESS_VISIBILITY_ARM -> M_ADAR_DSRNA_TO_VISIBILITY_BRANCH` | `ANY_OF` | `sufficient_module` | `adar_sensor_choice` |
+| `F_DSRNA_ACTIVATES_MDA5 -> M_MDA5_MAVS_IFN_VISIBILITY_ARM` | `ALL_OF` | `required_step` | `mda5_mavs_arm` |
+| `F_MDA5_MAVS_INDUCES_IFNB1 -> M_MDA5_MAVS_IFN_VISIBILITY_ARM` | `ALL_OF` | `required_step` | `mda5_mavs_arm` |
+| `F_IFNB1_INCREASES_TUMOR_IMMUNE_VISIBILITY -> M_MDA5_MAVS_IFN_VISIBILITY_ARM` | `ALL_OF` | `required_step` | `mda5_mavs_arm` |
+| `F_DSRNA_ACTIVATES_PKR -> M_PKR_STRESS_VISIBILITY_ARM` | `ALL_OF` | `required_step` | `pkr_arm` |
+| `F_PKR_DRIVES_ANTIVIRAL_STRESS_OUTPUT -> M_PKR_STRESS_VISIBILITY_ARM` | `ALL_OF` | `required_step` | `pkr_arm` |
+| `F_PKR_OUTPUT_INCREASES_TUMOR_IMMUNE_CONTROL -> M_PKR_STRESS_VISIBILITY_ARM` | `ALL_OF` | `required_step` | `pkr_arm` |
 
 ### Semantic Claim Relations
 
@@ -96,45 +102,51 @@ Source context: local `ADAR1paper.pdf`; DOI reported in the earlier audit as
 | `F_ADAR_BLOCKADE_INCREASES_UNEDITED_DSRNA -> F_DSRNA_ACTIVATES_MDA5` | `enables` | Increased unedited dsRNA supplies the ligand for the MDA5 branch. |
 | `F_ADAR_BLOCKADE_INCREASES_UNEDITED_DSRNA -> F_DSRNA_ACTIVATES_PKR` | `enables` | Increased unedited dsRNA supplies the ligand for the PKR branch. |
 | `F_DSRNA_ACTIVATES_MDA5 -> F_MDA5_MAVS_INDUCES_IFNB1` | `enables` | MDA5 activation is upstream of MAVS-dependent IFNB1 output. |
+| `F_MDA5_MAVS_INDUCES_IFNB1 -> F_IFNB1_INCREASES_TUMOR_IMMUNE_VISIBILITY` | `enables` | IFNB1/type-I-IFN output is upstream of tumor immune-visibility programs. |
 | `F_DSRNA_ACTIVATES_PKR -> F_PKR_DRIVES_ANTIVIRAL_STRESS_OUTPUT` | `enables` | PKR activation is upstream of stress or antiviral output. |
-| `M_MDA5_MAVS_IFN_ARM -> M_PKR_STRESS_IFN_ARM` | `parallel_to` | Distinct endogenous-dsRNA sensor routes. |
-| `F_SENSOR_OUTPUT_INCREASES_IMMUNE_VISIBILITY -> F_ADAR_BLOCKADE_SENSITIZES_TO_ANTI_PD1` | `enables` | Immune visibility is the mechanistic bridge into checkpoint response. |
+| `F_PKR_DRIVES_ANTIVIRAL_STRESS_OUTPUT -> F_PKR_OUTPUT_INCREASES_TUMOR_IMMUNE_CONTROL` | `enables` | PKR stress output must be shown to affect tumor vulnerability or immune control before it supports the PD-1 mechanism. |
+| `M_MDA5_MAVS_IFN_VISIBILITY_ARM -> M_PKR_STRESS_VISIBILITY_ARM` | `parallel_to` | Distinct complete dsRNA-to-visibility routes. |
+| `F_IFNB1_INCREASES_TUMOR_IMMUNE_VISIBILITY -> F_ADAR_BLOCKADE_SENSITIZES_TO_ANTI_PD1` | `enables` | MDA5/MAVS immune visibility is one mechanistic bridge into checkpoint response. |
+| `F_PKR_OUTPUT_INCREASES_TUMOR_IMMUNE_CONTROL -> F_ADAR_BLOCKADE_SENSITIZES_TO_ANTI_PD1` | `enables` | PKR-linked tumor control is the parallel bridge into checkpoint response. |
 
 ### Relation-Labeled DAG2 Visualization
 
 ```mermaid
 flowchart TD
   P["P_ADAR_PD1_SENSITIZATION<br/>ADAR blockade sensitizes to anti-PD-1"]
-  SENSOR["M_ADAR_DSRNA_SENSOR_BRANCH<br/>MDA5/MAVS OR PKR route"]
-  MDA5["M_MDA5_MAVS_IFN_ARM<br/>IFIH1-MAVS IFNB1 arm"]
-  PKR["M_PKR_STRESS_IFN_ARM<br/>EIF2AK2 stress arm"]
+  SENSOR["M_ADAR_DSRNA_TO_VISIBILITY_BRANCH<br/>MDA5/MAVS OR PKR complete route"]
+  MDA5["M_MDA5_MAVS_IFN_VISIBILITY_ARM<br/>IFIH1-MAVS IFNB1 visibility arm"]
+  PKR["M_PKR_STRESS_VISIBILITY_ARM<br/>EIF2AK2 stress control arm"]
   DSRNA["F_ADAR_BLOCKADE_INCREASES_UNEDITED_DSRNA"]
   A1["F_DSRNA_ACTIVATES_MDA5"]
   A2["F_MDA5_MAVS_INDUCES_IFNB1"]
+  A3["F_IFNB1_INCREASES_TUMOR_IMMUNE_VISIBILITY"]
   B1["F_DSRNA_ACTIVATES_PKR"]
   B2["F_PKR_DRIVES_ANTIVIRAL_STRESS_OUTPUT"]
-  VIS["F_SENSOR_OUTPUT_INCREASES_IMMUNE_VISIBILITY"]
+  B3["F_PKR_OUTPUT_INCREASES_TUMOR_IMMUNE_CONTROL"]
   PD1["F_ADAR_BLOCKADE_SENSITIZES_TO_ANTI_PD1"]
 
   DSRNA -- "DAG2 ALL_OF shared_anchor" --> P
   SENSOR -- "DAG2 ALL_OF required_step" --> P
-  VIS -- "DAG2 ALL_OF required_step" --> P
   PD1 -- "DAG2 ALL_OF context_bridge" --> P
   MDA5 -- "DAG2 ANY_OF sufficient_module" --> SENSOR
   PKR -- "DAG2 ANY_OF sufficient_module" --> SENSOR
   A1 -- "DAG2 ALL_OF" --> MDA5
   A2 -- "DAG2 ALL_OF" --> MDA5
+  A3 -- "DAG2 ALL_OF" --> MDA5
   B1 -- "DAG2 ALL_OF" --> PKR
   B2 -- "DAG2 ALL_OF" --> PKR
+  B3 -- "DAG2 ALL_OF" --> PKR
 
   DSRNA -. "claim_relations: enables" .-> A1
   DSRNA -. "claim_relations: enables" .-> B1
   A1 -. "claim_relations: enables" .-> A2
+  A2 -. "claim_relations: enables" .-> A3
   B1 -. "claim_relations: enables" .-> B2
+  B2 -. "claim_relations: enables" .-> B3
   MDA5 -. "claim_relations: parallel_to" .-> PKR
-  A2 -. "claim_relations: enables" .-> VIS
-  B2 -. "claim_relations: enables" .-> VIS
-  VIS -. "claim_relations: enables" .-> PD1
+  A3 -. "claim_relations: enables" .-> PD1
+  B3 -. "claim_relations: enables" .-> PD1
 ```
 
 ## 2. RBMS1 / dsRNA Shielding / Cell-Intrinsic Immune Suppression
