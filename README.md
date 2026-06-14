@@ -20,11 +20,17 @@ schema/
   schema.py             DAG-2 entry-layer dataclasses — legacy ClaimType,
                         the three orthogonal claim axes, ResearchQuestionContract,
                         CandidateNode
+assets/claim_dags/      PNG/SVG boxed-arrow diagrams used by the candidate claim
+                        DAG example documents.
 CLAIM_DECOMPOSITION_DAG_ARCHITECTURE.md
                         Target three-table claim/decomposition-DAG architecture.
 CLAIM_OBJECT_SIMPLE.md  Minimal claim-object example.
 CLAIM_OBJECT_MECHANISM_DAG_EXAMPLES.md
                         Mechanism DAG examples using claim_decomposition_edges.
+LLM_STEP0_CANDIDATE_CLAIM_DAG_EXAMPLES_20260602.md
+                        Candidate claim DAGs for tumor-immunity hypotheses,
+                        formatted as claim rows, decomposition edges, semantic
+                        relations, boxed-arrow diagrams, and rationale.
   KG_PROVENANCE.md      curated provenance map: license, API, proof-level per source
 ingest/                 redacted ingestion scripts (one per source) + SLURM wrapper
 INGEST.md               per-source recipe: endpoint, query, version, what it produces

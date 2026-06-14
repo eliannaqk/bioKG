@@ -1,0 +1,16 @@
+digraph G {
+  graph [rankdir=TB, bgcolor="white", pad="0.2", nodesep="0.45", ranksep="0.55"];
+  node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=10, margin="0.08,0.06", color="#2f3a45", fillcolor="#f8fafc"];
+  edge [fontname="Helvetica", fontsize=9, color="#46515f", arrowsize=0.7];
+  PARENT [label="PARENT\nPTPN2/PTPN1 act as brakes on JAK-STAT\ninterferon signaling, so dual inhibition\nshould amplify IFN response, antigen\npresentation, and NK/CD8 killing.", fillcolor="#eef6ff", color="#24527a", penwidth=1.4];
+  N1 [label="mechanism_ifn_jak_stat_amplification\nDual inhibition of PTPN2 and PTPN1 increases\ninterferon-stimulated STAT1 phosphorylation.", fillcolor="#f8fafc"];
+  N2 [label="mechanism_antigen_processing_program\nDual inhibition of PTPN2 and PTPN1 increases\nTAP1 expression in tumor cells.", fillcolor="#f8fafc"];
+  N3 [label="mechanism_mhc_i_presentation\nDual inhibition of PTPN2 and PTPN1 increases\nB2M-dependent surface peptide-MHC-I\npresentation on tumor cells.", fillcolor="#f8fafc"];
+  N4 [label="mechanism_cd8_killing\nIncreased tumor-cell peptide-MHC-I\npresentation permits greater CD8 T-cell-\nmediated tumor killing.", fillcolor="#f8fafc"];
+  N5 [label="mechanism_nk_killing\nDual inhibition of PTPN2 and PTPN1 increases\nNK-cell-mediated tumor killing.", fillcolor="#f8fafc"];
+  N1 -> PARENT [label="ALL_OF / required_step", color="#46515f"];
+  N2 -> PARENT [label="ALL_OF / required_step", color="#46515f"];
+  N3 -> PARENT [label="ALL_OF / required_step", color="#46515f"];
+  N4 -> PARENT [label="ALL_OF / ordinary_child", color="#46515f"];
+  N5 -> PARENT [label="ALL_OF / ordinary_child", color="#46515f"];
+}

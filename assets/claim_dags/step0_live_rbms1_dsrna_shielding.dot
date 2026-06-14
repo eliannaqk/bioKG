@@ -1,0 +1,18 @@
+digraph G {
+  graph [rankdir=TB, bgcolor="white", pad="0.2", nodesep="0.45", ranksep="0.55"];
+  node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=10, margin="0.08,0.06", color="#2f3a45", fillcolor="#f8fafc"];
+  edge [fontname="Helvetica", fontsize=9, color="#46515f", arrowsize=0.7];
+  PARENT [label="PARENT\nRBMS1 binds endogenous dsRNA hairpins and\nshields them from MDA5 and PKR\nrecognition, preventing activation of\nantiviral interferon signaling and thereby\nreducing cell-intrinsic immune activation.", fillcolor="#eef6ff", color="#24527a", penwidth=1.4];
+  N1 [label="mechanism_rbms1_binds_endogenous_dsrna_hairpins\nRBMS1 binds endogenous dsRNA hairpin\nstructures.", fillcolor="#f8fafc"];
+  N2 [label="mechanism_mda5_or_pkr_sensor_exclusion_module\nRBMS1 shielding of endogenous dsRNA excludes\naccess by antiviral dsRNA sensors through\ndistinct MDA5 or PKR branches.", fillcolor="#fff7ed"];
+  N3 [label="mechanism_rbms1_limits_mda5_access_to_endogenous_dsrna\nRBMS1 reduces MDA5 access to endogenous\ndsRNA hairpins.", fillcolor="#f8fafc"];
+  N4 [label="mechanism_rbms1_limits_pkr_access_to_endogenous_dsrna\nRBMS1 reduces PKR access to endogenous dsRNA\nhairpins.", fillcolor="#f8fafc"];
+  N5 [label="mechanism_rbms1_suppresses_antiviral_interferon_signaling\nRBMS1 suppresses antiviral interferon\nsignaling triggered by endogenous dsRNA\nsensing.", fillcolor="#f8fafc"];
+  N6 [label="mechanism_rbms1_reduces_cell_intrinsic_immune_activation\nRBMS1 reduces cell-intrinsic immune\nactivation.", fillcolor="#f8fafc"];
+  N3 -> N2 [label="INDEPENDENT_CAUSES / ordinary_child", color="#b45309"];
+  N4 -> N2 [label="INDEPENDENT_CAUSES / ordinary_child", color="#b45309"];
+  N1 -> PARENT [label="ALL_OF / shared_anchor", color="#46515f"];
+  N2 -> PARENT [label="ALL_OF / required_step", color="#46515f"];
+  N5 -> PARENT [label="ALL_OF / required_step", color="#46515f"];
+  N6 -> PARENT [label="ALL_OF / required_step", color="#46515f"];
+}

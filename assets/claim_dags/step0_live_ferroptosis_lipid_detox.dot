@@ -1,0 +1,16 @@
+digraph G {
+  graph [rankdir=TB, bgcolor="white", pad="0.2", nodesep="0.45", ranksep="0.55"];
+  node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=10, margin="0.08,0.06", color="#2f3a45", fillcolor="#f8fafc"];
+  edge [fontname="Helvetica", fontsize=9, color="#46515f", arrowsize=0.7];
+  PARENT [label="PARENT\nCells suppress ferroptosis by detoxifying\nlipid peroxides or lipid radicals.", fillcolor="#eef6ff", color="#24527a", penwidth=1.4];
+  N1 [label="mechanism_lipid_detox_mechanisms_module\nCells can suppress ferroptosis through any\none of several lipid peroxide or lipid\nradical detoxification mechanisms.", fillcolor="#fff7ed"];
+  N2 [label="mechanism_gpx4_reduces_lipid_peroxides\nGPX4 suppresses lipid peroxide accumulation\nby reducing lipid peroxides.", fillcolor="#f8fafc"];
+  N3 [label="mechanism_fsp1_suppresses_lipid_radicals\nAIFM2/FSP1 suppresses lipid radical\naccumulation.", fillcolor="#f8fafc"];
+  N4 [label="mechanism_dhodh_suppresses_lipid_peroxides\nDHODH suppresses mitochondrial lipid\nperoxide accumulation.", fillcolor="#f8fafc"];
+  N5 [label="mechanism_gch1_suppresses_lipid_radicals\nGCH1 suppresses lipid radical accumulation\nvia BH4-dependent radical trapping.", fillcolor="#f8fafc"];
+  N2 -> N1 [label="INDEPENDENT_CAUSES / ordinary_child", color="#b45309"];
+  N3 -> N1 [label="INDEPENDENT_CAUSES / ordinary_child", color="#b45309"];
+  N4 -> N1 [label="INDEPENDENT_CAUSES / ordinary_child", color="#b45309"];
+  N5 -> N1 [label="INDEPENDENT_CAUSES / ordinary_child", color="#b45309"];
+  N1 -> PARENT [label="ALL_OF / sufficient_module", color="#46515f"];
+}

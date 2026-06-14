@@ -1,0 +1,20 @@
+digraph G {
+  graph [rankdir=TB, bgcolor="white", pad="0.2", nodesep="0.45", ranksep="0.55"];
+  node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=10, margin="0.08,0.06", color="#2f3a45", fillcolor="#f8fafc"];
+  edge [fontname="Helvetica", fontsize=9, color="#46515f", arrowsize=0.7];
+  PARENT [label="PARENT\nADAR1 blockade will sensitize tumors to\nPD-1 therapy by allowing endogenous\ndouble-stranded RNA to activate antiviral\nsensing and tumor inflammation.", fillcolor="#eef6ff", color="#24527a", penwidth=1.4];
+  N1 [label="mechanism_adar_dsRNA_anchor\nADAR blockade permits endogenous double-\nstranded RNA to engage antiviral RNA sensing\nin tumor cells.", fillcolor="#f8fafc"];
+  N2 [label="mechanism_ifih1_sensor_step\nEndogenous double-stranded RNA increases\nIFIH1 activity in tumor cells after ADAR\nblockade.", fillcolor="#f8fafc"];
+  N3 [label="mechanism_mavs_ifnb1_step\nMAVS is required for IFIH1-driven IFNB1\ninduction in ADAR-blocked tumor cells.", fillcolor="#f8fafc"];
+  N4 [label="mechanism_tumor_inflammation_step\nIFNB1 induction increases inflammatory state\nin the tumor microenvironment.", fillcolor="#f8fafc"];
+  N5 [label="mechanism_pkr_growth_inhibition_step\nEndogenous double-stranded RNA increases\nEIF2AK2 activity and growth-inhibition\nphenotypes in ADAR-blocked tumor cells.", fillcolor="#f8fafc"];
+  N6 [label="mechanism_mda5_mavs_inflammatory_branch\nThe IFIH1-MAVS signaling branch mediates\ninflammatory output downstream of endogenous\ndsRNA after ADAR blockade.", fillcolor="#fff7ed"];
+  N7 [label="mechanism_downstream_dsRNA_sensor_contribution\nAt least one endogenous-dsRNA sensor branch\ncontributes downstream biology relevant to\nPD-1 sensitization after ADAR blockade.", fillcolor="#fff7ed"];
+  N2 -> N6 [label="ALL_OF / required_step", color="#46515f"];
+  N3 -> N6 [label="ALL_OF / required_step", color="#46515f"];
+  N4 -> N6 [label="ALL_OF / required_step", color="#46515f"];
+  N6 -> N7 [label="ANY_OF / sufficient_module", color="#b45309"];
+  N5 -> N7 [label="ANY_OF / sufficient_module", color="#b45309"];
+  N1 -> PARENT [label="ALL_OF / shared_anchor", color="#46515f"];
+  N7 -> PARENT [label="ALL_OF / required_step", color="#46515f"];
+}

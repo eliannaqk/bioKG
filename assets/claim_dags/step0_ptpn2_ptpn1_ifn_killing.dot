@@ -1,0 +1,20 @@
+digraph G {
+  graph [rankdir=LR, bgcolor="transparent", pad="0.25", nodesep="0.45", ranksep="0.9"];
+  node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=10, margin="0.10,0.08", color="#334155", penwidth=1.2];
+  edge [fontname="Helvetica", fontsize=9, color="#334155", arrowsize=0.75, penwidth=1.2];
+  "P" [label="P_PTPN2_PTPN1_IFN_KILLING", fillcolor="#dbeafe"];
+  "F1" [label="F_PTPN2_PTPN1_LOSS_AMPLIFIES_JAK_STAT", fillcolor="#ffffff"];
+  "F2" [label="F_IFN_AMPLIFICATION_INCREASES_ANTIGEN_PRESENTATION", fillcolor="#ffffff"];
+  "F3" [label="F_PTPN_INHIBITION_INCREASES_NK_SUSCEPTIBILITY", fillcolor="#ffffff"];
+  "F4" [label="F_PTPN_INHIBITION_INCREASES_CD8_KILLING", fillcolor="#ffffff"];
+  "F5" [label="F_DUAL_PARALOG_INHIBITION_OUTPERFORMS_SINGLE", fillcolor="#ffffff"];
+  "F1" -> "P" [label="ALL_OF"];
+  "F2" -> "P" [label="ALL_OF"];
+  "F3" -> "P" [label="ALL_OF"];
+  "F4" -> "P" [label="ALL_OF"];
+  "F5" -> "P" [label="ALL_OF"];
+  "F1" -> "F2" [label="enables", style=dashed, color="#64748b", fontcolor="#475569"];
+  "F1" -> "F3" [label="enables", style=dashed, color="#64748b", fontcolor="#475569"];
+  "F2" -> "F4" [label="enables", style=dashed, color="#64748b", fontcolor="#475569"];
+  "F5" -> "P" [label="refines", style=dashed, color="#64748b", fontcolor="#475569"];
+}
